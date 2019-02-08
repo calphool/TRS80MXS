@@ -19603,7 +19603,7 @@ This is just like the LOCK variant in that the holes are staggared by 5 mil, but
 <part name="IC3" library="74xx-us" library_urn="urn:adsk.eagle:library:88" deviceset="74*74" device="N" package3d_urn="urn:adsk.eagle:package:16407/2" technology="LS"/>
 <part name="P+14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="C15" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="C-US" device="025-024X044" package3d_urn="urn:adsk.eagle:package:23630/1" value=".1uf"/>
-<part name="GND14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="P+15" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -19957,8 +19957,8 @@ This is just like the LOCK variant in that the holes are staggared by 5 mil, but
 <attribute name="NAME" x="355.6" y="276.225" size="1.778" layer="95"/>
 <attribute name="VALUE" x="355.6" y="257.81" size="1.778" layer="96"/>
 </instance>
-<instance part="GND14" gate="1" x="350.52" y="256.54" smashed="yes">
-<attribute name="VALUE" x="347.98" y="254" size="1.778" layer="96"/>
+<instance part="P+15" gate="VCC" x="347.98" y="275.59" smashed="yes">
+<attribute name="VALUE" x="345.44" y="273.05" size="1.778" layer="96" rot="R90"/>
 </instance>
 </instances>
 <busses>
@@ -20149,20 +20149,6 @@ This is just like the LOCK variant in that the holes are staggared by 5 mil, but
 <pinref part="GND12" gate="1" pin="GND"/>
 <wire x1="408.94" y1="261.62" x2="408.94" y2="259.08" width="0.1524" layer="91"/>
 </segment>
-<segment>
-<pinref part="GND14" gate="1" pin="GND"/>
-<pinref part="IC3" gate="B" pin="CLR"/>
-<wire x1="350.52" y1="259.08" x2="350.52" y2="262.89" width="0.1524" layer="91"/>
-<pinref part="IC3" gate="B" pin="CLK"/>
-<wire x1="350.52" y1="262.89" x2="350.52" y2="265.43" width="0.1524" layer="91"/>
-<junction x="350.52" y="262.89"/>
-<pinref part="IC3" gate="B" pin="D"/>
-<wire x1="350.52" y1="265.43" x2="350.52" y2="270.51" width="0.1524" layer="91"/>
-<junction x="350.52" y="265.43"/>
-<pinref part="IC3" gate="B" pin="PRE"/>
-<wire x1="350.52" y1="270.51" x2="350.52" y2="273.05" width="0.1524" layer="91"/>
-<junction x="350.52" y="270.51"/>
-</segment>
 </net>
 <net name="VCC" class="0">
 <segment>
@@ -20297,6 +20283,15 @@ This is just like the LOCK variant in that the holes are staggared by 5 mil, but
 <wire x1="350.52" y1="295.91" x2="347.98" y2="295.91" width="0.1524" layer="91"/>
 <wire x1="347.98" y1="295.91" x2="347.98" y2="285.75" width="0.1524" layer="91"/>
 <junction x="350.52" y="295.91"/>
+</segment>
+<segment>
+<pinref part="IC3" gate="B" pin="PRE"/>
+<wire x1="350.52" y1="273.05" x2="347.98" y2="273.05" width="0.1524" layer="91"/>
+<wire x1="347.98" y1="273.05" x2="347.98" y2="262.89" width="0.1524" layer="91"/>
+<pinref part="IC3" gate="B" pin="CLR"/>
+<wire x1="347.98" y1="262.89" x2="350.52" y2="262.89" width="0.1524" layer="91"/>
+<pinref part="P+15" gate="VCC" pin="VCC"/>
+<junction x="347.98" y="273.05"/>
 </segment>
 </net>
 <net name="COMVID-OUT" class="0">
@@ -21551,19 +21546,20 @@ This is just like the LOCK variant in that the holes are staggared by 5 mil, but
 <wire x1="375.92" y1="279.4" x2="375.92" y2="285.75" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="CLOCK_DIV_2" class="0">
+<net name="CLOCK_DIV_4" class="0">
 <segment>
-<pinref part="IC3" gate="A" pin="Q"/>
-<wire x1="375.92" y1="295.91" x2="375.92" y2="313.69" width="0.1524" layer="91"/>
-<wire x1="375.92" y1="313.69" x2="322.58" y2="313.69" width="0.1524" layer="91"/>
 <wire x1="322.58" y1="313.69" x2="322.58" y2="287.02" width="0.1524" layer="91"/>
 <pinref part="U5" gate="G$1" pin="CLOCK"/>
 <wire x1="322.58" y1="287.02" x2="302.26" y2="287.02" width="0.1524" layer="91"/>
 <pinref part="U6" gate="G$1" pin="CLOCK"/>
 <wire x1="436.88" y1="287.02" x2="450.85" y2="287.02" width="0.1524" layer="91"/>
 <wire x1="450.85" y1="287.02" x2="450.85" y2="313.69" width="0.1524" layer="91"/>
-<wire x1="450.85" y1="313.69" x2="375.92" y2="313.69" width="0.1524" layer="91"/>
-<junction x="375.92" y="313.69"/>
+<wire x1="450.85" y1="313.69" x2="383.54" y2="313.69" width="0.1524" layer="91"/>
+<pinref part="IC3" gate="B" pin="Q"/>
+<wire x1="383.54" y1="313.69" x2="322.58" y2="313.69" width="0.1524" layer="91"/>
+<wire x1="375.92" y1="273.05" x2="383.54" y2="273.05" width="0.1524" layer="91"/>
+<wire x1="383.54" y1="273.05" x2="383.54" y2="313.69" width="0.1524" layer="91"/>
+<junction x="383.54" y="313.69"/>
 </segment>
 </net>
 <net name="N$15" class="0">
@@ -21574,6 +21570,27 @@ This is just like the LOCK variant in that the holes are staggared by 5 mil, but
 <wire x1="393.7" y1="318.77" x2="393.7" y2="281.94" width="0.1524" layer="91"/>
 <pinref part="U6" gate="G$1" pin="READY"/>
 <wire x1="393.7" y1="281.94" x2="408.94" y2="281.94" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$6" class="0">
+<segment>
+<pinref part="IC3" gate="A" pin="Q"/>
+<wire x1="375.92" y1="295.91" x2="378.46" y2="295.91" width="0.1524" layer="91"/>
+<wire x1="378.46" y1="295.91" x2="378.46" y2="276.86" width="0.1524" layer="91"/>
+<wire x1="378.46" y1="276.86" x2="345.44" y2="276.86" width="0.1524" layer="91"/>
+<wire x1="345.44" y1="276.86" x2="345.44" y2="265.43" width="0.1524" layer="91"/>
+<pinref part="IC3" gate="B" pin="CLK"/>
+<wire x1="345.44" y1="265.43" x2="350.52" y2="265.43" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$7" class="0">
+<segment>
+<pinref part="IC3" gate="B" pin="!Q"/>
+<wire x1="375.92" y1="262.89" x2="375.92" y2="256.54" width="0.1524" layer="91"/>
+<wire x1="375.92" y1="256.54" x2="344.17" y2="256.54" width="0.1524" layer="91"/>
+<wire x1="344.17" y1="256.54" x2="344.17" y2="270.51" width="0.1524" layer="91"/>
+<pinref part="IC3" gate="B" pin="D"/>
+<wire x1="344.17" y1="270.51" x2="350.52" y2="270.51" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
