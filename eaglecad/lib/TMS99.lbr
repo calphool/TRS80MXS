@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="50" unitdist="mil" unit="mm" style="lines" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mm"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -843,6 +843,41 @@ https://www.mouser.com/datasheet/2/140/T113051B-318481.pdf</description>
 <wire x1="15.24" y1="10.16" x2="10.16" y2="10.16" width="0.254" layer="94"/>
 <wire x1="10.16" y1="10.16" x2="5.08" y2="15.24" width="0.254" layer="94"/>
 </symbol>
+<symbol name="TRS80MXS_DECODER">
+<description>TRS80MXS_DECODER
+
+Custom SPLD built from an ATF22V10C that decodes addresses 0x80, 0x81, 0x82, 0x83, 0x84, and 0x85 on the address lines and DEV_IN and DEV_OUT to set control pins and enable pins for TMS9918, four SN76489s, and buffers used with joysticks.</description>
+<wire x1="-25.4" y1="25.4" x2="0" y2="25.4" width="0.254" layer="94"/>
+<wire x1="0" y1="25.4" x2="0" y2="-10.16" width="0.254" layer="94"/>
+<wire x1="0" y1="-10.16" x2="-25.4" y2="-10.16" width="0.254" layer="94"/>
+<wire x1="-25.4" y1="-10.16" x2="-25.4" y2="25.4" width="0.254" layer="94"/>
+<pin name="NC" x="-30.48" y="22.86" length="middle"/>
+<pin name="A0" x="-30.48" y="20.32" length="middle"/>
+<pin name="A1" x="-30.48" y="17.78" length="middle"/>
+<pin name="NC2" x="-30.48" y="15.24" length="middle"/>
+<pin name="A2" x="-30.48" y="12.7" length="middle"/>
+<pin name="A3" x="-30.48" y="10.16" length="middle"/>
+<pin name="A4" x="-30.48" y="7.62" length="middle"/>
+<pin name="A5" x="-30.48" y="5.08" length="middle"/>
+<pin name="A6" x="-30.48" y="2.54" length="middle"/>
+<pin name="A7" x="-30.48" y="0" length="middle"/>
+<pin name="DEV_IN" x="-30.48" y="-2.54" length="middle"/>
+<pin name="GND" x="-30.48" y="-5.08" length="middle"/>
+<pin name="DEV_OUT" x="5.08" y="-5.08" length="middle" rot="R180"/>
+<pin name="NC3" x="5.08" y="-2.54" length="middle" rot="R180"/>
+<pin name="SND4" x="5.08" y="0" length="middle" rot="R180"/>
+<pin name="SND3" x="5.08" y="2.54" length="middle" rot="R180"/>
+<pin name="JOY2" x="5.08" y="5.08" length="middle" rot="R180"/>
+<pin name="JOY1" x="5.08" y="7.62" length="middle" rot="R180"/>
+<pin name="SND2" x="5.08" y="10.16" length="middle" rot="R180"/>
+<pin name="SND1" x="5.08" y="12.7" length="middle" rot="R180"/>
+<pin name="CSR" x="5.08" y="15.24" length="middle" rot="R180"/>
+<pin name="CSW" x="5.08" y="17.78" length="middle" rot="R180"/>
+<pin name="MODE" x="5.08" y="20.32" length="middle" rot="R180"/>
+<pin name="VCC" x="5.08" y="22.86" length="middle" rot="R180"/>
+<text x="-22.86" y="27.94" size="1.778" layer="95">&gt;NAME</text>
+<text x="-22.86" y="-12.7" size="1.778" layer="96">&gt;VALUE</text>
+</symbol>
 </symbols>
 <devicesets>
 <deviceset name="TMS4116" prefix="U">
@@ -1264,6 +1299,45 @@ https://www.mouser.com/datasheet/2/140/T113051B-318481.pdf</description>
 <connect gate="G$1" pin="1" pad="P$1"/>
 <connect gate="G$1" pin="2" pad="P$2"/>
 <connect gate="G$1" pin="3" pad="P$3"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="TRS80MXS_DECODER" prefix="IC" uservalue="yes">
+<description>TRS80MXS - glue logic for TRS80MXS base board</description>
+<gates>
+<gate name="G$1" symbol="TRS80MXS_DECODER" x="12.7" y="-7.62"/>
+</gates>
+<devices>
+<device name="" package="DIP24SKI">
+<connects>
+<connect gate="G$1" pin="A0" pad="2"/>
+<connect gate="G$1" pin="A1" pad="3"/>
+<connect gate="G$1" pin="A2" pad="5"/>
+<connect gate="G$1" pin="A3" pad="6"/>
+<connect gate="G$1" pin="A4" pad="7"/>
+<connect gate="G$1" pin="A5" pad="8"/>
+<connect gate="G$1" pin="A6" pad="9"/>
+<connect gate="G$1" pin="A7" pad="10"/>
+<connect gate="G$1" pin="CSR" pad="21"/>
+<connect gate="G$1" pin="CSW" pad="22"/>
+<connect gate="G$1" pin="DEV_IN" pad="11"/>
+<connect gate="G$1" pin="DEV_OUT" pad="13"/>
+<connect gate="G$1" pin="GND" pad="12"/>
+<connect gate="G$1" pin="JOY1" pad="18"/>
+<connect gate="G$1" pin="JOY2" pad="17"/>
+<connect gate="G$1" pin="MODE" pad="23"/>
+<connect gate="G$1" pin="NC" pad="1"/>
+<connect gate="G$1" pin="NC2" pad="4"/>
+<connect gate="G$1" pin="NC3" pad="14"/>
+<connect gate="G$1" pin="SND1" pad="20"/>
+<connect gate="G$1" pin="SND2" pad="19"/>
+<connect gate="G$1" pin="SND3" pad="16"/>
+<connect gate="G$1" pin="SND4" pad="15"/>
+<connect gate="G$1" pin="VCC" pad="24"/>
 </connects>
 <technologies>
 <technology name=""/>

@@ -12390,7 +12390,8 @@ Source: AVX .. aphvc.pdf</description>
 <part name="C7" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-US" device="025-024X044" package3d_urn="urn:adsk.eagle:package:23630/1" value=".1uf"/>
 <part name="C8" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-US" device="025-024X044" package3d_urn="urn:adsk.eagle:package:23630/1" value=".1uf"/>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="J1-WAIT-AND-INT" library="SparkFun-Connectors" library_urn="urn:adsk.eagle:library:513" deviceset="CONN_04X2" device="" package3d_urn="urn:adsk.eagle:package:38103/1" value="WAIT-AND-INT"/>
+<part name="J1-INTERRUPTS" library="SparkFun-Connectors" library_urn="urn:adsk.eagle:library:513" deviceset="CONN_04X2" device="" package3d_urn="urn:adsk.eagle:package:38103/1" value="INTERRUPTS"/>
+<part name="J2-WAITS" library="SparkFun-Connectors" library_urn="urn:adsk.eagle:library:513" deviceset="CONN_04X2" device="" package3d_urn="urn:adsk.eagle:package:38103/1" value="WAITS"/>
 </parts>
 <sheets>
 <sheet>
@@ -12647,9 +12648,13 @@ Source: AVX .. aphvc.pdf</description>
 <instance part="GND11" gate="1" x="143.51" y="82.55" smashed="yes" rot="R270">
 <attribute name="VALUE" x="140.97" y="85.09" size="1.778" layer="96" rot="R270"/>
 </instance>
-<instance part="J1-WAIT-AND-INT" gate="G$1" x="-119.38" y="-12.7" smashed="yes">
+<instance part="J1-INTERRUPTS" gate="G$1" x="-119.38" y="-12.7" smashed="yes">
 <attribute name="VALUE" x="-123.19" y="-20.066" size="1.778" layer="96" font="vector"/>
 <attribute name="NAME" x="-123.444" y="-4.572" size="1.778" layer="95" font="vector"/>
+</instance>
+<instance part="J2-WAITS" gate="G$1" x="-119.38" y="10.16" smashed="yes">
+<attribute name="VALUE" x="-123.19" y="2.794" size="1.778" layer="96" font="vector"/>
+<attribute name="NAME" x="-123.444" y="18.288" size="1.778" layer="95" font="vector"/>
 </instance>
 </instances>
 <busses>
@@ -13926,7 +13931,7 @@ Source: AVX .. aphvc.pdf</description>
 <wire x1="180.34" y1="-2.54" x2="180.34" y2="-55.88" width="0.1524" layer="91"/>
 <wire x1="180.34" y1="-55.88" x2="205.74" y2="-55.88" width="0.1524" layer="91"/>
 <label x="190.5" y="-55.88" size="1.016" layer="95"/>
-<pinref part="J1-WAIT-AND-INT" gate="G$1" pin="1"/>
+<pinref part="J1-INTERRUPTS" gate="G$1" pin="1"/>
 <wire x1="-127" y1="-7.62" x2="-127" y2="-2.54" width="0.1524" layer="91"/>
 </segment>
 </net>
@@ -13937,9 +13942,10 @@ Source: AVX .. aphvc.pdf</description>
 <wire x1="110.49" y1="2.54" x2="110.49" y2="12.7" width="0.1524" layer="91"/>
 <label x="111.76" y="10.16" size="1.016" layer="95"/>
 <label x="-105.41" y="3.048" size="1.016" layer="95"/>
-<pinref part="J1-WAIT-AND-INT" gate="G$1" pin="2"/>
-<wire x1="-111.76" y1="-7.62" x2="-106.68" y2="-7.62" width="0.1524" layer="91"/>
-<wire x1="-106.68" y1="-7.62" x2="-106.68" y2="2.54" width="0.1524" layer="91"/>
+<pinref part="J2-WAITS" gate="G$1" pin="1"/>
+<wire x1="-127" y1="15.24" x2="-127" y2="22.86" width="0.1524" layer="91"/>
+<wire x1="-127" y1="22.86" x2="-106.68" y2="22.86" width="0.1524" layer="91"/>
+<wire x1="-106.68" y1="22.86" x2="-106.68" y2="2.54" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="A4" class="0">

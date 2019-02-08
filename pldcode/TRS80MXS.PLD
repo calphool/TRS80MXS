@@ -1,0 +1,237 @@
+Name     TRS80MXS;
+PartNo   TRS80MXS;
+Date     2/6/2019 ;
+Revision 01 ;
+Designer Joe Rounceville ;
+Company  SoftObject System ;
+Assembly None ;
+Location ;
+Device   g22v10;
+
+
+property   atmel {logic_doubling=on};
+
+/*
+Process for programming ATFV10 chip:
+	1) Compile this source file in WinCupl to produce a .JED file
+	2) Open VSpeed application (very very version specific... the one installed on this computer (VSpeed 5.0, 19/11/5)
+          seems to work, but there are two versions with that exact name/date, you need the older one -- use the wayback 
+          machine site if necessary).  Go into Devices and select ATMEL ATF22LV10C (UES) (PDIP24)
+       2.5) Put the chip in the programmer with the *back* (pins 12 and 13) at the *back* of the programmer (closest to the USB
+            port, and close the lever.  Note, this is *not* how VSPeed shows the chip orientation.
+       3) Run the condio.jed file through the programming process (top left button) twice to clear the chip
+       4) Run the TRS80MXS.jed file through the programming process, it should verify as it runs 
+       5) Click the "verify" button, and it should verify okay (Note: when you Read the IC, it won't match anything.  This is      
+       normal.)
+*/
+
+/* *************** INPUT PINS *********************/
+//    1               nothing
+PIN   2  =  a_zero                      ; /*          LSB - A0 (spelled out because of compiler issues */ 
+PIN   3  =  a_one                       ; /*                A1               */ 
+//    4  =  nothing                      
+PIN   5  =  a_two                       ; /*                A2               */ 
+PIN   6  =  a_three                     ; /*                A3               */ 
+PIN   7  =  a_four                      ; /*                A4               */ 
+PIN   8  =  a_five                      ; /*                A5               */ 
+PIN   9  =  a_six                       ; /*                A6               */ 
+PIN   10  = a_seven                     ; /*                A7               */ 
+PIN   11  = dev_in                      ; /*  active low    INP              */
+//    12              nothing 
+PIN   13  = dev_out                     ; /*  active low    OUT              */
+//    14               nothing           ; /*  active low                     */
+
+/* *************** OUTPUT PINS *********************/
+PIN   15  = snd4                        ; /*  active low */
+PIN   23  = mode                        ; /*  (0=VRAM, 1=VPD)              */ 
+PIN   17  = joy2                        ; /*  active low                   */ 
+PIN   18  = joy1                        ; /*  active low                   */ 
+PIN   19  = snd2                        ; /*  active low                   */ 
+PIN   20  = snd1                        ; /*  active low                   */ 
+PIN   21  = csr                         ; /*  active low                   */ 
+PIN   22  = csw                         ; /*  active low                   */ 
+PIN   16  = snd3                        ; /*  active low                   */
+
+
+/* send MODE 0 if IN and 0x80 */
+/* send MODE 0 if OUT and 0x80 */
+/* send MODE 1 if IN and 0x81 */
+/* send MODE 1 if OUT and 0x81 */
+field mode_inputs = [dev_in,dev_out,a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero];
+field mode_outputs = [mode];
+
+TABLE mode_inputs => mode_outputs {
+ 'b'0110000000=>'b'0;
+ 'b'1010000000=>'b'0;
+ 'b'0110000001=>'b'1;
+ 'b'1010000001=>'b'1;
+}
+
+
+
+/* send CSR 1 if address >= 0x00 and <= 0x7f */
+/* send CSR 0 if address = 0x80 and IN */
+/* send CSR 1 if address = 0x80 and not IN */
+/* send CSR 0 if address = 0x81 and IN */
+/* send CSR 1 if address = 0x81 and not IN */
+/* send CSR 1 if address >= 0x82 and <= 0xff */
+field csr_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in];
+field csr_outputs = [csr];
+
+TABLE csr_inputs => csr_outputs {
+['b'000000000..'b'011111111]=>'b'1;
+ 'b'100000000=>'b'0;
+ 'b'100000001=>'b'1;
+ 'b'100000010=>'b'0;
+ 'b'100000011=>'b'1;
+['b'100000100..'b'111111111]=>'b'1;
+}
+
+
+/* send CSW 1 if address >= 0x00 and <= 0x7f */
+/* send CSW 0 if address = 0x80 and OUT */
+/* send CSW 1 if address = 0x80 and not OUT */
+/* send CSW 0 if address = 0x81 and OUT */
+/* send CSW 1 if address = 0x81 and not OUT */
+/* send CSW 1 if address >= 0x82 and <= 0xff */
+field csw_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out];
+field csw_outputs = [csw];
+
+TABLE csw_inputs => csw_outputs {
+['b'000000000..'b'011111111]=>'b'1;
+ 'b'100000000=>'b'0;
+ 'b'100000001=>'b'1;
+ 'b'100000010=>'b'0;
+ 'b'100000011=>'b'1;
+['b'100000100..'b'111111111]=>'b'1;
+}
+
+
+/* send SND1 1 if address >= 0x00 and <= 0x7f */
+/* send SND1 1 if address = 0x80 and OUT */
+/* send SND1 1 if address = 0x80 and not OUT */
+/* send SND1 1 if address = 0x81 and OUT */
+/* send SND1 1 if address = 0x81 and not OUT */
+/* send SND1 0 if address = 0x82 and OUT */
+/* send SND1 1 if address >= 0x83 and <= 0xff */
+field snd1_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out];
+field snd1_outputs = [snd1];
+
+TABLE snd1_inputs => snd1_outputs {
+['b'000000000..'b'100000011]=>'b'1;
+ 'b'100000100=>'b'0;
+['b'100000101..'b'111111111]=>'b'1;
+}
+
+
+
+/* send SND2 1 if address >= 0x00 and <= 0x7f */
+/* send SND2 1 if address = 0x80 and OUT */
+/* send SND2 1 if address = 0x80 and not OUT */
+/* send SND2 1 if address = 0x81 and OUT */
+/* send SND2 1 if address = 0x81 and not OUT */
+/* send SND2 1 if address = 0x82 and OUT */
+/* send SND2 1 if address = 0x82 and not OUT */
+/* send SND2 0 if address = 0x83 and OUT */
+/* send SND2 1 if address >= 0x84 and <= 0xff */
+field snd2_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out];
+field snd2_outputs = [snd2];
+
+TABLE snd2_inputs => snd2_outputs {
+['b'000000000..'b'100000101]=>'b'1;
+ 'b'100000110=>'b'0;
+['b'100000111..'b'111111111]=>'b'1;
+}
+
+
+/* send SND3 1 if address >= 0x00 and <= 0x7f */
+/* send SND3 1 if address = 0x80 and OUT */
+/* send SND3 1 if address = 0x80 and not OUT */
+/* send SND3 1 if address = 0x81 and OUT */
+/* send SND3 1 if address = 0x81 and not OUT */
+/* send SND3 1 if address = 0x82 and OUT */
+/* send SND3 1 if address = 0x82 and not OUT */
+/* send SND3 1 if address = 0x83 and OUT */
+/* send SND3 1 if address = 0x83 and not OUT */
+/* send SND3 0 if address = 0x84 and OUT */
+/* send SND3 1 if address >= 0x84 and <= 0xff */
+
+field snd3_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out];
+field snd3_outputs = [snd3];
+
+TABLE snd3_inputs => snd3_outputs {
+['b'000000000..'b'100000111]=>'b'1;
+ 'b'100001000=>'b'0; 
+['b'100001001..'b'111111111]=>'b'1;
+}
+
+
+
+/* send SND4 1 if address >= 0x00 and <= 0x7f */
+/* send SND4 1 if address = 0x80 and OUT */
+/* send SND4 1 if address = 0x80 and not OUT */
+/* send SND4 1 if address = 0x81 and OUT */
+/* send SND4 1 if address = 0x81 and not OUT */
+/* send SND4 1 if address = 0x82 and OUT */
+/* send SND4 1 if address = 0x82 and not OUT */
+/* send SND4 1 if address = 0x83 and OUT */
+/* send SND4 1 if address = 0x83 and not OUT */
+/* send SND4 1 if address = 0x84 and OUT */
+/* send SND4 1 if address = 0x85 and not OUT /*
+/* send SND4 0 if address = 0x85 and OUT /*
+/* send SND4 1 if address >= 0x85 and <= 0xff */
+field snd4_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out];
+field snd4_outputs = [snd4];
+
+TABLE snd4_inputs => snd4_outputs {
+['b'000000000..'b'100001001]=>'b'1;
+ 'b'100001010=>'b'0; 
+['b'100001011..'b'111111111]=>'b'1;
+}
+
+
+/* send JOY1 1 if address >= 0x00 and <= 0x7f */
+/* send JOY1 1 if address = 0x80 and OUT */
+/* send JOY1 1 if address = 0x80 and not OUT */
+/* send JOY1 1 if address = 0x81 and OUT */
+/* send JOY1 1 if address = 0x81 and not OUT */
+/* send JOY1 0 if address = 0x82 and OUT */
+/* send JOY1 1 if address >= 0x83 and <= 0xff */
+field joy1_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in];
+field joy1_outputs = [joy1];
+
+TABLE joy1_inputs => joy1_outputs {
+['b'000000000..'b'011111111]=>'b'1;
+ 'b'100000000=>'b'1;
+ 'b'100000001=>'b'1;
+ 'b'100000010=>'b'1;
+ 'b'100000011=>'b'1;
+ 'b'100000100=>'b'0;
+['b'100000101..'b'111111111]=>'b'1;
+}
+
+
+
+/* send JOY2 1 if address >= 0x00 and <= 0x7f */
+/* send JOY2 1 if address = 0x80 and OUT */
+/* send JOY2 1 if address = 0x80 and not OUT */
+/* send JOY2 1 if address = 0x81 and OUT */
+/* send JOY2 1 if address = 0x81 and not OUT */
+/* send JOY2 1 if address = 0x82 and OUT */
+/* send JOY2 1 if address = 0x82 and not OUT */
+/* send JOY2 0 if address = 0x83 and OUT */
+/* send JOY2 1 if address >= 0x84 and <= 0xff */
+field joy2_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in];
+field joy2_outputs = [joy2];
+
+TABLE joy2_inputs => joy2_outputs {
+['b'000000000..'b'011111111]=>'b'1;
+ 'b'100000000=>'b'1;
+ 'b'100000001=>'b'1;
+ 'b'100000010=>'b'1;
+ 'b'100000011=>'b'1;
+ 'b'100000100=>'b'1;
+ 'b'100000101=>'b'1;
+ 'b'100000110=>'b'0;
+['b'100000111..'b'111111111]=>'b'1;
+}
