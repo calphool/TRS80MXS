@@ -28,6 +28,11 @@ of the Teensy unit.
 Build Notes
 ===========
 
+February 9. 2019
+
+Found [this interesting diagram.](https://www.kguttag.com/wp-content/uploads/2017/11/198x-External-Video-by-KG.pdf)  It may be worth digging into this later.  It would be kind of cool to be able to merge the TRS-80 
+video signal with the TMS9918 signal such that the TRS-80 signal is the back plane.
+
 February 8, 2019
 
 I decided to add two more sound chips to the graphics/sound shield.  So now there should be a grand total of 12 tonal voices
