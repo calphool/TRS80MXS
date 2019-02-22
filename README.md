@@ -28,6 +28,22 @@ of the Teensy unit.
 Build Notes
 ===========
 
+February 22, 2019
+
+I received my PCBs the other day.  Unfortunately I didn't do a great job of carefully reviewing them before sending them to the fab house.  There are 
+so many little things to check when you're making a PCB that it's easy to miss something.  In this case, I didn't double (and triple) check the 
+orientation of the headers on the boards.  I had them oriented correctly on the base and the floppy emulator PCB, but I didn't have them right on the 
+sound/graphics board.  So, I had to flip them (both horizontally and vertically... wow was I off!), and then move everything around on the board 
+because all the traces were now too far away from their respective chips.  *sigh*.  Oh well, I'll remember next time.  So now that's done and I've 
+got the graphics/sound board headed back to the fab house.  I wish I could get some kind of deal on the shipping.  The cost of the fabrication is 
+nothing ($5 for five boards), but the shipping is $20.  I can start populating the base and floppy PCBs now, so I'll probably do that this weekend.  One
+of the cool things about these boards is that by making them modular like this, I think I should be able to use them on other 8-bit computers... basically
+the base board will be unique to each computer, but the sound/graphics and floppy emulator may be pretty close to just working as a "cartridge" in 
+other 8-bit PCBs of the era.  Of course, they'll need different software, but I don't think it'll be a total overhaul to get them working with say 
+an Apple II, Commodore, or Atari 8-bit.  We'll see.  I mean, there will be differences because those computers were built around a 6502 and these 
+cards were built for a Z80 machine, but a lot still translates -- an address bus, an 8-bit data bus, and so on.  We'll see when we get there.  If I 
+keep plugging away I'm sure we can figure out a way to create a set of semi-universal cards... though maybe that's more of a long term goal.
+
 February 9. 2019
 
 Found [this interesting diagram.](https://www.kguttag.com/wp-content/uploads/2017/11/198x-External-Video-by-KG.pdf)  It may be worth digging into this later.  It would be kind of cool to be able to merge the TRS-80 
