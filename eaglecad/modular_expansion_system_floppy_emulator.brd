@@ -176,6 +176,20 @@ Joe Rounceville (C)2019</text>
 <text x="85.725" y="71.4375" size="1.778" layer="25" rot="R90">74LS139</text>
 <text x="70.1675" y="95.885" size="1.778" layer="25" rot="R180">INT*</text>
 <text x="78.4225" y="95.885" size="1.778" layer="25" rot="R180">WAIT*</text>
+<text x="17.78" y="93.98" size="1.778" layer="25">a0</text>
+<text x="20.32" y="92.3925" size="1.778" layer="25">a1</text>
+<text x="68.8975" y="97.155" size="1.778" layer="25">wr*</text>
+<text x="17.78" y="4.1275" size="1.778" layer="25">d0</text>
+<text x="20.32" y="5.715" size="1.778" layer="25">d1</text>
+<text x="22.86" y="4.1275" size="1.778" layer="25">d2</text>
+<text x="25.4" y="5.715" size="1.778" layer="25">d3</text>
+<text x="27.6225" y="3.81" size="1.778" layer="25">d4</text>
+<text x="30.1625" y="5.715" size="1.778" layer="25">d5</text>
+<text x="33.02" y="3.81" size="1.778" layer="25">d6</text>
+<text x="35.2425" y="5.715" size="1.778" layer="25">d7</text>
+<text x="66.04" y="3.81" size="1.778" layer="25">5v</text>
+<text x="62.865" y="5.3975" size="1.778" layer="25">gnd</text>
+<text x="59.69" y="3.81" size="1.778" layer="25">3.3v</text>
 </plain>
 <libraries>
 <library name="SparkFun-Boards">
