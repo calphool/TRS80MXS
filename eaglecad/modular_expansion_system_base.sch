@@ -28041,7 +28041,7 @@ http://www.fairchildsemi.com/ds/LM/LM7805.pdf</description>
 <wire x1="285.75" y1="207.01" x2="285.75" y2="104.14" width="0.762" layer="92"/>
 </segment>
 </bus>
-<bus name="CNTRL:BUFFERED_IN*,BUFFERED_OUT*,BUFFERED_RD*,BUFFERED_WR*">
+<bus name="CNTRL:IN*,OUT*,RD*,WR*">
 <segment>
 <wire x1="175.26" y1="71.12" x2="175.26" y2="52.07" width="0.762" layer="92"/>
 </segment>
@@ -28601,16 +28601,6 @@ http://www.fairchildsemi.com/ds/LM/LM7805.pdf</description>
 </net>
 <net name="BUFFERED_RD*" class="0">
 <segment>
-<wire x1="175.26" y1="59.69" x2="165.1" y2="59.69" width="0.1524" layer="91"/>
-<wire x1="165.1" y1="59.69" x2="165.1" y2="101.6" width="0.1524" layer="91"/>
-<pinref part="U$1" gate="G$1" pin="RD*"/>
-<wire x1="165.1" y1="101.6" x2="139.7" y2="101.6" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="IC3" gate="B" pin="A1"/>
-<wire x1="185.42" y1="69.85" x2="175.26" y2="69.85" width="0.1524" layer="91"/>
-</segment>
-<segment>
 <pinref part="IC3" gate="B" pin="Y1"/>
 <wire x1="218.44" y1="69.85" x2="210.82" y2="69.85" width="0.1524" layer="91"/>
 </segment>
@@ -28626,16 +28616,6 @@ http://www.fairchildsemi.com/ds/LM/LM7805.pdf</description>
 </segment>
 </net>
 <net name="BUFFERED_WR*" class="0">
-<segment>
-<wire x1="175.26" y1="57.15" x2="163.83" y2="57.15" width="0.1524" layer="91"/>
-<wire x1="163.83" y1="57.15" x2="163.83" y2="96.52" width="0.1524" layer="91"/>
-<pinref part="U$1" gate="G$1" pin="WR*"/>
-<wire x1="163.83" y1="96.52" x2="139.7" y2="96.52" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="IC3" gate="B" pin="A2"/>
-<wire x1="175.26" y1="67.31" x2="185.42" y2="67.31" width="0.1524" layer="91"/>
-</segment>
 <segment>
 <pinref part="IC3" gate="B" pin="Y2"/>
 <wire x1="218.44" y1="67.31" x2="210.82" y2="67.31" width="0.1524" layer="91"/>
@@ -28653,16 +28633,6 @@ http://www.fairchildsemi.com/ds/LM/LM7805.pdf</description>
 </net>
 <net name="BUFFERED_IN*" class="0">
 <segment>
-<wire x1="175.26" y1="54.61" x2="162.56" y2="54.61" width="0.1524" layer="91"/>
-<wire x1="162.56" y1="54.61" x2="162.56" y2="111.76" width="0.1524" layer="91"/>
-<pinref part="U$1" gate="G$1" pin="IN*"/>
-<wire x1="162.56" y1="111.76" x2="139.7" y2="111.76" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="IC3" gate="B" pin="A3"/>
-<wire x1="175.26" y1="64.77" x2="185.42" y2="64.77" width="0.1524" layer="91"/>
-</segment>
-<segment>
 <pinref part="IC3" gate="B" pin="Y3"/>
 <wire x1="218.44" y1="64.77" x2="210.82" y2="64.77" width="0.1524" layer="91"/>
 </segment>
@@ -28672,16 +28642,6 @@ http://www.fairchildsemi.com/ds/LM/LM7805.pdf</description>
 </segment>
 </net>
 <net name="BUFFERED_OUT*" class="0">
-<segment>
-<wire x1="175.26" y1="52.07" x2="161.29" y2="52.07" width="0.1524" layer="91"/>
-<wire x1="161.29" y1="52.07" x2="161.29" y2="93.98" width="0.1524" layer="91"/>
-<pinref part="U$1" gate="G$1" pin="OUT*"/>
-<wire x1="161.29" y1="93.98" x2="139.7" y2="93.98" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="IC3" gate="B" pin="A4"/>
-<wire x1="175.26" y1="62.23" x2="185.42" y2="62.23" width="0.1524" layer="91"/>
-</segment>
 <segment>
 <pinref part="IC3" gate="B" pin="Y4"/>
 <wire x1="218.44" y1="62.23" x2="210.82" y2="62.23" width="0.1524" layer="91"/>
@@ -29328,6 +29288,54 @@ http://www.fairchildsemi.com/ds/LM/LM7805.pdf</description>
 <pinref part="RN1" gate="G$1" pin="9"/>
 <wire x1="377.19" y1="83.82" x2="377.19" y2="22.86" width="0.1524" layer="91"/>
 <junction x="377.19" y="22.86"/>
+</segment>
+</net>
+<net name="RD*" class="0">
+<segment>
+<pinref part="U$1" gate="G$1" pin="RD*"/>
+<wire x1="139.7" y1="101.6" x2="170.18" y2="101.6" width="0.1524" layer="91"/>
+<wire x1="170.18" y1="101.6" x2="170.18" y2="60.96" width="0.1524" layer="91"/>
+<wire x1="170.18" y1="60.96" x2="175.26" y2="60.96" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="IC3" gate="B" pin="A1"/>
+<wire x1="175.26" y1="69.85" x2="185.42" y2="69.85" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="IN*" class="0">
+<segment>
+<pinref part="U$1" gate="G$1" pin="IN*"/>
+<wire x1="139.7" y1="111.76" x2="165.1" y2="111.76" width="0.1524" layer="91"/>
+<wire x1="165.1" y1="111.76" x2="165.1" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="165.1" y1="58.42" x2="175.26" y2="58.42" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="IC3" gate="B" pin="A3"/>
+<wire x1="175.26" y1="64.77" x2="185.42" y2="64.77" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="OUT*" class="0">
+<segment>
+<pinref part="U$1" gate="G$1" pin="OUT*"/>
+<wire x1="139.7" y1="93.98" x2="162.56" y2="93.98" width="0.1524" layer="91"/>
+<wire x1="162.56" y1="93.98" x2="162.56" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="162.56" y1="55.88" x2="175.26" y2="55.88" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="IC3" gate="B" pin="A4"/>
+<wire x1="175.26" y1="62.23" x2="185.42" y2="62.23" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="WR*" class="0">
+<segment>
+<pinref part="U$1" gate="G$1" pin="WR*"/>
+<wire x1="139.7" y1="96.52" x2="160.02" y2="96.52" width="0.1524" layer="91"/>
+<wire x1="160.02" y1="96.52" x2="160.02" y2="53.34" width="0.1524" layer="91"/>
+<wire x1="160.02" y1="53.34" x2="175.26" y2="53.34" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="IC3" gate="B" pin="A2"/>
+<wire x1="175.26" y1="67.31" x2="185.42" y2="67.31" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>

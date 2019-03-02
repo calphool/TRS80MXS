@@ -12569,12 +12569,12 @@ Source: AVX .. aphvc.pdf</description>
 <instance part="P+4" gate="G$1" x="-66.04" y="119.38" smashed="yes" rot="R270">
 <attribute name="VALUE" x="-63.5" y="118.11" size="1.778" layer="96"/>
 </instance>
-<instance part="IC1" gate="C" x="196.85" y="113.03" smashed="yes">
-<attribute name="NAME" x="189.23" y="118.745" size="1.778" layer="95"/>
-<attribute name="VALUE" x="189.23" y="105.41" size="1.778" layer="96"/>
+<instance part="IC1" gate="C" x="199.39" y="148.59" smashed="yes">
+<attribute name="NAME" x="191.77" y="154.305" size="1.778" layer="95"/>
+<attribute name="VALUE" x="191.77" y="140.97" size="1.778" layer="96"/>
 </instance>
-<instance part="GND9" gate="1" x="184.15" y="97.79" smashed="yes">
-<attribute name="VALUE" x="181.61" y="95.25" size="1.778" layer="96"/>
+<instance part="GND9" gate="1" x="186.69" y="133.35" smashed="yes">
+<attribute name="VALUE" x="184.15" y="130.81" size="1.778" layer="96"/>
 </instance>
 <instance part="P+3" gate="VCC" x="-80.01" y="130.81" smashed="yes">
 <attribute name="VALUE" x="-82.55" y="127" size="1.778" layer="96" rot="R90"/>
@@ -13008,10 +13008,10 @@ Source: AVX .. aphvc.pdf</description>
 <segment>
 <pinref part="IC1" gate="C" pin="I0"/>
 <pinref part="IC1" gate="C" pin="I1"/>
-<wire x1="184.15" y1="115.57" x2="184.15" y2="110.49" width="0.1524" layer="91"/>
+<wire x1="186.69" y1="151.13" x2="186.69" y2="146.05" width="0.1524" layer="91"/>
 <pinref part="GND9" gate="1" pin="GND"/>
-<wire x1="184.15" y1="110.49" x2="184.15" y2="100.33" width="0.1524" layer="91"/>
-<junction x="184.15" y="110.49"/>
+<wire x1="186.69" y1="146.05" x2="186.69" y2="135.89" width="0.1524" layer="91"/>
+<junction x="186.69" y="146.05"/>
 </segment>
 <segment>
 <pinref part="IC1" gate="P" pin="GND"/>
