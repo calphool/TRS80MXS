@@ -37,6 +37,12 @@ that was supposed to be doing the buffering, it was still screwing stuff up.  So
 I updated the design in EagleCad (it's now version 1.1), but didn't send for new boards at this point.  If someone wants to buy a few of these things 
 or something I'll go ahead and order some more.  [Here's a pic of the completed board](./img/TRS80MXS_Base_v1.0.jpg?raw=true)... well, mostly.  I didn't have a 3.3v regulator handy, so I left that off for now, easy enough to solder in later when needed.  I also didn't have 4.7k resistor networks of the right size, so I cobbled together a hand full of discrete resistors and made an array out of them.  It's not pretty, but it's functional for now.  I also modified a switch to be a right angle mounted switch, which is a little kludgy but it's stable and will be hidden in plastic at some point anyway.  So yeah, not beautiful, but completely functional and I'll be able to build the other two "shield" modules and snap them on there.  Next I'll get the floppy emulator moved into this new form factor and tested.
 
+Oh yeah, talking to my friend about the project, he expressed that he'd like to be able to browse the web with his TRS-80.  That's a bit o a tall order, 
+but in theory would be possible with one more "shield".  Namely, an ESP32-based shield that was interfaced in the same way that the floppy emulator is 
+interfaced (with a memory location peep hole mapping via a flip-flop and some latches, along with a WAIT* pin to aid in timing.)  So yeah, I may do that 
+as well.  That'd make for quite the [sandwich](./img/sandwich.jpg?raw=true) of boards (base + graphics/sound + ESP32 wifi + floppy if we want to use it more than once), but in principle it would work.  The hardest part would be the browser rendering engine itself.  It might be one of those projects where
+you can get the skeleton of the thing working fairly easily (basic text handling like a Lynx or maybe Browsh browser), and then graphics and sound would require a lot of design, which can turn into someone else's labor of love if they want.
+
 February 22, 2019
 
 I received my PCBs the other day.  Unfortunately I didn't do a great job of carefully reviewing them before sending them to the fab house.  There are 
