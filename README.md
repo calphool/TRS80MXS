@@ -28,6 +28,15 @@ of the Teensy unit.
 Build Notes
 ===========
 
+March 3, 2019
+
+I got the first instance of the base board built and tested.  It had a bug in the RD*, WR*, IN*, and OUT* signal lines.  I just started using 
+busses in EagleCad, and the user interface is incredibly awkward.  It's *super* easy to accidentally combine bus lines in weird ways.  In my case 
+I had combined the buffered and unbuffered copies of the RD*, IN*, OUT*, and WR* lines, and it was creating havoc.  Even after removing the 74LS244
+that was supposed to be doing the buffering, it was still screwing stuff up.  So I had to cut several traces around the chip and wire it properly.
+I updated the design in EagleCad (it's now version 1.1), but didn't send for new boards at this point.  If someone wants to buy a few of these things 
+or something I'll go ahead and order some more.  [Here's a pic of the completed board](./img/TRS80MXS_Base_v1.0.jpg)... well, mostly.  I didn't have a 3.3v regulator handy, so I left that off for now, easy enough to solder in later when needed.  I also didn't have 4.7k resistor networks of the right size, so I cobbled together a hand full of discrete resistors and made an array out of them.  It's not pretty, but it's functional for now.  I also modified a switch to be a right angle mounted switch, which is a little kludgy but it's stable and will be hidden in plastic at some point anyway.  So yeah, not beautiful, but completely functional and I'll be able to build the other two "shield" modules and snap them on there.  Next I'll get the floppy emulator moved into this new form factor and tested.
+
 February 22, 2019
 
 I received my PCBs the other day.  Unfortunately I didn't do a great job of carefully reviewing them before sending them to the fab house.  There are 
