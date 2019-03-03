@@ -31,7 +31,7 @@ Build Notes
 March 3, 2019
 
 I got the first instance of the base board built and tested.  It had a bug in the RD*, WR*, IN*, and OUT* signal lines.  I just started using 
-busses in EagleCad, and the user interface is incredibly awkward.  It's *super* easy to accidentally combine bus lines in weird ways.  In my case 
+[busses in EagleCad](./img/bus.gif?raw=true), and the user interface is incredibly awkward.  It's *super* easy to accidentally combine bus lines in weird ways.  In my case 
 I had combined the buffered and unbuffered copies of the RD*, IN*, OUT*, and WR* lines, and it was creating havoc.  Even after removing the 74LS244
 that was supposed to be doing the buffering, it was still screwing stuff up.  So I had to cut several traces around the chip and wire it properly.
 I updated the design in EagleCad (it's now version 1.1), but didn't send for new boards at this point.  If someone wants to buy a few of these things 
