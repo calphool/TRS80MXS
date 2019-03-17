@@ -5,10 +5,8 @@ extern drivesettings Drives[4];
 
 bool initSD() {
   if (!sdEx.begin()) {             // couldn't establish SD card connection
-        p((char*)"ERROR:  Unable to open SdFatSdioEX object.\n");
+        fatalError((char*)"ERROR:  Unable to open SdFatSdioEX object.\n");
         sdEx.initErrorHalt("SdFatSdioEX begin() failed");
-        L2_RED();
-        L1_RED();
         return false;
   }  
   return true;
@@ -65,9 +63,7 @@ void viewFile(char* fileName, bool bViewHex) {
   if(!initSD()) return;
   sdEx.chvol();
   if(!file.open(fileName, O_RDONLY)) {
-        p((char*)"ERROR:  Unable to open file: %s\n",fileName);
-        L2_RED();
-        L1_RED();
+        fatalError((char*)"ERROR:  Unable to open file: %s\n",fileName);
         return;
   }
 
@@ -98,16 +94,12 @@ void appendBufferToFile(char* buf, int iSize, char* fileName) {
 
   sdEx.chvol();
   if(!file.open(fileName, O_CREAT | O_WRITE | O_AT_END)) {
-        p((char*)"ERROR:  Unable to open file: %s\n",fileName);
-        L2_RED();
-        L1_RED();
+        fatalError((char*)"ERROR:  Unable to open file: %s\n",fileName);
         return;
   }
 
   if (iSize != file.write(buf, iSize)) {
-        p((char*)"ERROR:  Unable to write to file: %s\n",fileName);
-        L2_RED();
-        L1_RED();
+        fatalError((char*)"ERROR:  Unable to write to file: %s\n",fileName);
         file.close();
         return;    
   }
@@ -139,9 +131,7 @@ void openDiskFileByName(String sFileName, int iDriveNum) {
              p((char*)workStrm.c_str());
              Drives[iDriveNum].diskFile = sdEx.open(workStrm.c_str(), FILE_READ);
              if(!Drives[iDriveNum].diskFile) {
-                p((char*)"ERROR:  Unable to open file\n");
-                L1_RED();
-                L2_RED();
+                fatalError((char*)"ERROR:  Unable to open file\n");
                 file.close();
                 return;
              }
@@ -158,7 +148,7 @@ void openDiskFileByName(String sFileName, int iDriveNum) {
   if(bLoaded == true)
       Drives[iDriveNum].sDiskFileName = sFileName;
   else
-      p((char*)"ERROR: Unable to load file %s.\n",sFileName);
+      fatalError((char*)"ERROR: Unable to load file %s.\n",sFileName);
 
   return;
 }

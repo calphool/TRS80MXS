@@ -449,6 +449,6 @@ int PeekFromTRS80() {
     return interruptStatus;
   }
 
-  p((char*)" <--- (0xfe) <::HUH Why Am I Here?::>\n");
+  p((char*)" <--- (0xfe) <---: 0x%04X <::HUH Why Am I Here?::>\n",address);
   return 0xfe;
 }

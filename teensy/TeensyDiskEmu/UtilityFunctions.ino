@@ -24,7 +24,17 @@ void BinaryStrZeroPad(int Number,char ZeroPadding){
   Serial.println();
 }
 
+void fatalError(char *fmt, ... ){
+    char buf[128];        
 
+    L2_RED();
+    va_list args;
+    va_start (args, fmt );
+    vsnprintf(buf, 128, fmt, args);
+    va_end (args);
+    Serial.print(buf);
+    Serial.flush();
+}
 
 
 static const unsigned char base64_table[65] =
