@@ -28,6 +28,21 @@ of the Teensy unit.
 Build Notes
 ===========
 
+March 17, 2019
+
+Happy St. Patrick's Day!  Got the redesigned drive emulator "shield" working.  Last board is the video/sound board.  There's some LED weirdness going on with
+the drive emulator board (probably pin reassignments or something), but I'm not going to fool around with that right now.  The drive emulation works as 
+expected, so that's good enough.  Stay tuned for the final board.  It has the most dramatic changes, so it may take a little more debugging to get fully 
+working.  Once it's done, then our layer sandwich is basically done, except for the wireless board that I haven't yet designed. 
+
+In totally unrelated news, I bought an Apple IIGS for $250.  I don't have boot disks, so it tries to boot and then complains that it has nothing to 
+boot from.  I've ordered some disks from ebay.  Gotta love the IIGS.  It was Woz's last serious involvement in engineering at Apple, and some argue that it 
+saved the company because it extended the aging Apple II line just long enough for Apple's board to realize that Jobs didn't know what he was talking about 
+trying to push the Mac line when the technology just wasn't there yet.  Some people slather a lot of praise on Jobs, and certainly he was a visionary, but
+his visions were often too far ahead of what the technology could do at the time, which put the company at risk in the late 80s.  Vision is great and 
+necessary, but engineering is where the rubber meets the road.  Any science fiction writer can imagine amazing technology.  Making it actually happen 
+requires hard skills.
+
 March 3, 2019
 
 I got the first instance of the base board built and tested.  It had a bug in the RD*, WR*, IN*, and OUT* signal lines.  I just started using 
