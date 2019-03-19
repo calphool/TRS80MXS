@@ -191,11 +191,11 @@ TABLE snd4_inputs => snd4_outputs {
 
 
 /* send JOY1 1 if address >= 0x00 and <= 0x7f */
-/* send JOY1 1 if address = 0x80 and OUT */
-/* send JOY1 1 if address = 0x80 and not OUT */
-/* send JOY1 1 if address = 0x81 and OUT */
-/* send JOY1 1 if address = 0x81 and not OUT */
-/* send JOY1 0 if address = 0x82 and OUT */
+/* send JOY1 1 if address = 0x80 and IN */
+/* send JOY1 1 if address = 0x80 and not IN */
+/* send JOY1 1 if address = 0x81 and IN */
+/* send JOY1 1 if address = 0x81 and not IN */
+/* send JOY1 0 if address = 0x82 and IN */
 /* send JOY1 1 if address >= 0x83 and <= 0xff */
 field joy1_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in];
 field joy1_outputs = [joy1];
@@ -213,13 +213,13 @@ TABLE joy1_inputs => joy1_outputs {
 
 
 /* send JOY2 1 if address >= 0x00 and <= 0x7f */
-/* send JOY2 1 if address = 0x80 and OUT */
-/* send JOY2 1 if address = 0x80 and not OUT */
-/* send JOY2 1 if address = 0x81 and OUT */
-/* send JOY2 1 if address = 0x81 and not OUT */
-/* send JOY2 1 if address = 0x82 and OUT */
-/* send JOY2 1 if address = 0x82 and not OUT */
-/* send JOY2 0 if address = 0x83 and OUT */
+/* send JOY2 1 if address = 0x80 and IN */
+/* send JOY2 1 if address = 0x80 and not IN */
+/* send JOY2 1 if address = 0x81 and IN */
+/* send JOY2 1 if address = 0x81 and not IN */
+/* send JOY2 1 if address = 0x82 and IN */
+/* send JOY2 1 if address = 0x82 and not IN */
+/* send JOY2 0 if address = 0x83 and IN */
 /* send JOY2 1 if address >= 0x84 and <= 0xff */
 field joy2_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in];
 field joy2_outputs = [joy2];
