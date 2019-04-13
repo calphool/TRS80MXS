@@ -28,6 +28,19 @@ of the Teensy unit.
 Build Notes
 ===========
 
+April 13, 2019
+
+Got the third board working.  Getting the GAL22V10D programmed ended up being a pain.  I don't know why, but my VS4800 programmer just decided 
+it wasn't going to program my ATF22V10C chips, so I bought some GAL22V10D chips.  It wouldn't program them either.  So, I decided to install VSpeed
+(the programmer software) on another machine, and although at first it did the same thing, after fooling around over and over again (using the "all compare" function seemed to somehow cause it to start working).  One thing I can say for sure using that software and programmer is that until you issue the program instruction followed by a Read IC instruction and the checksum matches, you haven't programmed it properly.  You can also avoid the encrypt function, because it introduces its own chaos into the mix.  I suppose if I had an expensive programmer I wouldn't have to deal with that nonsense.
+
+So, today is basically the culmination of a lot of hard work for a long time.  Today I should be able to write code on my Mac, create a disk image with trstools, sneakernet that code over a microSD card to my floppy emulator or upload it via USB to the teensy, and now I've got 12 channel audio and graphics (and of course 32k of extra ram on the power distribution board).  I'll go through a few cycles of that in the next few days to prove that it works, maybe create a build pipeline for my pacman game.  
+
+I'll decide after I get a few rounds of that under my belt if I want to design/build one more shield board -- an ESP32 board.  This would give the system 
+one additional feature that could be pretty useful -- wireless connectivity.  For my build pipeline that would make it so I could skip the sneakernet 
+step, do a compile on the computer
+
+
 March 17, 2019
 
 Happy St. Patrick's Day!  Got the redesigned drive emulator "shield" working.  Last board is the video/sound board.  There's some LED weirdness going on with
