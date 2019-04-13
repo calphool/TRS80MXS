@@ -38,7 +38,7 @@ So, today is basically the culmination of a lot of hard work for a long time.  T
 
 I'll decide after I get a few rounds of that under my belt if I want to design/build one more shield board -- an ESP32 board.  This would give the system 
 one additional feature that could be pretty useful -- wireless connectivity.  For my build pipeline that would make it so I could skip the sneakernet 
-step, do a compile on the computer
+step, do a compile on the computer and transfer wirelessly (maybe -- I would have to figure out how to get the data over to the teensy.  Maybe some transfer program that would move data from the ESP32 to the Teensy.)
 
 
 March 17, 2019
