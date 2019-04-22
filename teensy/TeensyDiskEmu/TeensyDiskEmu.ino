@@ -152,7 +152,11 @@ void setup() {
 
   pinSetup();                         // set pin modes
   initialPinState();                  // put pins in initial configuration
+  
 
+
+
+ 
   L2_RED();
   while (!Serial && iLEDCtr < 30) {   // attempt to establish serial connection from Teensy
     iLEDCtr++;
@@ -188,6 +192,7 @@ void setup() {
   p((char*)"Setting up interval timer: %d", it.begin(clockTick, 25000));
 
   sei();                             // enable interrupts
+
 }
 
 

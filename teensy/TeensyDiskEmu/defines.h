@@ -8,14 +8,14 @@
   #define L1_WHITE()  {digitalWriteFast(5,HIGH);digitalWriteFast(7,HIGH);digitalWriteFast(6,HIGH);}
   #define L1_BLACK()  {digitalWriteFast(5,LOW); digitalWriteFast(7,LOW); digitalWriteFast(6,LOW);}
 */
-#define L2_RED()    {digitalWriteFast(3,HIGH);digitalWriteFast(4,LOW); digitalWriteFast(2,LOW);}
-#define L2_BLUE()   {digitalWriteFast(3,LOW); digitalWriteFast(4,HIGH);digitalWriteFast(2,LOW);}
-#define L2_GREEN()  {digitalWriteFast(3,LOW); digitalWriteFast(4,LOW); digitalWriteFast(2,HIGH);}
-#define L2_CYAN()   {digitalWriteFast(3,LOW); digitalWriteFast(4,HIGH);digitalWriteFast(2,HIGH);}
-#define L2_VIOLET() {digitalWriteFast(3,HIGH);digitalWriteFast(4,HIGH);digitalWriteFast(2,LOW);}
-#define L2_YELLOW() {digitalWriteFast(3,HIGH);digitalWriteFast(4,LOW); digitalWriteFast(2,HIGH);}
-#define L2_WHITE()  {digitalWriteFast(3,HIGH);digitalWriteFast(4,HIGH);digitalWriteFast(2,HIGH);}
-#define L2_BLACK()  {digitalWriteFast(3,LOW); digitalWriteFast(4,LOW); digitalWriteFast(2,LOW);}
+#define L2_RED()    {digitalWriteFast(2,HIGH);digitalWriteFast(4,LOW); digitalWriteFast(3,LOW);}
+#define L2_BLUE()   {digitalWriteFast(2,LOW); digitalWriteFast(4,HIGH);digitalWriteFast(3,LOW);}
+#define L2_GREEN()  {digitalWriteFast(2,LOW); digitalWriteFast(4,LOW); digitalWriteFast(3,HIGH);}
+#define L2_CYAN()   {digitalWriteFast(2,LOW); digitalWriteFast(4,HIGH);digitalWriteFast(3,HIGH);}
+#define L2_VIOLET() {digitalWriteFast(2,HIGH);digitalWriteFast(4,HIGH);digitalWriteFast(3,LOW);}
+#define L2_YELLOW() {digitalWriteFast(2,HIGH);digitalWriteFast(4,LOW); digitalWriteFast(3,HIGH);}
+#define L2_WHITE()  {digitalWriteFast(2,HIGH);digitalWriteFast(4,HIGH);digitalWriteFast(3,HIGH);}
+#define L2_BLACK()  {digitalWriteFast(2,LOW); digitalWriteFast(4,LOW); digitalWriteFast(3,LOW);}
 
 
 //                        0 - disconnected
