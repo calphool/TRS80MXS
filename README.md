@@ -40,6 +40,7 @@ that configuration is a known antipattern.  What happens is the two 7805s sort o
 wins, takes all the current, overheats, and then the other suddenly jumps in if its sibling's heat overload kicks in.  That's not 
 really useable.  So instead, I figured I'd switch to a higher amperage switching circuit built around an LM2596.  Since I don't know
 if the noise will be too much, I left one of the 7805s in place, and made it so you could use a jumper to switch between the two.  
+
 All of that got me to thinking that maybe having a "regulator board" wasn't such a dandy idea anyway.  It forces all the current 
 to be fed from that one board, which in turn creates a heat problem if I use linear regulators.  So, I also ran the raw 9V in to 
 one of the previously unused header pins, which means that in future designs the shields could regulate their own power if need be.
