@@ -1,6 +1,7 @@
 # TRS80MXS
 TRS-80 Modular eXpansion System
 
+![Fully Stacked TRS80MXS](img/TRS80MXS_Stack.jpg?raw=true "TRS80MXS")
 
 This is repo is for the TRS-80 Modular eXpansion System (MXS).  The intent is to make it the final of a series of 
 prototypes (TRS80HDD and TRS80GS and a memory expansion module).  
