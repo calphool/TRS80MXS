@@ -43,6 +43,10 @@ if the noise will be too much, I left one of the 7805s in place, and made it so 
 All of that got me to thinking that maybe having a "regulator board" wasn't such a dandy idea anyway.  It forces all the current 
 to be fed from that one board, which in turn creates a heat problem if I use linear regulators.  So, I also ran the raw 9V in to 
 one of the previously unused header pins, which means that in future designs the shields could regulate their own power if need be.
+I probably should swap out all the 74LS* chips for 74HCT* chips to reduce power consumption.  Save the planet man.  What are you 
+doing with all these old power hungry chips?  (My experience has been that 74LS* chips are rock solid at the design stage, and then 
+you can pivot to HCT or ACT later to get additional desirable qualities -- you just have to sort of "ease" them into your design 
+to make sure you don't get caught with some unexpected behavior difference -- sometimes related to timing.)
 
 Additionally, I added some inductors to the graphics board.  These are on the TI-99/4A schematics for the VDP, and presumably they're
 there to stabilize power.  I noticed that the TI-99/4A circuits have several of these chokes throughout, and there's a clean 
