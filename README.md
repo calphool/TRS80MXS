@@ -29,6 +29,33 @@ of the Teensy unit.
 Build Notes
 ===========
 
+April 21, 2019
+
+I reworked the base board design and the graphics board design.  I'd added a switching supply for the 5V, but I left the 7805 in 
+there as well, with a jumper to allow you to switch back and forth.  Since I don't know if the switching supply will be too noisy,
+I figured I wanted to have something that I knew would work.  The reason I had to redesign the base power board was that I had 
+some fuzzy thinking going on.  I had two 7805 regulators on the original board, with their outputs tied together.  For some reason
+I was thinking that I could manage more current that way, but that's only true in a really crude and kind of useless way.  Basically
+that configuration is a known antipattern.  What happens is the two 7805s sort of "fight" to see who's going to provide the 5V, one
+wins, takes all the current, overheats, and then the other suddenly jumps in if its sibling's heat overload kicks in.  That's not 
+really useable.  So instead, I figured I'd switch to a higher amperage switching circuit built around an LM2596.  Since I don't know
+if the noise will be too much, I left one of the 7805s in place, and made it so you could use a jumper to switch between the two.  
+All of that got me to thinking that maybe having a "regulator board" wasn't such a dandy idea anyway.  It forces all the current 
+to be fed from that one board, which in turn creates a heat problem if I use linear regulators.  So, I also ran the raw 9V in to 
+one of the previously unused header pins, which means that in future designs the shields could regulate their own power if need be.
+
+Additionally, I added some inductors to the graphics board.  These are on the TI-99/4A schematics for the VDP, and presumably they're
+there to stabilize power.  I noticed that the TI-99/4A circuits have several of these chokes throughout, and there's a clean 
+separation between normal VCC and VCC for video, with the chokes being the main difference.  So far I haven't needed these, but 
+I figure the TI engineers probably had them there for some reason.
+
+I've been working on some audio software.  Soon I think I'll have a 12-part harmony audio player.  It's sort of like a MOD tracker
+from back in the day, but it doesn't play samples -- just manipulates the tone generators on the sound chips.  I'm anxious to 
+get it working fully so I can try out some stuff.  I'll probably build some kind of midi converter as well.  Interestingly 
+enough I haven't yet been able to find a midi file that tries to use 12 voices at once.  I wrote a little utility that calculates 
+tone depth across all midi channels, ran hundreds of midi files through it, and so far I've only been able to find one song with 
+more than 10 simultaneous voices, so 12 tonal voices might have been overkill.  Oh well.  ;-)
+
 April 13, 2019
 
 Got the third board working.  Getting the GAL22V10D programmed ended up being a pain.  I don't know why, but my VS4800 programmer just decided 
