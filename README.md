@@ -14,7 +14,7 @@ Theory of Operation
 ===================
 
 The basic theory of operation of the MXS is covered in the other projects in this repo.  The combined unit has a few 
-unique characteristics.  First, it has three headers at the north, and south positions, and norteast of each board.  These 
+unique characteristics.  First, it has three headers at the north, and south positions, and northeast of each board.  These 
 are what allow the boards to be stacked.  One header is mostly the address bus of the TRS-80 expansion connector, 
 passed through a 74LS244 buffer.  It also includes the operation signals (RD, WR, IN, OUT).  The opposite header 
 contains the data bus and a few miscellaneous signals.  Finally the header at the northeast position is 4 lines that 
@@ -28,6 +28,15 @@ of the Teensy unit.
 
 Build Notes
 ===========
+
+May 23, 2019
+
+I am still using the previous version of the PCBs at this time.  I've removed one of the 7805 linear regulators and 
+replaced it with a TRACO TSR2-2450 switching regulator.  It appears that the regulator is stable enough, which was one of 
+the questions I had about those regulators.  It appears that they'll work okay.  I'll probably spend some time this weekend
+working on software.  I'd like to get an audio demo up and working, then some video, and then I'll pivot to working on a 
+wifi shield at some point in the near future.
+
 
 April 21, 2019
 
