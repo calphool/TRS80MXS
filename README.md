@@ -29,6 +29,12 @@ of the Teensy unit.
 Build Notes
 ===========
 
+May 27, 2019
+
+I got some of the sound code working.  It took a while to figure out what was going on in playnote.c.  One of the big pains in 
+the sound chips is that I wired the data lines backward due to strange labelling in the sound chip data sheets.  This requires 
+you to think of the bits backward.  Anyway... got it working.  It's pretty cool hearing 12 simultaneous harmonious voices.
+
 May 23, 2019
 
 I am still using the previous version of the PCBs at this time.  I've removed one of the 7805 linear regulators and 
