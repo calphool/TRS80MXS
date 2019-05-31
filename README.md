@@ -29,6 +29,13 @@ of the Teensy unit.
 Build Notes
 ===========
 
+May 31, 2019
+
+I just uploaded a demo program that plays a J.S. Bach tune - Invention 13.  [Here's a video of it playing.](https://www.youtube.com/watch?v=8Pr8rdETvlA)  The player isn't 
+quite perfect (some slight timing issues), but it's certainly recognizable.  I used a preprocessor that's located in the OSX code that reads a midi file and turns it into 
+an array of structures.  This isn't quite ideal.  It would probably be better to merge the two so that the TRS-80 can directly play midi files.  I may go ahead and piece 
+that together over the weekend if I can get the midifile cpp code to compile on z88dk (the compiler I'm using for the TRS-80).
+
 May 27, 2019
 
 I got some of the sound code working.  It took a while to figure out what was going on in playnote.c.  One of the big pains in 
