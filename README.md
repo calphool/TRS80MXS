@@ -29,6 +29,10 @@ of the Teensy unit.
 Build Notes
 ===========
 
+June 10, 2019
+
+Improved the timing just a bit.  Hear the difference [here.](https://www.youtube.com/watch?v=ByLgBegGoTc)
+
 May 31, 2019
 
 I just uploaded a demo program that plays a J.S. Bach tune - Invention 13.  [Here's a video of it playing.](https://www.youtube.com/watch?v=8Pr8rdETvlA)  The player isn't 
