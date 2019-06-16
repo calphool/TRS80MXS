@@ -420,7 +420,13 @@ void stepNote() {
    }
 
    playVoices();
-   hold(150);
+   for(int i=0;i<12;i++) {
+    if(vArray_volume[i] > 0) {
+        vArray_volume[i] = vArray_volume[i] >> 1;
+    }        
+    sound(i,-1,vArray_volume[i]);
+   }
+   hold(75);
    iSongPos++;
 
 }

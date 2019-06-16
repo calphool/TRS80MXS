@@ -886,7 +886,6 @@ int nsArrayLen = 4968;
 int iSongPos = 0;
 int noteStructPos = 0;
 void stepNote() {
-   iSongPos++;
 
    if(ns[noteStructPos].iOffset < iSongPos)  // do nothing if we're behind the position in the song
        return;
@@ -903,12 +902,15 @@ void stepNote() {
    }
 
    playVoices();
+   /*
    for(int i=0;i<12;i++) {
     if(vArray_volume[i] > 0) {
         vArray_volume[i] = vArray_volume[i] >> 1;
     }        
     sound(i,-1,vArray_volume[i]);
    }
+   */
+   iSongPos++;
 
    //hold(150);
 }
