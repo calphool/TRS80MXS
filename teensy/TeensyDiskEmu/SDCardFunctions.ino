@@ -129,7 +129,7 @@ void openDiskFileByName(String sFileName, int iDriveNum) {
           if(workStrm == sFileName) {
              p((char*)"Opening disk %d file: ",iDriveNum);
              p((char*)workStrm.c_str());
-             Drives[iDriveNum].diskFile = sdEx.open(workStrm.c_str(), FILE_READ);
+             Drives[iDriveNum].diskFile = sdEx.open(workStrm.c_str(), O_RDWR);
              if(!Drives[iDriveNum].diskFile) {
                 fatalError((char*)"ERROR:  Unable to open file\n");
                 file.close();

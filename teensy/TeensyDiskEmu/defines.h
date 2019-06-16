@@ -1,13 +1,4 @@
-/*
-  #define L1_RED()    {digitalWriteFast(5,HIGH);digitalWriteFast(7,LOW); digitalWriteFast(6,LOW);}
-  #define L1_GREEN()  {digitalWriteFast(5,LOW); digitalWriteFast(7,LOW); digitalWriteFast(6,HIGH);}
-  #define L1_BLUE()   {digitalWriteFast(5,LOW); digitalWriteFast(7,HIGH);digitalWriteFast(6,LOW);}
-  #define L1_YELLOW() {digitalWriteFast(5,HIGH);digitalWriteFast(7,LOW); digitalWriteFast(6,HIGH);}
-  #define L1_CYAN()   {digitalWriteFast(5,LOW); digitalWriteFast(7,HIGH);digitalWriteFast(6,HIGH);}
-  #define L1_VIOLET() {digitalWriteFast(5,HIGH);digitalWriteFast(7,HIGH);digitalWriteFast(6,LOW);}
-  #define L1_WHITE()  {digitalWriteFast(5,HIGH);digitalWriteFast(7,HIGH);digitalWriteFast(6,HIGH);}
-  #define L1_BLACK()  {digitalWriteFast(5,LOW); digitalWriteFast(7,LOW); digitalWriteFast(6,LOW);}
-*/
+
 #define L2_RED()    {digitalWriteFast(2,HIGH);digitalWriteFast(4,LOW); digitalWriteFast(3,LOW);}
 #define L2_BLUE()   {digitalWriteFast(2,LOW); digitalWriteFast(4,HIGH);digitalWriteFast(3,LOW);}
 #define L2_GREEN()  {digitalWriteFast(2,LOW); digitalWriteFast(4,LOW); digitalWriteFast(3,HIGH);}
@@ -77,7 +68,7 @@ typedef struct  {
   volatile int iTrackDirection = IN;
   volatile int motorRunningCtr;
 
-  volatile int sectorsRead = 0;
+  volatile int sectorsProcessed = 0;
   volatile int statusRegisterChecks = 0;
   volatile int currentCommand;
   File diskFile;

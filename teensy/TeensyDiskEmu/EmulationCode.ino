@@ -28,7 +28,7 @@
 #define CMD_STEPOUT 0x60
 
 #define CMD_READ    0x80
-#define CMD_WRITE   0x90
+#define CMD_WRITE   0xa0
 
 #define CMD_READ_ADDR 0xc4
 #define CMD_READ_TRK  0xe4
@@ -133,7 +133,7 @@ inline void cmdStepOut() {
     L2_WHITE();
 }
 
-inline void cmdRead() {
+inline void cmdReadSector() {
     Drives[currentDrive].byteCtr = 256;
     Drives[currentDrive].busyCtr = 256;
     Drives[currentDrive].afterSectorBusyCtr = 5;
@@ -141,12 +141,12 @@ inline void cmdRead() {
     Drives[currentDrive].statusRegister = BUSY;
     Drives[currentDrive].currentCommand = CMD_READ;
     Drives[currentDrive].DRQCtr = 0;
-    if(Drives[currentDrive].sectorsRead == 0)
+    if(Drives[currentDrive].sectorsProcessed == 0)
        Drives[currentDrive].DRQCtr = 4;
     else 
        Drives[currentDrive].statusRegister |= DRQ;
 
-    Drives[currentDrive].sectorsRead++;
+    Drives[currentDrive].sectorsProcessed++;
     L2_VIOLET();
 }
 
@@ -165,9 +165,24 @@ inline void cmdForceInterrupt(int interruptType) {
 }
 
 
-inline void cmdWrite() {
-  p((char*)"    WRITE CMD (unimpl)\n");
+inline void cmdWriteSector() {
+  p((char*)"    WRITE SECTOR CMD\n");
   Drives[currentDrive].currentCommand = CMD_WRITE;
+
+    Drives[currentDrive].byteCtr = 256;
+    Drives[currentDrive].busyCtr = 256;
+    Drives[currentDrive].afterSectorBusyCtr = 5;
+    Drives[currentDrive].statusRegister = BUSY;
+    Drives[currentDrive].DRQCtr = 0;
+    if(Drives[currentDrive].sectorsProcessed == 0)
+       Drives[currentDrive].DRQCtr = 4;
+    else 
+       Drives[currentDrive].statusRegister |= DRQ;
+
+    Drives[currentDrive].statusRegister &= ~(WRITEFAULT);   
+
+    Drives[currentDrive].sectorsProcessed++;
+    L2_RED();
 }
 
 inline void cmdReadAddr() {
@@ -187,30 +202,26 @@ inline void cmdWriteTrk() {
 
 
 void invokeCommand() {
-    p((char*)"<::command reg::> \n");
+    p((char*)"<::command reg::>\n");
     Drives[currentDrive].commandRegister = dataBus;
   
   //
   // Command   Type    76543210
   //
-  // RESTORE     1     0000XXXX
-  // SEEK        1     0001XXXX
-  // STEP        1     001uXXXX    u = update track register
-  // STEP IN     1     010uXXXX
-  // STEP OUT    1     011uXXXX
-  // READ CMD    2     100mbXXX    m = muliple record, b = 128-1024 block length (0) or 16-4096 block length(1)
-  // WRITE CMD   2     101mbXXX
-  // READ ADDR   3     11000100
-  // READ TRK    3     1110010X
-  // WRITE TRK   3     11110100
-  // FORCE INTRP 4     1101XXXX
+  // RESTORE      1     0000XXXX
+  // SEEK         1     0001XXXX
+  // STEP         1     001uXXXX    u = update track register
+  // STEP IN      1     010uXXXX
+  // STEP OUT     1     011uXXXX
+  // READ SECTOR  2     100mbXXX    m = muliple record, b = 128-1024 block length (0) or 16-4096 block length(1)
+  // WRITE SECTOR 2     101mbXXX
+  // READ ADDR    3     11000100
+  // READ TRK     3     1110010X
+  // WRITE TRK    3     11110100
+  // FORCE INTRP  4     1101XXXX
   
-  if((Drives[currentDrive].commandRegister & CMD_RESTORE_MASK) == CMD_RESTORE) {              // restore command
-    cmdRestore();
-    return;
-  }
   if((Drives[currentDrive].commandRegister & CMD_READ_MASK) == CMD_READ) {        // read command
-    cmdRead();
+    cmdReadSector();
     return;
   }
   if((Drives[currentDrive].commandRegister & CMD_FORCE_INTERRUPT_MASK) == CMD_FORCE_INTERRUPT) {        // force interrupt command
@@ -219,6 +230,10 @@ void invokeCommand() {
   }
   if((Drives[currentDrive].commandRegister & CMD_SEEK_MASK) == CMD_SEEK) {         // seek command
     cmdSeek();
+    return;
+  }
+  if((Drives[currentDrive].commandRegister & CMD_RESTORE_MASK) == CMD_RESTORE) {              // restore command
+    cmdRestore();
     return;
   }
   if((Drives[currentDrive].commandRegister & CMD_STEP_MASK) == CMD_STEP) {         // step command
@@ -234,7 +249,7 @@ void invokeCommand() {
     return;
   }
   if((Drives[currentDrive].commandRegister & CMD_WRITE_MASK) == CMD_WRITE) {        // write command
-    cmdWrite();
+    cmdWriteSector();
     return; 
   }
   if((Drives[currentDrive].commandRegister & CMD_READ_ADDR_MASK) == CMD_READ_ADDR) {               // read address command
@@ -299,8 +314,30 @@ inline void setSectorReg() {
 }
 
 inline void setDataReg() {
-    p((char*)"<::data reg::> \n");
+    size_t x;
     Drives[currentDrive].dataRegister = dataBus;  // data byte
+
+    p((char*)"<::data reg::> \n");
+
+    if( Drives[currentDrive].currentCommand == CMD_WRITE) {
+      if(Drives[currentDrive].byteCtr > 0) {
+         Drives[currentDrive].byteCtr--;
+         if(Drives[currentDrive].byteCtr == 0) {
+            Drives[currentDrive].busyCtr = 3;
+         }
+         
+         x = Drives[currentDrive].diskFile.write(Drives[currentDrive].dataRegister);
+         if(x != 1) {
+            p((char*)"<::write error %d::> \n", x);  
+         }
+         if(Drives[currentDrive].diskFile.sync() != 1) {
+            p((char*)"<::sync error::> \n");  
+         }
+      }
+    }
+
+
+    
     //statusRegister = INDEXHOLE;
     return;
 }
@@ -342,7 +379,7 @@ inline int getStatusRegister() {
       Drives[currentDrive].busyCtr--;
     }
 
-    if(Drives[currentDrive].currentCommand == CMD_READ) {
+    if((Drives[currentDrive].currentCommand == CMD_READ) || (Drives[currentDrive].currentCommand == CMD_WRITE)) {
       if(Drives[currentDrive].DRQCtr == 0) 
           Drives[currentDrive].statusRegister |= DRQ;
       
@@ -374,13 +411,13 @@ inline int getStatusRegister() {
     else
        Drives[currentDrive].statusRegister &= ~(NOTREADY);
 
-    if(Drives[currentDrive].sectorsRead == 0) {
+    if(Drives[currentDrive].sectorsProcessed == 0) {
       if(Drives[currentDrive].trackNum == 0) {
         Drives[currentDrive].statusRegister |= TRACKZERO; // force track number to zero on the first status check
       }
     }
 
-    if(Drives[currentDrive].trackNum == 17) {
+    if(Drives[currentDrive].trackNum == 17 && Drives[currentDrive].currentCommand != CMD_WRITE) {
       Drives[currentDrive].statusRegister |= 0x20;   // goofy thing that's required because NEWDOS expects to see "FA" status bits on track 17... is this what was keeping me from booting?
     }
 
@@ -390,10 +427,9 @@ inline int getStatusRegister() {
       else
         Drives[currentDrive].statusRegister |= INDEXHOLE;
     }
-    
-    //p((char*)" <--- (0x%02X) <::status reg::>\n",Drives[currentDrive].statusRegister);
-    
-    //digitalWriteFast(INTERUPT_TO_TRS80, HIGH);
+
+    p((char*)" <--- (0x%02X) <::status reg::>\n", Drives[currentDrive].statusRegister);
+
     return Drives[currentDrive].statusRegister;
 }
 
@@ -416,7 +452,18 @@ inline int getDataRegister() {
  * ***************************************************************
  */
 int PeekFromTRS80() {
-  //p((char*)"%d.[%02X,%02X] <---: 0x%04X ",/*sectorsRead*/0,Drives[currentDrive].trackNum,Drives[currentDrive].sectorNum,address); 
+  p((char*)"%d.[%02X,%02X] <---: 0x%04X ",/*sectorsRead*/0,Drives[currentDrive].trackNum,Drives[currentDrive].sectorNum,address);
+
+  if(address == 0x37e0) {             // read interrupt latch (supposed to reset the latch)       
+    if((oldInterruptStatus & 0x80) == 0x80) {
+        digitalWriteFast(INTERUPT_TO_TRS80,HIGH);
+        interruptStatus = 0;      
+    }
+ 
+    oldInterruptStatus = interruptStatus;
+    p((char*)" <--- (0x%02X) <::interrupt latch::>\n", interruptStatus);
+    return interruptStatus;
+  }
 
   if(address == 0x37ec) {             // read status register
     interruptStatus &= ~(0x40);
@@ -437,17 +484,7 @@ int PeekFromTRS80() {
     return Drives[currentDrive].trackNum;
   }  
 
-  if(address == 0x37e0) {             // read interrupt latch (supposed to reset the latch)       
-    if((oldInterruptStatus & 0x80) == 0x80) {
-        digitalWriteFast(INTERUPT_TO_TRS80,HIGH);
-        interruptStatus = 0;      
-    }
- 
-    //p((char*)" <--- (0x%02X) <::interrupt latch::>\n",interruptStatus);
 
-    oldInterruptStatus = interruptStatus;
-    return interruptStatus;
-  }
 
   p((char*)" <--- (0xfe) <---: 0x%04X <::HUH Why Am I Here?::>\n",address);
   return 0xfe;
