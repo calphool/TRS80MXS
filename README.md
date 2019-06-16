@@ -29,6 +29,14 @@ of the Teensy unit.
 Build Notes
 ===========
 
+June 16, 2019
+
+I tweaked the Teensy code to support deleting and writing files now.  So now drives 1-3 work as perfect emulators for JV1 formatted files.  I still have no
+idea why drive 4 acts flaky.  The code is literally identical.  It's got to be some bug in the Model 1 hardware behavior when you've got 4 floppies. I also
+uploaded some more audio tools.  midiDump accepts a midi file and converts it to a large array that can be copy/pasted into one of the player files like 
+bach.c and then compiled with z88dk to create a .cmd file.  It's a tiny bit buggy, but it more-or-less produces the right data.  One of these days I'll 
+dig into what precisely is causing it to act a little flakey.
+
 June 10, 2019
 
 Improved the timing just a bit.  Hear the difference [here.](https://www.youtube.com/watch?v=ByLgBegGoTc)
