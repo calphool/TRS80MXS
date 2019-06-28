@@ -171,7 +171,7 @@
 <text x="33.655" y="3.81" size="1.016" layer="25" font="fixed" ratio="6">D6</text>
 <text x="36.195" y="5.08" size="1.016" layer="25" font="fixed" ratio="6">D7</text>
 <text x="45.085" y="5.715" size="1.016" layer="25" font="fixed" ratio="6" rot="R90">RAS*</text>
-<text x="47.3075" y="5.715" size="1.016" layer="25" font="fixed" ratio="6" rot="R90">CAS*</text>
+<text x="47.3075" y="5.3975" size="1.016" layer="25" font="fixed" ratio="6" rot="R90">CAS*</text>
 <text x="49.8475" y="4.1275" size="0.6096" layer="25" font="fixed" ratio="6" rot="R90">RES*</text>
 <text x="53.6575" y="4.445" size="0.6096" layer="25" font="fixed" ratio="6" rot="R180">INTAK*</text>
 <text x="62.865" y="4.1275" size="0.6096" layer="25" font="fixed" ratio="6" rot="R90">3.3V</text>
@@ -214,7 +214,7 @@
 <text x="37.1475" y="8.255" size="0.6096" layer="25">10uf</text>
 <text x="60.0075" y="81.5975" size="0.6096" layer="25">4.7k</text>
 <text x="59.69" y="58.7375" size="0.6096" layer="25">4.7k</text>
-<text x="88.5825" y="28.8925" size="1.778" layer="25" rot="R90">TRS80MXS Base - V1.1
+<text x="88.5825" y="28.8925" size="1.778" layer="25" rot="R90">TRS80MXS Base - V1.2
 Joe Rounceville (C) 2019</text>
 </plain>
 <libraries>
@@ -3693,8 +3693,8 @@ design rules under a new name.</description>
 <attribute name="NAME" x="51.6255" y="8.5725" size="0.6096" layer="25" ratio="10"/>
 <attribute name="VALUE" x="51.308" y="5.842" size="0.6096" layer="27" ratio="10"/>
 </element>
-<element name="LD1117" library="SparkFun-IC-Power" library_urn="urn:adsk.eagle:library:526" package="78XXL" package3d_urn="urn:adsk.eagle:package:39065/1" value="V_REG_LD1117VXX" x="42.545" y="16.51" smashed="yes">
-<attribute name="NAME" x="38.735" y="21.59" size="1.778" layer="25" ratio="10"/>
+<element name="LD1117V33" library="SparkFun-IC-Power" library_urn="urn:adsk.eagle:library:526" package="78XXL" package3d_urn="urn:adsk.eagle:package:39065/1" value="V_REG_LD1117VXX" x="42.545" y="16.51" smashed="yes">
+<attribute name="NAME" x="36.195" y="20.955" size="1.778" layer="25" ratio="10"/>
 <attribute name="VALUE" x="38.608" y="19.685" size="0.6096" layer="27" ratio="10"/>
 </element>
 <element name="C1" library="resistor" library_urn="urn:adsk.eagle:library:348" package="E2,5-5" package3d_urn="urn:adsk.eagle:package:23344/1" value="10uf" x="40.386" y="7.747" smashed="yes" rot="R270">
@@ -3807,16 +3807,16 @@ design rules under a new name.</description>
 </element>
 <element name="IC6" library="linear" library_urn="urn:adsk.eagle:library:262" package="TO220-52" package3d_urn="urn:adsk.eagle:package:16443/1" value="LM2596T-5.0" x="48.895" y="26.035" smashed="yes" rot="R90">
 <attribute name="NAME" x="70.739" y="21.463" size="1.27" layer="25" rot="R180"/>
-<attribute name="VALUE" x="52.451" y="21.7805" size="1.27" layer="27"/>
+<attribute name="VALUE" x="52.7685" y="28.7655" size="1.27" layer="27"/>
 </element>
 <element name="C5" library="rcl" library_urn="urn:adsk.eagle:library:334" package="E2,5-5" package3d_urn="urn:adsk.eagle:package:23344/1" value="680uf" x="57.4675" y="17.4625" smashed="yes" rot="R90">
 <attribute name="NAME" x="56.1975" y="16.7005" size="1.27" layer="25" ratio="10" rot="R90"/>
 <attribute name="SPICEPREFIX" value="C" x="57.4675" y="17.4625" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="VALUE" x="60.198" y="15.4305" size="1.27" layer="27" ratio="10" rot="R90"/>
+<attribute name="VALUE" x="59.563" y="15.748" size="1.016" layer="27" ratio="10" rot="R90"/>
 </element>
 <element name="D2-1N5824" library="diode" library_urn="urn:adsk.eagle:library:210" package="DO41-7.6" package3d_urn="urn:adsk.eagle:package:43421/1" value="1N5818-T" x="70.1675" y="37.1475" smashed="yes" rot="R90">
-<attribute name="NAME" x="69.1515" y="36.3855" size="1.27" layer="25" ratio="10" rot="R90"/>
-<attribute name="VALUE" x="70.5485" y="36.703" size="1.27" layer="27" ratio="10" rot="R90"/>
+<attribute name="NAME" x="68.834" y="34.4805" size="1.27" layer="25" ratio="10" rot="R90"/>
+<attribute name="VALUE" x="72.771" y="34.4805" size="1.27" layer="27" ratio="10" rot="R90"/>
 </element>
 <element name="L1" library="rcl" library_urn="urn:adsk.eagle:library:334" package="6000-XXXX-RC" package3d_urn="urn:adsk.eagle:package:23538/1" value="33uh" x="64.77" y="15.5575" smashed="yes">
 <attribute name="NAME" x="60.2644" y="20.1901" size="1.27" layer="25"/>
@@ -3826,11 +3826,11 @@ design rules under a new name.</description>
 <element name="C9" library="rcl" library_urn="urn:adsk.eagle:library:334" package="E2,5-5" package3d_urn="urn:adsk.eagle:package:23344/1" value="220uf" x="51.7525" y="13.97" smashed="yes" rot="R90">
 <attribute name="NAME" x="49.8475" y="12.573" size="1.27" layer="25" ratio="10" rot="R90"/>
 <attribute name="SPICEPREFIX" value="C" x="51.7525" y="13.97" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="VALUE" x="54.1655" y="11.938" size="1.27" layer="27" ratio="10" rot="R90"/>
+<attribute name="VALUE" x="53.848" y="12.2555" size="1.016" layer="27" ratio="10" rot="R90"/>
 </element>
 <element name="JP1" library="jumper" library_urn="urn:adsk.eagle:library:252" package="JP2" package3d_urn="urn:adsk.eagle:package:15452/1" value="5V_SOURCE" x="78.4225" y="30.48" smashed="yes" rot="R180">
-<attribute name="NAME" x="81.9785" y="28.829" size="1.27" layer="25" ratio="10" rot="R180"/>
-<attribute name="VALUE" x="81.9785" y="34.798" size="1.27" layer="27" ratio="10" rot="R180"/>
+<attribute name="NAME" x="73.0885" y="32.4485" size="1.27" layer="25" ratio="10" rot="R270"/>
+<attribute name="VALUE" x="83.8835" y="28.7655" size="1.27" layer="27" ratio="10" rot="R180"/>
 </element>
 </elements>
 <signals>
@@ -3849,7 +3849,7 @@ design rules under a new name.</description>
 <contactref element="U$2" pad="2"/>
 <contactref element="U$2" pad="1"/>
 <contactref element="J2_DATA_AND_POWER_CON" pad="2"/>
-<contactref element="LD1117" pad="IN"/>
+<contactref element="LD1117V33" pad="IN"/>
 <contactref element="C1" pad="-"/>
 <contactref element="IC1" pad="10"/>
 <contactref element="IC2" pad="10"/>
@@ -3910,7 +3910,7 @@ design rules under a new name.</description>
 <contactref element="RN1" pad="1"/>
 <contactref element="R7" pad="1"/>
 <contactref element="C4" pad="+"/>
-<contactref element="LD1117" pad="OUT"/>
+<contactref element="LD1117V33" pad="OUT"/>
 <contactref element="JP1" pad="2"/>
 </signal>
 <signal name="BUFFERED_A0">
@@ -4818,7 +4818,7 @@ design rules under a new name.</description>
 </signal>
 <signal name="VCC/2">
 <contactref element="J2_DATA_AND_POWER_CON" pad="3"/>
-<contactref element="LD1117" pad="GND"/>
+<contactref element="LD1117V33" pad="GND"/>
 <contactref element="C1" pad="+"/>
 <wire x1="50.93739375" y1="4.7024" x2="49.5476" y2="4.7024" width="0.3" layer="16"/>
 <wire x1="51.82979375" y1="3.81" x2="60.96" y2="3.81" width="0.3" layer="16"/>

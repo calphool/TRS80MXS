@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.005" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -30571,7 +30571,7 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 <part name="C4" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="CPOL-US" device="E2.5-5" package3d_urn="urn:adsk.eagle:package:23344/1" value="10uf"/>
 <part name="P+3" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
 <part name="GND15" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="LD1117" library="SparkFun-IC-Power" library_urn="urn:adsk.eagle:library:526" deviceset="V_REG_LD1117VXX" device="" package3d_urn="urn:adsk.eagle:package:39065/1"/>
+<part name="LD1117V33" library="SparkFun-IC-Power" library_urn="urn:adsk.eagle:library:526" deviceset="V_REG_LD1117VXX" device="" package3d_urn="urn:adsk.eagle:package:39065/1"/>
 <part name="GND16" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="C1" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="CPOL-US" device="E2.5-5" package3d_urn="urn:adsk.eagle:package:23344/1" value="10uf"/>
 <part name="GND17" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
@@ -30719,7 +30719,7 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 <instance part="GND15" gate="1" x="267.97" y="26.67" smashed="yes" rot="R180">
 <attribute name="VALUE" x="270.51" y="29.21" size="1.778" layer="96" rot="R180"/>
 </instance>
-<instance part="LD1117" gate="G$1" x="97.79" y="17.78" smashed="yes">
+<instance part="LD1117V33" gate="G$1" x="97.79" y="17.78" smashed="yes">
 <attribute name="NAME" x="86.36" y="0" size="1.778" layer="95"/>
 <attribute name="VALUE" x="86.36" y="-2.54" size="1.778" layer="96"/>
 </instance>
@@ -31398,7 +31398,7 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 <wire x1="267.97" y1="13.97" x2="267.97" y2="24.13" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="LD1117" gate="G$1" pin="GND"/>
+<pinref part="LD1117V33" gate="G$1" pin="GND"/>
 <pinref part="GND16" gate="1" pin="GND"/>
 <wire x1="97.79" y1="10.16" x2="97.79" y2="7.62" width="0.1524" layer="91"/>
 </segment>
@@ -31699,7 +31699,7 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 <wire x1="78.74" y1="29.21" x2="77.47" y2="29.21" width="0.1524" layer="91"/>
 <pinref part="R7" gate="G$1" pin="1"/>
 <pinref part="C4" gate="G$1" pin="+"/>
-<pinref part="LD1117" gate="G$1" pin="IN"/>
+<pinref part="LD1117V33" gate="G$1" pin="IN"/>
 <wire x1="90.17" y1="17.78" x2="77.47" y2="17.78" width="0.1524" layer="91"/>
 <junction x="77.47" y="17.78"/>
 <wire x1="77.47" y1="35.56" x2="77.47" y2="29.21" width="0.1524" layer="91"/>
@@ -31754,7 +31754,7 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 <pinref part="J2_DATA_AND_POWER_CON" gate="G$1" pin="3"/>
 <wire x1="265.43" y1="13.97" x2="265.43" y2="17.78" width="0.1524" layer="91"/>
 <wire x1="265.43" y1="17.78" x2="119.38" y2="17.78" width="0.1524" layer="91"/>
-<pinref part="LD1117" gate="G$1" pin="OUT"/>
+<pinref part="LD1117V33" gate="G$1" pin="OUT"/>
 <wire x1="119.38" y1="17.78" x2="105.41" y2="17.78" width="0.1524" layer="91"/>
 <pinref part="C1" gate="G$1" pin="+"/>
 <junction x="119.38" y="17.78"/>
