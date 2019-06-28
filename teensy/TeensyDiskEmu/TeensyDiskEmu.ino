@@ -25,6 +25,9 @@ volatile int iBusDirection = 2;
 volatile int dataBus;
 volatile int address;
 
+char respBuffer[255];
+char workBuffer[255];
+
 
 
 /* set up pin directionality */
@@ -154,7 +157,8 @@ void setup() {
   initialPinState();                  // put pins in initial configuration
   
 
-
+  strcpy(respBuffer, "PENDING\n");
+  workBuffer[0] = 0x0;
 
  
   L2_RED();
@@ -199,8 +203,8 @@ void setup() {
 void clockTick() {
   // comment out if you want to turn off the clock functionality...
 
-  interruptStatus = interruptStatus | 0x80;
-  digitalWriteFast(INTERUPT_TO_TRS80, LOW);
+  //interruptStatus = interruptStatus | 0x80;
+  //digitalWriteFast(INTERUPT_TO_TRS80, LOW);
 }
 
 

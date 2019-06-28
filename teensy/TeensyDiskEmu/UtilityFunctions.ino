@@ -185,3 +185,21 @@ static const unsigned char base64_table[65] =
   *out_len = pos - out;
   return out;
 }
+
+
+
+char * trim_space(char *str) {
+    char *end;
+    /* skip leading whitespace */
+    while (isspace(*str)) {
+        str = str + 1;
+    }
+    /* remove trailing whitespace */
+    end = str + strlen(str) - 1;
+    while (end > str && isspace(*end)) {
+        end = end - 1;
+    }
+    /* write null character */
+    *(end+1) = '\0';
+    return str;
+}

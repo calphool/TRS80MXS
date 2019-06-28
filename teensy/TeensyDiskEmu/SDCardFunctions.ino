@@ -18,7 +18,6 @@ void catalog() {
   String workStrm;
   StringStream stream(workStrm); // set up string stream to capture SD card directory
 
-
   if(!initSD()) return;
     
   sdEx.chvol();
@@ -35,6 +34,59 @@ void catalog() {
       }
       file.close();
   }
+}
+
+
+char buffer[255];
+
+char* getImageAt(int ix) {
+  int iCtr = 0;
+  File file;
+  String workStrm;
+  StringStream stream(workStrm); // set up string stream to capture SD card directory
+
+  if(!initSD()) return NULL;
+    
+  sdEx.chvol();
+  sdEx.vwd()->rewind();
+  while (file.openNext(sdEx.vwd(), O_RDONLY)) {
+      if(!file.isHidden()) {
+          file.printName(&stream);
+          if (!file.isDir()) {
+            stream.flush();
+            strcpy(buffer, workStrm.c_str());
+            if(ix == iCtr) {
+              file.close();
+              return buffer;
+            }
+            iCtr++;
+            workStrm = "";
+          }
+      }
+      file.close();
+  }
+
+  return NULL;
+}
+
+
+int getImageCount() {
+  int iCtr = 0;
+  File file;
+
+  if(!initSD()) return 0;
+    
+  sdEx.chvol();
+  sdEx.vwd()->rewind();
+  while (file.openNext(sdEx.vwd(), O_RDONLY)) {
+      if(!file.isHidden()) {
+          if (!file.isDir()) {
+            iCtr++;
+          }
+      }
+      file.close();
+  }
+  return iCtr;
 }
 
 
@@ -108,14 +160,14 @@ void appendBufferToFile(char* buf, int iSize, char* fileName) {
 }
 
 
-void openDiskFileByName(String sFileName, int iDriveNum) {
+int openDiskFileByName(String sFileName, int iDriveNum) {
   File file;
   String workStrm;
   boolean bLoaded = false;
   
   StringStream stream(workStrm); // set up string stream to capture SD card directory
 
-  if(!initSD()) return;
+  if(!initSD()) return -1;
 
   sdEx.chvol();
   sdEx.vwd()->rewind();
@@ -133,7 +185,7 @@ void openDiskFileByName(String sFileName, int iDriveNum) {
              if(!Drives[iDriveNum].diskFile) {
                 fatalError((char*)"ERROR:  Unable to open file\n");
                 file.close();
-                return;
+                return -1;
              }
              else {
               p((char*)"\n%d bytes in file.\n",Drives[iDriveNum].diskFile.available());
@@ -147,8 +199,10 @@ void openDiskFileByName(String sFileName, int iDriveNum) {
 
   if(bLoaded == true)
       Drives[iDriveNum].sDiskFileName = sFileName;
-  else
+  else {
       fatalError((char*)"ERROR: Unable to load file %s.\n",sFileName);
+      return -1;
+  }
 
-  return;
+  return 0;
 }

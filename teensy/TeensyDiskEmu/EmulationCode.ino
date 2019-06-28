@@ -52,11 +52,9 @@ volatile int currentDrive = 0x0;
 volatile int interruptStatus;
 volatile int oldInterruptStatus;
 
-
+int iRespCtr = 0;
 
 drivesettings Drives[4];
-
-
 
 
 void init1771Emulation() {
@@ -343,6 +341,159 @@ inline void setDataReg() {
 }
 
 
+#define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
+
+int levenshtein(char *s1, char *s2) {
+    unsigned int s1len, s2len, x, y, lastdiag, olddiag;
+    s1len = strlen(s1);
+    s2len = strlen(s2);
+    unsigned int column[s1len+1];
+    for (y = 1; y <= s1len; y++)
+        column[y] = y;
+    for (x = 1; x <= s2len; x++) {
+        column[0] = x;
+        for (y = 1, lastdiag = x-1; y <= s1len; y++) {
+            olddiag = column[y];
+            column[y] = MIN3(column[y] + 1, column[y-1] + 1, lastdiag + (toupper(s1[y-1]) == toupper(s2[x-1]) ? 0 : 1));
+            lastdiag = olddiag;
+        }
+    }
+    return(column[s1len]);
+}
+
+
+void findClosestName(char* s, int drNum) {
+  char buf[128];
+  char bestName[128];
+  int iBestScore = 9999;
+
+
+  int x = getImageCount();
+  p((char*)"findClosestName, searching %d images\n", x); 
+
+
+  for(int i=0;i < x; i++) {
+    strcpy(buf, getImageAt(i));
+    int score = levenshtein(s, buf);
+    if(score < iBestScore) {
+      iBestScore = score;
+      strcpy(bestName,buf);
+    }
+  }
+
+  p((char*)"mount - closest name = %s\n", bestName); 
+
+  if(openDiskFileByName(bestName, drNum) != 0) {
+    sprintf(respBuffer, "FAILED TO MOUNT %s\n",bestName);
+    return;
+  }
+
+  init1771Emulation();
+  sprintf(respBuffer,"MOUNTED %s TO DRIVE %d\n", bestName, drNum);
+}
+
+
+void mount() {
+  char c;
+
+  p((char*)"inside mount()\n"); 
+
+  workBuffer[0] = ' '; //M
+  workBuffer[1] = ' '; //O
+  workBuffer[2] = ' '; //U
+  workBuffer[3] = ' '; //N
+  workBuffer[4] = ' '; //T
+  workBuffer[5] = ' '; // 
+  strcpy(workBuffer,trim_space(workBuffer)); // get rid of "MOUNT " part of string
+
+  c = workBuffer[0];      // get the number part
+  workBuffer[0] = ' ';    
+  strcpy(workBuffer,trim_space(workBuffer)); // get rid of the number part
+
+  c = c - 48;
+  if(c != 0 && c != 1 && c != 2 && c != 3) {
+     sprintf(respBuffer,"BAD DRIVE NUMBER\n", c);  
+     return;
+  }
+
+  p((char*)"mount drive num %d, %s\n", c, workBuffer); 
+
+  if(openDiskFileByName(workBuffer, c) != 0) {
+      p((char*)"mount - finding closest name to %s\n", workBuffer); 
+      findClosestName(workBuffer, c);
+  }
+  else {
+      init1771Emulation();
+      p((char*)"mounted %s\n", workBuffer); 
+      sprintf(respBuffer,"MOUNTED\n");  
+  }
+}
+
+
+void imgCount() {
+  int i = getImageCount();
+  sprintf(respBuffer,"%d\n", i);
+}
+
+void imgAt() {
+  workBuffer[0] = ' ';
+  workBuffer[1] = ' ';
+  workBuffer[2] = ' ';
+  workBuffer[3] = ' ';
+  workBuffer[4] = ' ';  
+  strcpy(workBuffer,trim_space(workBuffer));
+
+  int i = atoi(workBuffer);
+  respBuffer[0] = 0x0;
+  strcpy(respBuffer,getImageAt(i));
+  strcat(respBuffer,"\n");
+}
+
+void listMounts() {
+  strcpy(respBuffer, Drives[0].sDiskFileName.c_str());
+  strcat(respBuffer,",");
+  strcat(respBuffer, Drives[1].sDiskFileName.c_str());
+  strcat(respBuffer,",");
+  strcat(respBuffer, Drives[2].sDiskFileName.c_str());
+  strcat(respBuffer,",");
+  strcat(respBuffer, Drives[3].sDiskFileName.c_str());
+  strcat(respBuffer,"\n");
+}
+
+void help() {
+     strcpy(respBuffer,"VALID COMMANDS: MOUNT, IMGCOUNT, IMGAT, LISTMOUNTS, HELP\n");
+}
+
+
+void processCommand() {
+  strcpy(workBuffer,trim_space(workBuffer));
+  p((char*)"Command Received: >%s<\n", workBuffer); 
+
+
+  if(strstr(workBuffer,"MOUNT ") != NULL) {
+    mount();
+  }
+  else if(strstr(workBuffer,"IMGCOUNT") != NULL) {
+    imgCount();
+  }
+  else if(strstr(workBuffer,"IMGAT") != NULL) {
+    imgAt();
+  }
+  else if(strstr(workBuffer,"LISTMOUNTS") != NULL) {
+    listMounts();
+  }
+  else if(strstr(workBuffer,"HELP") != NULL) {
+    help();
+  }
+  else {
+     strcpy(respBuffer,"INVALID_COMMAND_RECEIVED\n");
+  }
+
+  iRespCtr = 0;
+  workBuffer[0] = 0x0;
+}
+
+
 /* ***********************************************************************
  *  Data pushes from TRS-80
  *  **********************************************************************
@@ -366,7 +517,17 @@ void PokeFromTRS80() {
     return setDataReg();
   }
 
-  p((char*)"Unhandled POKE!\n\n");
+  if(address == 0x37e8) {  // command (sent to printer port, but used as command input for emulator)
+    strcpy(respBuffer, "PENDING\n");
+    int y = strlen(workBuffer);
+    workBuffer[y] = dataBus;
+    workBuffer[y+1] = 0x0;
+    if(workBuffer[y] == '\n' || workBuffer[y] == '\r' || workBuffer[y] == 0x0a || workBuffer[y] == 0x0d)  {
+        return processCommand(); 
+    }
+  }
+  else
+      p((char*)"Unhandled POKE!\n\n");
 }
 
 
@@ -484,6 +645,15 @@ int PeekFromTRS80() {
     return Drives[currentDrive].trackNum;
   }  
 
+  if(address == 0x37e8) {
+    p((char*)"\n");
+    if(respBuffer[iRespCtr] == '\n' || respBuffer[iRespCtr] == '\r') {
+      iRespCtr=0;
+      return '\n'; 
+    }
+    iRespCtr++;
+    return respBuffer[iRespCtr-1];
+  }
 
 
   p((char*)" <--- (0xfe) <---: 0x%04X <::HUH Why Am I Here?::>\n",address);
