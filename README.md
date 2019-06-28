@@ -29,6 +29,16 @@ of the Teensy unit.
 Build Notes
 ===========
 
+June 28, 2019
+
+I wrote a utility (called "trs80mxs") that runs on the TRS-80 to manipulate the drive images that are stored on the MicroSD card.  Before this utility,
+you had to do your manipulations from a Mac connected via USB.  Since that forced the MXS to be tethered, that didn't seem like a good long term solution.
+So, I "stole" the address the TRS-80 uses for printers and turned it into a "general purpose communication buffer" between the Teensy and the TRS-80.  So,
+the Teensy receives data, turns it into SD Card manipulation commands, and replies back with what happened.  So the trs80mxs command utility doesn't 
+really do much -- it just sends commands to the printer address, and reads the response back through the same address, and prints it to the screen on 
+the TRS-80.  With it you can list disk images that are on the SD card, mount them onto one of the 4 emulated drive slots, and list what is currently 
+mounted.  I've also created a video of using the utility [here.](https://www.youtube.com/watch?v=PgaojUgeEG4)
+
 June 16, 2019
 
 I tweaked the Teensy code to support deleting and writing files now.  So now drives 1-3 work as perfect emulators for JV1 formatted files.  I still have no
