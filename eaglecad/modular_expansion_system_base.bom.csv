@@ -1,37 +1,40 @@
-Part;Value;Device;Package;Description;Mouser Part Number;Digikey;Notes
-LD1117V33;V_REG_LD1117VXX;V_REG_LD1117VXX;78XXL;3.3V Linear Regulator;511-LD1117V33;;
-IC10;74LS30N;74LS30N;DIL14;8-input NAND gate;595-SN74LS30N;;You can use 74HCT* if you prefer
-IC5;74LS30N;74LS30N;DIL14;8-input NAND gate;595-SN74LS30N;;You can use 74HCT* if you prefer
-C10;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;
-C2;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;
-C3;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;
-C6;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;
-C7;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;
-C8;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;
-U$1;EBC20DRAS;EBC20DRAS;EBC20DRAS;Card edge connector;;S9672-ND;This is for a card edge connector.  You could choose to use a cable-based connector, but beware of long lengths of parallel cable.
-L1;33uh;L-US6000-XXX-RC;6000-XXXX-RC;Inductor;80-SBCP-80HY330H;;
-JP1;5V_SOURCE;JP2E;JP2;Jumper pins;538-42375-1856;;
-JUMPER SHUNT;JUMPER SHUNT;JUMPER SHUNT;JUMPER SHUNT;JUMPER SHUNT;517-950-00;;Jumper shunt to switch between linear or switching regulator (Note, this is optional, you could just use the switching regulator and get rid of all the 7805 related stuff)
-D1;LED;LED3MM;LED_3MM;LED (Generic);941-C4SMKBJFCQ0T0352;;
-IC9;7805T;7805T;TO220H;Linear Regulator;926-LM7805CT/NOPB;;This is optional.  If you want to just run off the switching regulator, you can leave this (and C11 and C12) out.  The option was created because some shields might be sensitive to switched vs. linear supply
-IC1;74LS244N;74LS244N;DIL20;Octal BUFFER and LINE DRIVER, 3-state;595-SN74LS244N;;You can use 74HCT* if you prefer
-IC2;74LS244N;74LS244N;DIL20;Octal BUFFER and LINE DRIVER, 3-state;595-SN74LS244N;;You can use 74HCT* if you prefer
-IC3;74LS244N;74LS244N;DIL20;Octal BUFFER and LINE DRIVER, 3-state;595-SN74LS244N;;You can use 74HCT* if you prefer
-C1;10uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;647-UMA1C100MDD;;
-C4;10uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;647-UMA1C100MDD;;
-C12;10uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;647-UMA1C100MDD1TP;;
-C5;680uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;661-EKYB160E681MH15D;;
-C11;100uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;667-ECA-1CM101I;;
-C9;220uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;667-EEU-FR1C221;;
-IC8;74LS00N;74LS00N;DIL14;Quad 2-input NAND gate;595-SN74LS00N;;You can use 74HCT* if you prefer
-D2-1N5824;1N5818-T;1N5818-T;DO41-7.6;Rectifier;511-1N5822;;Ideally would use 1N5824, but it is hard to find (difference is amp capacity)
-R7;330;R-US_0309/V;0309V;Resistor;603-CFR-25JT-52-330R;;
-RN1;4.7k;G08R;SIL9;Resistor Network;652-4609X-AP1-472LF;;
-RN2;4.7k;G08R;SIL9;Resistor Network;652-4609X-AP1-472LF;;
-IC4;SRAM;62256P;DIL28-6;SRAM memory;913-AS6C62256-55PCN;;
-J1-INTERRUPTS;INTERRUPTS;CONN_04X2;2X4;Stacked header;200-SSQ10404GD;;
-J2-WAITS;WAITS;CONN_04X2;2X4;Stacked header;200-SSQ10404GD;;
-J1_ADDRESS_CON;j1;CONN_20;1X20;Stacked header;200-SSQ12004GS;;
-J2_DATA_AND_POWER_CON;j2;CONN_20;1X20;Stacked header;200-SSQ12004GS;;
-SW1;100SP3T1B1M6QE;100SP3T1B1M6QE;100SP3T1B1M6QE;Switch;612-100SP3T1B1M6QE;;
-IC6;LM2596T-5.0;LM2596TH;TO220-52;Switching Regulator;926-LM2596T-5.0/NOPB;;
+Part;Value;Device;Package;Description;Mouser Part Number;Digikey;Notes;Current Price
+LD1117V33;V_REG_LD1117VXX;V_REG_LD1117VXX;78XXL;3.3V Linear Regulator;511-LD1117V33;;;0.54
+IC10;74LS30N;74LS30N;DIL14;8-input NAND gate;595-SN74LS30N;;You can use 74HCT* if you prefer;0.98
+IC5;74LS30N;74LS30N;DIL14;8-input NAND gate;595-SN74LS30N;;You can use 74HCT* if you prefer;0.98
+C10;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;;0.24
+C2;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;;0.24
+C3;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;;0.24
+C6;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;;0.24
+C7;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;;0.24
+C8;.1uf;C-US025-025X050;C025-025X050;Capacitor ;810-FA18X7R1H10400;;;0.24
+U$1;EBC20DRAS;EBC20DRAS;EBC20DRAS;Card edge connector;;S9672-ND;This is for a card edge connector.  You could choose to use a cable-based connector, but beware of long lengths of parallel cable.;6.9
+L1;33uh;L-US6000-XXX-RC;6000-XXXX-RC;Inductor;80-SBCP-80HY330H;;;2.9
+JP1;5V_SOURCE;JP2E;JP2;Jumper pins;538-42375-1856;;;0.16
+JUMPER SHUNT;JUMPER SHUNT;JUMPER SHUNT;JUMPER SHUNT;JUMPER SHUNT;517-950-00;;Jumper shunt to switch between linear or switching regulator (Note, this is optional, you could just use the switching regulator and get rid of all the 7805 related stuff);0.47
+D1;LED;LED3MM;LED_3MM;LED (Generic);941-C4SMKBJFCQ0T0352;;;0.18
+IC9;7805T;7805T;TO220H;Linear Regulator;926-LM7805CT/NOPB;;This is optional.  If you want to just run off the switching regulator, you can leave this (and C11 and C12) out.  The option was created because some shields might be sensitive to switched vs. linear supply;1.53
+IC1;74LS244N;74LS244N;DIL20;Octal BUFFER and LINE DRIVER, 3-state;595-SN74LS244N;;You can use 74HCT* if you prefer;0.9
+IC2;74LS244N;74LS244N;DIL20;Octal BUFFER and LINE DRIVER, 3-state;595-SN74LS244N;;You can use 74HCT* if you prefer;0.9
+IC3;74LS244N;74LS244N;DIL20;Octal BUFFER and LINE DRIVER, 3-state;595-SN74LS244N;;You can use 74HCT* if you prefer;0.9
+C1;10uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;647-UMA1C100MDD;;;0.16
+C4;10uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;647-UMA1C100MDD;;;0.16
+C12;10uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;647-UMA1C100MDD1TP;;;0.16
+C5;680uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;661-EKYB160E681MH15D;;;0.48
+C11;100uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;667-ECA-1CM101I;;;0.18
+C9;220uf;CPOL-USE2.5-5;E2,5-5;Polarized Electrolytic;667-EEU-FR1C221;;;0.3
+IC8;74LS00N;74LS00N;DIL14;Quad 2-input NAND gate;595-SN74LS00N;;You can use 74HCT* if you prefer;1.17
+D2-1N5824;1N5818-T;1N5818-T;DO41-7.6;Rectifier;511-1N5822;;Ideally would use 1N5824, but it is hard to find (difference is amp capacity);0.47
+R7;330;R-US_0309/V;0309V;Resistor;603-CFR-25JT-52-330R;;;0.1
+RN1;4.7k;G08R;SIL9;Resistor Network;652-4609X-AP1-472LF;;;0.43
+RN2;4.7k;G08R;SIL9;Resistor Network;652-4609X-AP1-472LF;;;0.43
+IC4;SRAM;62256P;DIL28-6;SRAM memory;913-AS6C62256-55PCN;;;2.54
+J1-INTERRUPTS;INTERRUPTS;CONN_04X2;2X4;Stacked header;200-SSQ10404GD;;;2.44
+J2-WAITS;WAITS;CONN_04X2;2X4;Stacked header;200-SSQ10404GD;;;2.44
+J1_ADDRESS_CON;j1;CONN_20;1X20;Stacked header;200-SSQ12004GS;;;4.58
+J2_DATA_AND_POWER_CON;j2;CONN_20;1X20;Stacked header;200-SSQ12004GS;;;4.58
+SW1;100SP3T1B1M6QE;100SP3T1B1M6QE;100SP3T1B1M6QE;Switch;612-100SP3T1B1M6QE;;;2.97
+IC6;LM2596T-5.0;LM2596TH;TO220-52;Switching Regulator;926-LM2596T-5.0/NOPB;;;4.77
+;;;;;;;;
+;;;;;;;;
+;;;;;;;;47.14

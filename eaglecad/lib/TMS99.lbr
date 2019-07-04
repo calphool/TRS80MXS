@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -480,6 +480,30 @@ https://www.mouser.com/datasheet/2/140/T113051B-318481.pdf</description>
 <wire x1="-21.1455" y1="3.2893" x2="-21.1455" y2="5.6388" width="0.127" layer="21"/>
 <text x="-10.16" y="-1.27" size="1.27" layer="21" rot="R90">SPDT Switch</text>
 </package>
+<package name="76SC04T">
+<description>Grayhill 76SC04T</description>
+<wire x1="0" y1="0" x2="17.4625" y2="0" width="0.127" layer="21"/>
+<wire x1="17.4625" y1="0" x2="17.4625" y2="9.525" width="0.127" layer="21"/>
+<wire x1="17.4625" y1="9.525" x2="0" y2="9.525" width="0.127" layer="21"/>
+<wire x1="0" y1="9.525" x2="0" y2="0" width="0.127" layer="21"/>
+<pad name="OUT1A" x="2.2225" y="2.2225" drill="0.55"/>
+<pad name="IN2" x="4.7625" y="2.2225" drill="0.55"/>
+<pad name="OUT2A" x="7.3025" y="2.2225" drill="0.55"/>
+<pad name="OUT3A" x="9.8425" y="2.2225" drill="0.55"/>
+<pad name="IN4" x="12.3825" y="2.2225" drill="0.55"/>
+<pad name="OUTA4" x="14.9225" y="2.2225" drill="0.55"/>
+<pad name="OUT1B" x="2.2225" y="7.3025" drill="0.55"/>
+<pad name="IN1" x="4.7625" y="7.3025" drill="0.55"/>
+<pad name="OUT2B" x="7.3025" y="7.3025" drill="0.55"/>
+<pad name="OUT3B" x="9.8425" y="7.3025" drill="0.55"/>
+<pad name="IN3" x="12.3825" y="7.3025" drill="0.55"/>
+<pad name="OUT4B" x="14.9225" y="7.3025" drill="0.55"/>
+<rectangle x1="2.8575" y1="2.8575" x2="4.1275" y2="6.6675" layer="21"/>
+<rectangle x1="5.3975" y1="2.8575" x2="6.6675" y2="6.6675" layer="21"/>
+<rectangle x1="10.4775" y1="2.8575" x2="11.7475" y2="6.6675" layer="21"/>
+<rectangle x1="13.0175" y1="2.8575" x2="14.2875" y2="6.6675" layer="21"/>
+<text x="0.9525" y="7.9375" size="1.27" layer="21">76SC04T SPDT DIP</text>
+</package>
 </packages>
 <symbols>
 <symbol name="TMS9918">
@@ -877,6 +901,33 @@ Custom SPLD built from an ATF22V10C that decodes addresses 0x80, 0x81, 0x82, 0x8
 <pin name="VCC" x="5.08" y="22.86" length="middle" rot="R180"/>
 <text x="-22.86" y="27.94" size="1.778" layer="95">&gt;NAME</text>
 <text x="-22.86" y="-12.7" size="1.778" layer="96">&gt;VALUE</text>
+</symbol>
+<symbol name="76SC04T">
+<description>Grayhill 76SC04T</description>
+<wire x1="-33.02" y1="17.78" x2="-33.02" y2="-15.24" width="0.254" layer="94"/>
+<wire x1="-33.02" y1="-15.24" x2="-2.54" y2="-15.24" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="-15.24" x2="-2.54" y2="17.78" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="17.78" x2="-33.02" y2="17.78" width="0.254" layer="94"/>
+<pin name="OUT1A" x="-38.1" y="15.24" length="middle"/>
+<pin name="OUT1B" x="2.54" y="15.24" length="middle" rot="R180"/>
+<pin name="IN1" x="2.54" y="10.16" length="middle" rot="R180"/>
+<wire x1="-10.16" y1="10.16" x2="-15.24" y2="10.16" width="0.254" layer="94"/>
+<wire x1="-15.24" y1="10.16" x2="-20.32" y2="15.24" width="0.254" layer="94"/>
+<pin name="IN2" x="-38.1" y="10.16" length="middle"/>
+<pin name="OUT2A" x="-38.1" y="5.08" length="middle"/>
+<pin name="OUT2B" x="2.54" y="5.08" length="middle" rot="R180"/>
+<wire x1="-25.4" y1="10.16" x2="-20.32" y2="10.16" width="0.254" layer="94"/>
+<wire x1="-20.32" y1="10.16" x2="-15.24" y2="5.08" width="0.254" layer="94"/>
+<pin name="OUT3B" x="2.54" y="0" length="middle" rot="R180"/>
+<pin name="IN3" x="2.54" y="-5.08" length="middle" rot="R180"/>
+<pin name="OUT3A" x="-38.1" y="0" length="middle"/>
+<wire x1="-10.16" y1="-5.08" x2="-15.24" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="-15.24" y1="-5.08" x2="-20.32" y2="0" width="0.254" layer="94"/>
+<pin name="IN4" x="-38.1" y="-5.08" length="middle"/>
+<pin name="OUT4A" x="-38.1" y="-10.16" length="middle"/>
+<pin name="OUT4B" x="2.54" y="-10.16" length="middle" rot="R180"/>
+<wire x1="-25.4" y1="-5.08" x2="-20.32" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="-20.32" y1="-5.08" x2="-15.24" y2="-10.16" width="0.254" layer="94"/>
 </symbol>
 </symbols>
 <devicesets>
@@ -1338,6 +1389,33 @@ Custom SPLD built from an ATF22V10C that decodes addresses 0x80, 0x81, 0x82, 0x8
 <connect gate="G$1" pin="SND3" pad="16"/>
 <connect gate="G$1" pin="SND4" pad="15"/>
 <connect gate="G$1" pin="VCC" pad="24"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="76SC04T" prefix="SW">
+<description>76SC04T</description>
+<gates>
+<gate name="G$1" symbol="76SC04T" x="17.78" y="-2.54"/>
+</gates>
+<devices>
+<device name="" package="76SC04T">
+<connects>
+<connect gate="G$1" pin="IN1" pad="IN1"/>
+<connect gate="G$1" pin="IN2" pad="IN2"/>
+<connect gate="G$1" pin="IN3" pad="IN3"/>
+<connect gate="G$1" pin="IN4" pad="IN4"/>
+<connect gate="G$1" pin="OUT1A" pad="OUT1A"/>
+<connect gate="G$1" pin="OUT1B" pad="OUT1B"/>
+<connect gate="G$1" pin="OUT2A" pad="OUT2A"/>
+<connect gate="G$1" pin="OUT2B" pad="OUT2B"/>
+<connect gate="G$1" pin="OUT3A" pad="OUT3A"/>
+<connect gate="G$1" pin="OUT3B" pad="OUT3B"/>
+<connect gate="G$1" pin="OUT4A" pad="OUT4B"/>
+<connect gate="G$1" pin="OUT4B" pad="OUTA4"/>
 </connects>
 <technologies>
 <technology name=""/>

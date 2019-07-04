@@ -29,6 +29,15 @@ of the Teensy unit.
 Build Notes
 ===========
 
+July 4, 2019
+
+I just designed and uploaded the WIFI module.  It hasn't been built yet, and no software has been written, but the design is 
+there.  I'll get the board and parts on order and see what we get.  Chances are it won't work right off the bat, but you 
+never know.  I decided to design this board with a couple of nuances.  First, it is built around port IO rather than memory 
+mapping.  Since the port numbers aren't really standardized on the TRS-80, I decided to make the address decoder selectable 
+with 8 DIP switches, so any port between 0 and 255 can be chosen.  The other nuance is that I didn't use any GALs or CPLDs for 
+the glue logic.  That should make this board a little easier to build than the graphics/sound board.
+
 June 28, 2019
 
 I wrote a utility (called "trs80mxs") that runs on the TRS-80 to manipulate the drive images that are stored on the MicroSD card.  Before this utility,
