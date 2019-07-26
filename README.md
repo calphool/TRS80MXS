@@ -29,6 +29,22 @@ of the Teensy unit.
 Build Notes
 ===========
 
+July 25, 2019
+
+I purchased a TRS-80 Model 1 on Ebay, so I don't have to borrow my friend's any more.  Unfortunately, it didn't come with a 
+power supply.  So, I designed one.  Maybe someone with a bad power supply can use my design.  Here's a pic of the ~[schematic.](img/powersupply.pdf?raw=true)
+The schematic and board layout is in the eaglecad folder.  I didn't actually use the board layout.  I just hand wired everything for my supply, and put it 
+inside an electrical utility box.  If you decide to make one of these, be very careful.  You'd working with 110V mains voltages, so you need to know what 
+you're doing.  I'm not responsible if you electrocute yourself!)
+
+July 7, 2019
+
+Figured something out that's worth documenting.  For a long time I've thought that something was wrong with drive 3.  I was 
+using NEWDOS/80 2.0 disk images in drive 0 (boot drive).  Apparently there's a command (PDRIVE) that changes how DOS handles
+different drives.  The drive image I was using had the wrong settings for drive 3, and by dumb luck and coincidence had 
+usable settings for the other 3 drives.  As soon as I changed drive 3's TI and TD settings, it started working properly, 
+so there's nothing actually wrong with drive 3!
+
 July 4, 2019
 
 I just designed and uploaded the WIFI module.  It hasn't been built yet, and no software has been written, but the design is 
