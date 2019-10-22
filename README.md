@@ -29,6 +29,13 @@ of the Teensy unit.
 Build Notes
 ===========
 
+October 21, 2019
+
+I'm still working on the project.  Things have slowed down a bit over the past few months because my eldest daughter got married, 
+my youngest daughter started college, and I'm selling my house.  Once I get settled in the new house I'll pick up the 
+Wifi module again, which is the last one to get completely working.  It "sort of" works right now, but it's built around the 
+ESP32 module and that thing is sort of a bugger to code for.
+
 July 25, 2019
 
 I purchased a TRS-80 Model 1 on Ebay, so I don't have to borrow my friend's any more.  Unfortunately, it didn't come with a 

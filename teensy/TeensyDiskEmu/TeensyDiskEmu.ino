@@ -178,10 +178,10 @@ void setup() {
   }
 
   configureInterrupts();                             // tie interrupt lines to code blocks
-  openDiskFileByName("NEWDOS_80sssd_jv1.DSK", 0);                // open file specified from SD card
+  openDiskFileByName("newdos80.dsk", 0);                // open file specified from SD card
   openDiskFileByName("more-arcade-1_80sssd_jv1.DSK", 1);                // open file specified from SD card
   openDiskFileByName("more-arcade-2_80sssd_jv1.DSK", 2);                // open file specified from SD card
-  openDiskFileByName("more-arcade-3_80sssd_jv1.DSK", 3);                // open file specified from SD card
+  openDiskFileByName("blank.DSK", 3);                // open file specified from SD card
 
   p((char*)"\nReady.\n");
   if (!Serial) {
