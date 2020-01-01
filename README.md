@@ -29,6 +29,39 @@ of the Teensy unit.
 Build Notes
 ===========
 
+January 1, 2020
+
+Well, we're in the new house, and semi-settled.  Always a million things to do when you move to a new house.  
+However, I've got a little time to begin working on the Wifi module again.  As luck would have it, I'm now living 
+only a few blocks from my friend who started this little adventure.  Just for fun over Christmas, I had my younger 
+daughter come play some of the games that are loaded on the HDD module.  I even hooked up the cassette port to 
+an amplifier, and I connected the composite video out on my old TRS-80 to our big screen TV.  It's kind of 
+amazing when you think about it -- that computer is 42 years old, and I can connect it to a brand new flat panel display.
+My daughter laughed her head off at these "cheesy old games."  She said something like "Dad, how could you guys 
+stand to play these silly things?  There's no color. They're like really bad rip offs of arcade games that weren't 
+that great to begin with!"  The answer of course is pretty simple.  We had no choice, and we *thought* they were 
+pretty cool games.  In fact, I'm still pretty amazed when I ran a couple of those games and the authors had managed 
+to implement a sample playing routine into the game so that when it started it said something like "Ready Player One" 
+and "Game Over".  I mean, seriously -- in 1977 somebody had figured out how to sample audio and misuse the audio 
+cassette port to drive voice samples.  It may not be impressive to my 20 something daughter, but it's still pretty 
+impressive to me.  Perspective I guess.
+
+So I'll see if I can wrap up the Wifi module in the next few weeks.  It was intended to be a general purpose 
+wifi module, but I'm running into some things that make me think that may not be practical / easy.  The main one is 
+that the ESP32 designers didn't really imagine that someone would use their module for a general purpose HTTP client.
+The issue is basically RAM constraints.  We take it for granted these days, but TLS security requires a *lot* of 
+RAM to store a bunch of root certificates.  The code that implements the TLS stuff for my ESP32 module makes a 
+rather huge assumption that you're going to have a single site that the module is going to talk to, so you don't
+really even try to load a bunch of root certs into it.  You load one for the site your're going to be accessing.
+That obviously doesn't work very well when you're trying to build a general purpose tool.  Now I *could* probably
+implement a proxy in AWS or something, and then set up my ESP32 to work against that HTTP proxy, but I don't really 
+want this hardware to be a slave to some stupid proxy running in AWS.  So, I'm at a bit of an impass.  I *may* be 
+able to figure something out, but it'll require me to dig deeply into the TLS libraries for my ESP32, and basically 
+rewrite a huge chunk of their code.... and who knows what the performance will be like.  The other possible route 
+would be to do something like reduce the functionality of the Wifi module so that it just gives you access to a 
+particular hosting site, like maybe DropBox, but that's a bit of a let down.  We'll see what I can come up with 
+over the next few weeks.
+
 October 21, 2019
 
 I'm still working on the project.  Things have slowed down a bit over the past few months because my eldest daughter got married, 
