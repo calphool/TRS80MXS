@@ -6,9 +6,10 @@ TRS-80 Modular eXpansion System
 This is repo is for the TRS-80 Modular eXpansion System (MXS).  The intent is to make it the final of a series of 
 prototypes (TRS80HDD and TRS80GS and a memory expansion module).  
 
-The MXS consists of three modules set up as a stackable set.  So, you can build the base module first, which will 
+The MXS consists of four modules set up as a stackable set.  So, you can build the base module first, which will 
 give you a 32k memory expansion for your TRS-80 Model 1, as well as a power conditioning base that the other boards
-use.  Then you can make either the floppy drive emulator or the TI video/graphics board (or both).  The boards snap together.  
+use.  Then you can make either the floppy drive emulator, the TI video/graphics board, or the WIFI board (or all three).  
+The boards snap together.  
 
 Theory of Operation
 ===================
