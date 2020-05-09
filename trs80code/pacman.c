@@ -17,6 +17,10 @@
    *******************************************************************************************************************************
 */
 
+// Uses z88dk compiler
+// sample compilation command:
+// zcc  +trs80 -O3 -lndos -lm -create-app --list -subtype=disk pacman.c
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -101,10 +105,6 @@
 #define PATT_PACMAN_DYING_END 29
 
 
-
-
-// pattern setting function macro
-#define SETPATTERN(XXX,YYY) strcpy(buf,YYY); setCharPattern(XXX,buf);
 
 
 // sprite identifiers
