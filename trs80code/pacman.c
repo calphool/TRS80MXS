@@ -1,3 +1,22 @@
+/* *******************************************************************************************************************************
+   | PAC-MAN-like game for TRS-80 Model 1 with TRS80MXS graphics/sound/joystick board                                            |
+   | Copyright 2020 JOSEPH ROUNCEVILLE                                                                                           |
+   |                                                                                                                             |
+   | Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation  |
+   | files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,  |
+   | modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the       |
+   | Software is furnished to do so, subject to the following conditions:                                                        |
+   |                                                                                                                             |
+   | The above copyright notice and this permission notice shall be included in all copies or substantial portions of the        |
+   | Software.                                                                                                                   |
+   |                                                                                                                             |
+   | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE        |
+   | WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR       |
+   | COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, |
+   | ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                       |
+   *******************************************************************************************************************************
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +32,6 @@
     #define SCREEN_WIDTH 512
     #define SCREEN_HEIGHT 384
 #endif
-
 
 // port addresses
 #define LEFT_POS 0x82
@@ -70,7 +88,6 @@
 #define PATT_NORMAL_GHOST_EYES_E 16
 #define PATT_NORMAL_GHOST_EYES_W 17
 #define PATT_SCARED_GHOST 18
-
 #define PATT_PACMAN_DYING_START 19
 #define PATT_PACMAN_DYING_1 20
 #define PATT_PACMAN_DYING_2 21
@@ -104,7 +121,6 @@
 #define BROWN_GHOST_SPRITENUM 8
 
 #define MAX_SPRITENUM 8
-
 
 #define EAST_PACMAN_PAT_OFFSET 0
 #define NORTH_PACMAN_PAT_OFFSET 3 
@@ -144,13 +160,14 @@ __sfr __at 0x85 PORTX85;
 #define TRUE 1
 #define FALSE 0
 
-
+// ordinals
 #define NORTH 0
 #define SOUTH 1
 #define WEST 2
 #define EAST 3
 
 
+// video setup structure
 typedef struct {
     unsigned char graphicsMode;
     unsigned char externalVideoEnabled;
@@ -167,6 +184,7 @@ typedef struct {
 } graphicsSetup;
 
 
+//sprite attribute structure
 typedef struct {
   int x;
   int y;
@@ -177,26 +195,24 @@ typedef struct {
   char prevdir;
 } spriteAttr;
 
-char buf[33];
-unsigned char bRunning = FALSE;  // main game loop control
+char buf[33];                   // work buffer
+unsigned char bRunning = FALSE; // main game loop control
 unsigned int anPos = 0;         // animation position
 int anDir = 1;                  // 1, -1 counter direction
 graphicsSetup g;                // graphics mode struct
 spriteAttr sprAttr[32];         // sprite struct array
-unsigned long score = 0;
-unsigned int dotctr = 0; 
-unsigned int energizerctr = 0;
-unsigned int ghostCtr = 0;
+unsigned long score = 0;        // score field
+unsigned int dotctr = 0;        // counter to decide when we're done with a screen
+unsigned int energizerctr = 0;  // count down counter when an energizer is eaten
+unsigned int ghostCtr = 0;      // score counter that adds up with each ghost being eaten
 
 
 #define getRand256() ((unsigned char)(rand() % 256))
 
 
-
-
-/* *************************************************************
-   | Pull byte from VDP RAM                                    |
-   *************************************************************
+/* *******************************************************************************************************************************
+   | Pull byte from VDP RAM                                                                                                      |
+   *******************************************************************************************************************************
 */
 unsigned char getVDPRAM(unsigned int addr) {
 #ifdef GCC_COMPILED
@@ -214,9 +230,9 @@ unsigned char getVDPRAM(unsigned int addr) {
 #endif
 }
 
-/* *************************************************************
-   | Retrieve character at position                            |
-   *************************************************************
+/* ******************************************************************************************************************************
+   | Retrieve character at position                                                                                             |
+   ******************************************************************************************************************************
 */
 unsigned char getCharAt(unsigned char x, unsigned char y) {
     static unsigned int addr;
@@ -231,17 +247,21 @@ unsigned char getCharAt(unsigned char x, unsigned char y) {
 }
 
 
-
-
 #ifdef GCC_COMPILED
-
+/* *****************************************************************************************************************************
+   | 32 bit memset                                                                                                             |
+   *****************************************************************************************************************************
+*/
 void *memset32(void *m, uint32_t val, size_t count) {
     uint32_t *buf = m;
     while(count--) *buf++ = val;
     return m;
 }
 
-
+/* *****************************************************************************************************************************
+   | given TMS9118 color, return ARGB value                                                                                    |
+   *****************************************************************************************************************************
+*/
 Uint32 getARGBFromTMS9118Color(char cTMS9118Color) {
         switch(cTMS9118Color) {
           case 0: 
@@ -279,17 +299,29 @@ Uint32 getARGBFromTMS9118Color(char cTMS9118Color) {
         }
 }
 
+/* ******************************************************************************************************************************
+   | Fill background with ARGB value                                                                                            |
+   ******************************************************************************************************************************
+*/
 void setBGColor() {
       memset32(pixels, getARGBFromTMS9118Color(VDPRegisters[7] & 0x0f), SCREEN_WIDTH*SCREEN_HEIGHT);
 }
 
 
-
+/* ******************************************************************************************************************************
+   | Plot a pixel on the SDL window                                                                                             |
+   ******************************************************************************************************************************
+*/
 void plotSDLPixel(int x, int y, Uint32 color) {    // x = 0 - 255, y = 0 - 191
     memset32(pixels + (x<<1) + y*SCREEN_WIDTH*2, color, 2); 
     memset32(pixels + (x<<1) + y*SCREEN_WIDTH*2 + SCREEN_WIDTH, color, 2);     
 }
 
+
+/* ******************************************************************************************************************************
+   | get foreground ARGB color for a given character                                                                            |
+   ******************************************************************************************************************************
+*/
 Uint32 getFGColorForChar(unsigned char ch) {
     unsigned char raw = getVDPRAM(g.ColorTableAddr + (ch >> 3));
 
@@ -297,6 +329,10 @@ Uint32 getFGColorForChar(unsigned char ch) {
     return getARGBFromTMS9118Color(raw);
 }
 
+/* ******************************************************************************************************************************
+   | get background ARGB color for a given character                                                                            |
+   ******************************************************************************************************************************
+*/
 Uint32 getBGColorForChar(unsigned char ch) {
     unsigned char raw = getVDPRAM(g.ColorTableAddr + (ch >> 3));
 
@@ -304,7 +340,10 @@ Uint32 getBGColorForChar(unsigned char ch) {
     return getARGBFromTMS9118Color(raw);
 }
 
-
+/* *****************************************************************************************************************************
+   | plot character on SDL window                                                                                              |
+   *****************************************************************************************************************************
+*/
 void plotCharOnSDLPixels(int xTMS9118, int yTMS9118, unsigned char c) {
   unsigned int pattern_addr = (c<<3) + g.PatternTableAddr;
   Uint32 fgCol = getFGColorForChar(c);
@@ -313,65 +352,67 @@ void plotCharOnSDLPixels(int xTMS9118, int yTMS9118, unsigned char c) {
   for(int i=0;i<8;i++) {  
     c = screen_buffer[pattern_addr+i]; // now c = something like 0x55
     if(c >= 128) {
-      plotSDLPixel(xTMS9118*8, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3), (yTMS9118<<3)+i,fgCol);
       c=c-128;
     }
     else 
-      plotSDLPixel(xTMS9118*8, yTMS9118*8+i,bgCol);
+      plotSDLPixel((xTMS9118<<3), (yTMS9118<<3)+i,bgCol);
 
     if(c >= 64) {
-      plotSDLPixel(xTMS9118*8+1, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3)+1, (yTMS9118<<3)+i,fgCol);
       c=c-64;
     }
    else 
-      plotSDLPixel(xTMS9118*8+1, yTMS9118*8+i,bgCol);
+      plotSDLPixel((xTMS9118<<3)+1, (yTMS9118<<3)+i,bgCol);
 
     if(c >= 32) {
-      plotSDLPixel(xTMS9118*8+2, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3)+2, (yTMS9118<<3)+i,fgCol);
       c=c-32;
     }
    else 
-      plotSDLPixel(xTMS9118*8+2, yTMS9118*8+i,bgCol);
+      plotSDLPixel((xTMS9118<<3)+2, (yTMS9118<<3)+i,bgCol);
 
     if(c >= 16) {
-      plotSDLPixel(xTMS9118*8+3, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3)+3, (yTMS9118<<3)+i,fgCol);
       c=c-16;
     }
    else 
-      plotSDLPixel(xTMS9118*8+3, yTMS9118*8+i,bgCol);
+      plotSDLPixel((xTMS9118<<3)+3, (yTMS9118<<3)+i,bgCol);
 
     if(c >= 8) {
-      plotSDLPixel(xTMS9118*8+4, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3)+4, (yTMS9118<<3)+i,fgCol);
       c=c-8;
     }
    else 
-      plotSDLPixel(xTMS9118*8+4, yTMS9118*8+i,bgCol);
+      plotSDLPixel((xTMS9118<<3)+4, (yTMS9118<<3)+i,bgCol);
 
     if(c >= 4) {
-      plotSDLPixel(xTMS9118*8+5, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3)+5, (yTMS9118<<3)+i,fgCol);
       c=c-4;
     }
    else 
-      plotSDLPixel(xTMS9118*8+5, yTMS9118*8+i,bgCol);
+      plotSDLPixel((xTMS9118<<3)+5, (yTMS9118<<3)+i,bgCol);
 
     if(c >= 2) {
-      plotSDLPixel(xTMS9118*8+6, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3)+6, (yTMS9118<<3)+i,fgCol);
       c=c-2;
     }
    else 
-      plotSDLPixel(xTMS9118*8+6, yTMS9118*8+i,bgCol);
+      plotSDLPixel((xTMS9118<<3)+6, (yTMS9118<<3)+i,bgCol);
 
     if(c >= 1) {
-      plotSDLPixel(xTMS9118*8+7, yTMS9118*8+i,fgCol);
+      plotSDLPixel((xTMS9118<<3)+7, (yTMS9118<<3)+i,fgCol);
       c=c-1;
     }
    else 
-      plotSDLPixel(xTMS9118*8+7, yTMS9118*8+i,bgCol);
-
+      plotSDLPixel((xTMS9118<<3)+7, (yTMS9118<<3)+i,bgCol);
   }
 }
 
-
+/* ******************************************************************************************************************************
+   | draw entire screen worth of characters from RAM to SDL window                                                              |
+   ******************************************************************************************************************************
+*/
 void drawCharacters() {
   static int x;
   static int y;
@@ -383,7 +424,10 @@ void drawCharacters() {
   }
 }
 
-
+/* ******************************************************************************************************************************
+   | draw sprites onto SDL window                                                                                               |
+   ******************************************************************************************************************************
+*/
 void drawSprites() {
   static int x;
   static int y;
@@ -477,14 +521,20 @@ void drawSprites() {
   }
 }
 
+/* ******************************************************************************************************************************
+   | draw out entire screen on SDL window                                                                                       |
+   ******************************************************************************************************************************
+*/
 void updateEmulatedVDPScreen() {
   setBGColor();
   drawCharacters();
   drawSprites();
 }
 
-
-
+/* ******************************************************************************************************************************
+   | draw out entire screen on SDL window                                                                                       |
+   ******************************************************************************************************************************
+*/
 void SDLSetup() {
    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     printf("could not initialize sdl2: %s\n", SDL_GetError());
@@ -508,20 +558,23 @@ void SDLSetup() {
    memset(pixels, 255, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(Uint32));
 }
 
+
+/* ******************************************************************************************************************************
+   | Shutdown SDL                                                                                                               |
+   ******************************************************************************************************************************
+*/
 void SDLShutdown() {
    SDL_DestroyTexture(texture);
    SDL_DestroyRenderer(renderer);
    SDL_DestroyWindow(window);
    SDL_Quit();
 }
-
-
 #endif
 
 
-/* *************************************************************
-   | VDP register set (low level register change)              |
-   *************************************************************
+/* ******************************************************************************************************************************
+   | VDP register set (low level register change)                                                                               |
+   ******************************************************************************************************************************
 */
 void setVDPRegister(unsigned char reg,unsigned char dat) {
 #ifdef GCC_COMPILED
@@ -534,9 +587,9 @@ void setVDPRegister(unsigned char reg,unsigned char dat) {
 }
 
 
-/* *************************************************************
-   | Set byte in VDP RAM                                       |
-   *************************************************************
+/* ******************************************************************************************************************************
+   | Set byte in VDP RAM                                                                                                        |
+   ******************************************************************************************************************************
 */
 void setVDPRAM(unsigned int addr, unsigned char dat) {
 #ifdef GCC_COMPILED
@@ -558,9 +611,9 @@ void setVDPRAM(unsigned int addr, unsigned char dat) {
 #endif
 }
 
-/* *************************************************************
-   | Set sound byte to left or right sound chip                |
-   *************************************************************
+/* ******************************************************************************************************************************
+   | Set sound byte to left or right sound chip                                                                                 |
+   ******************************************************************************************************************************
 */
 void soundOut(unsigned char LeftOrRight, unsigned char dat) {
 #ifdef GCC_COMPILED
@@ -572,9 +625,9 @@ void soundOut(unsigned char LeftOrRight, unsigned char dat) {
 #endif
 }
 
-/* *************************************************************
-   | get left or right joystick position                       |
-   *************************************************************
+/* ******************************************************************************************************************************
+   | get left or right joystick position                                                                                        |
+   ******************************************************************************************************************************
 */
 unsigned char getJoystick(unsigned char LeftOrRight) {
 #ifdef GCC_COMPILED 
@@ -603,9 +656,9 @@ unsigned char getJoystick(unsigned char LeftOrRight) {
 #endif
 }
 
-/* *************************************************************
-   | Put character on screen at position                       |
-   *************************************************************
+/* ******************************************************************************************************************************
+   | Put character on screen at position                                                                                        |
+   ******************************************************************************************************************************
 */
 void setCharacterAt(unsigned char x, unsigned char y, unsigned char c) {
     static unsigned int addr;
@@ -616,10 +669,9 @@ void setCharacterAt(unsigned char x, unsigned char y, unsigned char c) {
 }
 
 
-
-/* *************************************************************
-   | Write a string at screen position                         |
-   *************************************************************
+/* ******************************************************************************************************************************
+   | Write a string at screen position                                                                                          |
+   ******************************************************************************************************************************
 */
 void setCharactersAt(unsigned char x, unsigned char y, char* s) {
     static unsigned int addr;
@@ -634,32 +686,24 @@ void setCharactersAt(unsigned char x, unsigned char y, char* s) {
     }
 }
 
+/* ******************************************************************************************************************************
+   | load pattern table with binary data                                                                                        |
+   ******************************************************************************************************************************
+*/
+void setCharPatternByArray(unsigned char pos, char* p, int l) {
+  static unsigned int i;
+  static unsigned int addr;
 
-void setScreenColor(unsigned char textForegroundColor, unsigned char backgroundColor) {
-    setVDPRegister(7,textForegroundColor << 4 | backgroundColor);
+  addr = (pos<<3) + g.PatternTableAddr;
+
+  for(i=0;i<l;i++)
+    setVDPRAM(addr+i, *(p+i));
 }
 
-
-void setCharPattern(unsigned char pos, char* patt) {
-    static char duple[3];
-    static unsigned char d;
-    static unsigned char e;
-    static unsigned char f;
-    static unsigned int addr;
-
-    addr = (pos<<3) + g.PatternTableAddr;
-    duple[2]=0x0;
-    d = 0;
-    e = strlen(patt);
-    for(f=0;f<e;f=f+2) {
-        duple[0] = *(patt+f);
-        duple[1] = *(patt+f+1);
-        setVDPRAM(addr+d,(unsigned char) strtol(duple, NULL, 16));
-        d++;
-    }
-}
-
-
+/* ******************************************************************************************************************************
+   | set foreground and background of a group of characters                                                                     |
+   ******************************************************************************************************************************
+*/
 unsigned char setCharacterGroupColor(unsigned char colorGroup, unsigned char foreground, unsigned char background) {
     static unsigned char c;
 
@@ -670,103 +714,153 @@ unsigned char setCharacterGroupColor(unsigned char colorGroup, unsigned char for
     setVDPRAM(g.ColorTableAddr + colorGroup, c);
 }
 
-
+/* ******************************************************************************************************************************
+   | load character patterns                                                                                                    |
+   ******************************************************************************************************************************
+*/
 void setPatterns() {
    static unsigned int i;
-   static unsigned char buf[17];
    
-   for(i=0;i<256;i++)
-       setCharPattern(i,"0000000000000000");   
+   static char p0[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char a[8] =  {0x81,0x81,0x81,0x81,0x81,0x81,0x81,0x81};
+   static char b[8] =  {0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char c[8] =  {0x3c,0x42,0x81,0x81,0x81,0x81,0x81,0x81};
+   static char d[8] =  {0x3F,0x40,0x80,0x80,0x80,0x80,0x40,0x3F};
+   static char e[8] =  {0x81,0x81,0x81,0x81,0x81,0x81,0x42,0x3C};
+   static char f[8] =  {0xFC,0x02,0x01,0x01,0x01,0x01,0x02,0xFC};
+   static char g[8] =  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char h[8] =  {0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80};
+   static char ii[8] = {0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char j[8] =  {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
+   static char k[8] =  {0x3F,0x40,0x80,0x80,0x80,0x80,0x80,0x80};
+   static char l[8] =  {0xFC,0x02,0x01,0x01,0x01,0x01,0x01,0x01};
+   static char m[8] =  {0x01,0x01,0x01,0x01,0x01,0x01,0x02,0xFC};
+   static char n[8] =  {0x80,0x80,0x80,0x80,0x80,0x80,0x40,0x3F};
+   
+   static char r[8] =  {0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char q[8] =  {0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char s[8] =  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char t[8] =  {0x38,0x7C,0xFE,0xFE,0xFE,0x7C,0x38,0x00};
 
+   static char AU[8] = {0x78,0x84,0x84,0xFC,0x84,0x84,0x84,0x00};
+   static char BU[8] = {0xF8,0x84,0x84,0xF8,0x84,0x84,0xF8,0x00};
+   static char CU[8] = {0x78,0x84,0x80,0x80,0x80,0x84,0x78,0x00};
+   static char DU[8] = {0xF8,0x84,0x84,0x84,0x84,0x84,0xF8,0x00};
+   static char EU[8] = {0xFC,0x80,0x80,0xF8,0x80,0x80,0xFC,0x00};
+   static char FU[8] = {0xFC,0x80,0x80,0xF8,0x80,0x80,0x80,0x00};
+   static char GU[8] = {0x78,0x80,0x80,0xBC,0x84,0x84,0x78,0x00};
+   static char HU[8] = {0x84,0x84,0x84,0xFC,0x84,0x84,0x84,0x00};
+   static char IU[8] = {0xFC,0x30,0x30,0x30,0x30,0x30,0xFC,0x00};
+   static char JU[8] = {0x7C,0x10,0x10,0x10,0x90,0x90,0x70,0x00};
+   static char KU[8] = {0x84,0x98,0xA0,0xC0,0xA0,0x98,0x84,0x00};
+   static char LU[8] = {0x80,0x80,0x80,0x80,0x80,0x80,0xFC,0x00};
+   static char MU[8] = {0x84,0xCC,0xB4,0xB4,0x84,0x84,0x84,0x00};
+   static char NU[8] = {0x84,0xC4,0xA4,0xA4,0x94,0x8C,0x84,0x00};
+   static char OU[8] = {0x78,0x84,0x84,0x84,0x84,0x84,0x78,0x00};
+   static char PU[8] = {0xF8,0x84,0x84,0xF8,0x80,0x80,0x80,0x00};
+   static char QU[8] = {0x78,0x84,0x84,0x84,0x94,0x8C,0x7C,0x00};
+   static char RU[8] = {0xF8,0x84,0x88,0xF0,0x88,0x88,0x84,0x00};
+   static char SU[8] = {0x7C,0x80,0x80,0x78,0x04,0x04,0xF8,0x00};
+   static char TU[8] = {0xFC,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+   static char UU[8] = {0x84,0x84,0x84,0x84,0x84,0x84,0x78,0x00};
+   static char VU[8] = {0x84,0x84,0x84,0x48,0x48,0x48,0x30,0x00};
+   static char WU[8] = {0x84,0x84,0x84,0xB4,0xB4,0xCC,0x84,0x00};
+   static char XU[8] = {0x84,0x84,0x48,0x30,0x48,0x84,0x84,0x00};
+   static char YU[8] = {0x84,0x48,0x48,0x30,0x30,0x30,0x30,0x00};
+   static char ZU[8] = {0xFC,0x08,0x10,0x10,0x20,0x40,0xFC,0x00};
+   static char N0[8] = {0x78,0x8C,0x94,0xB4,0xA4,0xC4,0x78,0x00};
+   static char N1[8] = {0x30,0x70,0x30,0x30,0x30,0x30,0xFC,0x00};
+   static char N2[8] = {0x78,0x84,0x84,0x18,0x60,0x80,0xFC,0x00};
+   static char N3[8] = {0x78,0x84,0x04,0x38,0x04,0x84,0x78,0x00};
+   static char N4[8] = {0xCC,0xCC,0xCC,0xFC,0x0C,0x0C,0x0C,0x00};
+   static char N5[8] = {0xFC,0x80,0x80,0x78,0x04,0x84,0x78,0x00};
+   static char N6[8] = {0x38,0x40,0x80,0xF8,0x84,0x84,0x78,0x00};
+   static char N7[8] = {0xFC,0x0C,0x18,0x18,0x30,0x30,0x60,0x00};
+   static char N8[8] = {0x78,0x84,0x84,0x78,0x84,0x84,0x78,0x00};
+   static char N9[8] = {0x78,0x84,0x84,0x7C,0x04,0x08,0x70,0x00};
+   static char NC[8] = {0x00,0x30,0x30,0x00,0x00,0x30,0x30,0x00};
+   static char ND[8] = {0x00,0x00,0x00,0x7E,0x00,0x00,0x00,0x00};
+   
+   for(i=0;i<256;i++)                   // set all characters to blank
+          setCharPatternByArray(i,p0,8);
                                         //     SHAPE  
-   SETPATTERN('a',"8181818181818181");  //      | |   
+   setCharPatternByArray('a',a,8);      //      | |   
                                         //      | |   
-
-   SETPATTERN('b',"FF000000000000FF");  //      ___  
+   setCharPatternByArray('b',b,8);      //      ___  
                                         //      ---   
-
-   SETPATTERN('c',"3C42818181818181");  //      .--.
+   setCharPatternByArray('c',c,8);      //      .--.
                                         //      |  |  
-
-   SETPATTERN('d',"3F4080808080403F");  //       ___
+   setCharPatternByArray('d',d,8);      //       ___
                                         //      {___  
-
-   SETPATTERN('e',"818181818181423C");  //      |  |
+   setCharPatternByArray('e',e,8);      //      |  |
                                         //      '--'  
+   setCharPatternByArray('f',f,8);      //       ___
+                                        //       ___}                 
+   setCharPatternByArray('g',g,8);      //       ___
 
-   SETPATTERN('f',"FC020101010102FC");  //       ___
-                                        //       ___}
-                                               
-   SETPATTERN('g',"00000000000000FF");  //       ___
-
-
-   SETPATTERN('h',"8080808080808080");  //       |
+   setCharPatternByArray('h',h,8);      //       |
                                         //       |
-
-   SETPATTERN('i',"FF00000000000000");  //       --
+   setCharPatternByArray('i',ii,8);     //       --
                                         //
-
-   SETPATTERN('j',"0101010101010101");  //         |
+   setCharPatternByArray('j',j,8);      //         |
                                         //         |
-
-   SETPATTERN('k',"3F40808080808080");  //       ___
+   setCharPatternByArray('k',k,8);      //       ___
                                         //      |
-
-   SETPATTERN('l',"FC02010101010101");  //       ___
+   setCharPatternByArray('l',l,8);      //       ___
                                         //          |
-
-   SETPATTERN('m',"01010101010102FC");  //          |
+   setCharPatternByArray('m',m,8);      //          |
                                         //       ___|
-
-   SETPATTERN('n',"808080808080403F");  //       |
+   setCharPatternByArray('n',n,8);      //       |
                                         //       |___
+   setCharPatternByArray('r',r,8);      //          .
+   setCharPatternByArray('q',q,8);      //          _
+   setCharPatternByArray('s',s,8);      //          _
+   setCharPatternByArray('t',t,8);      //       energizer
 
-   SETPATTERN('r',"C0C0000000000000");  //          .
-   SETPATTERN('q',"C0C00000000000FF");  //          _
-   SETPATTERN('s',"00000000000000FF");  //          _
-   SETPATTERN('t',"387CFEFEFE7C3800");  //       energizer
-
-   SETPATTERN('A',"788484FC84848400");
-   SETPATTERN('B',"F88484F88484F800");
-   SETPATTERN('C',"7884808080847800");
-   SETPATTERN('D',"F88484848484F800");
-   SETPATTERN('E',"FC8080F88080FC00");
-   SETPATTERN('F',"FC8080F880808000");
-   SETPATTERN('G',"788080BC84847800");
-   SETPATTERN('H',"848484FC84848400");
-   SETPATTERN('I',"FC3030303030FC00");
-   SETPATTERN('J',"7C10101090907000");
-   SETPATTERN('K',"8498A0C0A0988400");
-   SETPATTERN('L',"808080808080FC00");
-   SETPATTERN('M',"84CCB4B484848400");
-   SETPATTERN('N',"84C4A4A4948C8400");
-   SETPATTERN('O',"7884848484847800");
-   SETPATTERN('P',"F88484F880808000");
-   SETPATTERN('Q',"78848484948C7C00");
-   SETPATTERN('R',"F88488F088888400");
-   SETPATTERN('S',"7C8080780404F800");
-   SETPATTERN('T',"FC30303030303000");
-   SETPATTERN('U',"8484848484847800");
-   SETPATTERN('V',"8484844848483000");
-   SETPATTERN('W',"848484B4B4CC8400");
-   SETPATTERN('X',"8484483048848400");
-   SETPATTERN('Y',"8448483030303000");
-   SETPATTERN('Z',"FC0810102040FC00");
-   SETPATTERN('0',"788C94B4A4C47800");
-   SETPATTERN('1',"307030303030FC00");
-   SETPATTERN('2',"788484186080FC00");
-   SETPATTERN('3',"7884043804847800");
-   SETPATTERN('4',"CCCCCCFC0C0C0C00");
-   SETPATTERN('5',"FC80807804847800");
-   SETPATTERN('6',"384080F884847800");
-   SETPATTERN('7',"FC0C181830306000");
-   SETPATTERN('8',"7884847884847800");
-   SETPATTERN('9',"7884847C04087000");
-   SETPATTERN(':',"0030300000303000");
-   SETPATTERN('-',"0000007E00000000");
+   setCharPatternByArray('A',AU,8);      
+   setCharPatternByArray('B',BU,8);      
+   setCharPatternByArray('C',CU,8);      
+   setCharPatternByArray('D',DU,8);      
+   setCharPatternByArray('E',EU,8);      
+   setCharPatternByArray('F',FU,8);      
+   setCharPatternByArray('G',GU,8);      
+   setCharPatternByArray('H',HU,8);      
+   setCharPatternByArray('I',IU,8);      
+   setCharPatternByArray('J',JU,8);      
+   setCharPatternByArray('K',KU,8);      
+   setCharPatternByArray('L',LU,8);      
+   setCharPatternByArray('M',MU,8);      
+   setCharPatternByArray('N',NU,8);      
+   setCharPatternByArray('O',OU,8);      
+   setCharPatternByArray('P',PU,8);      
+   setCharPatternByArray('Q',QU,8);      
+   setCharPatternByArray('R',RU,8);      
+   setCharPatternByArray('S',SU,8);      
+   setCharPatternByArray('T',TU,8);      
+   setCharPatternByArray('U',UU,8);      
+   setCharPatternByArray('V',VU,8);      
+   setCharPatternByArray('W',WU,8);      
+   setCharPatternByArray('X',XU,8);      
+   setCharPatternByArray('Y',YU,8);      
+   setCharPatternByArray('Z',ZU,8);      
+   setCharPatternByArray('0',N0,8); 
+   setCharPatternByArray('1',N1,8); 
+   setCharPatternByArray('2',N2,8); 
+   setCharPatternByArray('3',N3,8); 
+   setCharPatternByArray('4',N4,8); 
+   setCharPatternByArray('5',N5,8); 
+   setCharPatternByArray('6',N6,8); 
+   setCharPatternByArray('7',N7,8); 
+   setCharPatternByArray('8',N8,8); 
+   setCharPatternByArray('9',N9,8); 
+   setCharPatternByArray(':',NC,8); 
+   setCharPatternByArray('-',ND,8); 
 }
 
-
+/* ******************************************************************************************************************************
+   | set TMS9118 hardware registers and graphic structure                                                                       |
+   ******************************************************************************************************************************
+*/
 void setGraphicsMode() {
   static unsigned char b;
 
@@ -817,33 +911,30 @@ void setGraphicsMode() {
   setVDPRegister(7, b);
 }
 
-
-void setSpritePattern(unsigned char spriteNumber, char* patt) {
-  static char duple[3];
-  static unsigned char d;
-  static unsigned char x;
+/* ******************************************************************************************************************************
+   | Load sprite pattern into pattern table                                                                                     |
+   ******************************************************************************************************************************
+*/
+void setSpritePatternByArray(unsigned char patternNumber, char* p, char l) {
   static unsigned int addr;
-  static unsigned char slen;
+  static unsigned int i;
 
-  duple[2] = 0x0;
   addr = g.SpritePatternTableAddr;
   if(g.sprites16x16Enabled == TRUE) 
-      addr = addr + (spriteNumber << 5);
+      addr = addr + (patternNumber << 5);
   else
-      addr = addr + (spriteNumber << 3);
-  
-  d=0;
-  slen = strlen(patt);
-  for(x=0;x<slen;x=x+2) {
-        duple[0] = *(patt+x);
-        duple[1] = *(patt+x+1);
-        setVDPRAM(addr+d,(unsigned char)strtol(duple, NULL, 16));
-        d++;
+      addr = addr + (patternNumber << 3);
+
+  for(i=0;i<l;i++) {
+    setVDPRAM(addr+i,*(p+i));
   }
 }
 
-
- void syncSpriteAttributesToHardware(unsigned char spriteNum) {
+/* ******************************************************************************************************************************
+   | move sprite data out of sprite attribute struct and move it into registers                                                 |
+   ******************************************************************************************************************************
+*/
+void syncSpriteAttributesToHardware(unsigned char spriteNum) {
   static unsigned int addr;
   static unsigned char vert;
   static int horiz;
@@ -875,13 +966,20 @@ void setSpritePattern(unsigned char spriteNumber, char* patt) {
 }
 
 
-
+/* ******************************************************************************************************************************
+   | clear TRS-80 screen by scrolling it 16 times                                                                               |
+   ******************************************************************************************************************************
+*/
 void clearTRSScreen() {
   for(int i=0;i<16;i++)
     printf("\n");
 }
 
 
+/* ******************************************************************************************************************************
+   | draw dots into maze                                                                                                        |
+   ******************************************************************************************************************************
+*/
 void drawDots() {
   static unsigned char k;
 
@@ -937,14 +1035,16 @@ void drawDots() {
     setCharacterAt(19,k,'r');
   }
 
-  setCharacterAt(2,5,'t');
-  setCharacterAt(2,19,'t');
-  setCharacterAt(30,5,'t');
-  setCharacterAt(30,19,'t');
-
+  setCharacterAt(2,5,'t');   // energizer
+  setCharacterAt(2,19,'t');  // energizer
+  setCharacterAt(30,5,'t');  // energizer
+  setCharacterAt(30,19,'t'); // energizer
 }
 
-
+/* ******************************************************************************************************************************
+   | make all the characters white (except the ones in the alphabetic text)                                                     |
+   ******************************************************************************************************************************
+*/
 void setEverythingWhite() {
   static unsigned char j;
 
@@ -954,6 +1054,10 @@ void setEverythingWhite() {
      setCharacterGroupColor(j, DARKRED, BLACK);   // set chars 64 - 95 to red on black 
 }
 
+/* ******************************************************************************************************************************
+   | set the color groups at the right colors for the maze                                                                      |
+   ******************************************************************************************************************************
+*/
 void setMazeColors() {
   static unsigned char j;
 
@@ -967,14 +1071,20 @@ void setMazeColors() {
    setCharacterGroupColor(14,WHITE,BLACK);
 }
 
-
+/* ********************************************************************************************************************************
+   | update the score and show it on the screen (sprintf is expensive, so we don't do it all the time -- just when score updates) |
+   ********************************************************************************************************************************
+*/
 void updateScore(int incr) {
   score = score + incr;
   sprintf(buf, "%08ld", score);
   setCharactersAt(24,0,buf);
 }
 
-
+/* ***************************
+   | draw characters of maze |
+   ***************************
+*/
 void drawMaze() {
   static unsigned char j;
   static unsigned char k;
@@ -998,7 +1108,6 @@ void drawMaze() {
 
    for(j=0;j<32;j++) {
        setCharacterAt(j,1,'g');
-       //setCharacterAt(j,23,'g');
    }
 
    setCharactersAt(18,0,"SCORE:");
@@ -1115,7 +1224,10 @@ void drawMaze() {
   drawDots();  
 }
 
-
+/* ******************************************************************************************************************************
+   | can this sprite go south?                                                                                                  |
+   ******************************************************************************************************************************
+*/
 unsigned char canGoSouth(unsigned char spriteNum) {
     static int x;
     static int y;
@@ -1155,6 +1267,10 @@ unsigned char canGoSouth(unsigned char spriteNum) {
 }
 
 
+/* ******************************************************************************************************************************
+   | can this sprite go north?                                                                                                  |
+   ******************************************************************************************************************************
+*/
 unsigned char canGoNorth(unsigned char spriteNum) {
     static int x;
     static int y;
@@ -1192,7 +1308,10 @@ unsigned char canGoNorth(unsigned char spriteNum) {
     return FALSE;
 }
 
-
+/* ******************************************************************************************************************************
+   | can this sprite go east?                                                                                                   |
+   ******************************************************************************************************************************
+*/
 unsigned char canGoEast(unsigned char spriteNum) {
     static int x;
     static int y;
@@ -1238,7 +1357,10 @@ unsigned char canGoEast(unsigned char spriteNum) {
     return FALSE;
 }
 
-
+/* ******************************************************************************************************************************
+   | can this sprite go west?                                                                                                   |
+   ******************************************************************************************************************************
+*/
 unsigned char canGoWest(unsigned char spriteNum) {
     static int x;
     static int y;
@@ -1285,7 +1407,10 @@ unsigned char canGoWest(unsigned char spriteNum) {
 }
 
 
-
+/* ******************************************************************************************************************************
+   | do nothing X times                                                                                                         |
+   ******************************************************************************************************************************
+*/
 void hold(unsigned int x) {
 #ifdef GCC_COMPILED
     SDL_Delay(x >> 3);
@@ -1298,7 +1423,10 @@ void hold(unsigned int x) {
 #endif
 }
 
-
+/* ******************************************************************************************************************************
+   | set ghost direction - NORTH                                                                                                |
+   ******************************************************************************************************************************
+*/
 void goNorth(int i) {
         sprAttr[i].ydir = -2;
         sprAttr[i].xdir = 0;
@@ -1306,6 +1434,10 @@ void goNorth(int i) {
         sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_N;
 }
 
+/* ******************************************************************************************************************************
+   | set ghost direction - SOUTH                                                                                                |
+   ******************************************************************************************************************************
+*/
 void goSouth(int i) {
         sprAttr[i].ydir = 2;
         sprAttr[i].xdir = 0;
@@ -1313,6 +1445,10 @@ void goSouth(int i) {
         sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_S;
 }
 
+/* ******************************************************************************************************************************
+   | set ghost direction - EAST                                                                                                 |
+   ******************************************************************************************************************************
+*/
 void goEast(int i) {
         sprAttr[i].xdir = 2;
         sprAttr[i].ydir = 0;
@@ -1320,14 +1456,22 @@ void goEast(int i) {
         sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_E;
 }
 
+/* ******************************************************************************************************************************
+   | set ghost direction - WEST                                                                                                 |
+   ******************************************************************************************************************************
+*/
 void goWest(int i) {
         sprAttr[i].xdir = -2;
         sprAttr[i].ydir = 0;
         sprAttr[i].prevdir = WEST;
         sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_W;
-        //syncSpriteAttributesToHardware(i-4);
 }
 
+
+/* ******************************************************************************************************************************
+   | randomly pick an available ghost direction                                                                                 |
+   ******************************************************************************************************************************
+*/
 void setAvailableGhostDirection(int i) {
   static unsigned char bFoundOne;
   static unsigned char r;
@@ -1359,6 +1503,10 @@ void setAvailableGhostDirection(int i) {
 }
 
 
+/* ******************************************************************************************************************************
+   | set ghost colors back to normal                                                                                            |
+   ******************************************************************************************************************************
+*/
 void ghostsNormal() {
     static int i;
     sprAttr[RED_GHOST_SPRITENUM].color = DARKRED;
@@ -1370,6 +1518,10 @@ void ghostsNormal() {
     }
 }
 
+/* ******************************************************************************************************************************
+   | Move ghosts one step                                                                                                       |
+   ******************************************************************************************************************************
+*/
 void moveGhosts() {
   static int ctr = 0;
   static int i;
@@ -1387,6 +1539,7 @@ void moveGhosts() {
             if(sprAttr[i].prevdir == WEST && canGoWest(i) == FALSE) 
               setAvailableGhostDirection(i);
 
+      // randomly override current ghost direction every once in a while
       if(getRand256() > 240) {
         setAvailableGhostDirection(i);
       }
@@ -1426,18 +1579,19 @@ void moveGhosts() {
       sprAttr[i-4].color = TRANSPARENT;
       sprAttr[i].color = DARKBLUE;
     }
-
-     //syncSpriteAttributesToHardware(i);
-     //syncSpriteAttributesToHardware(i-4);
   }
 
   if(energizerctr == 1) {
     ghostsNormal();
     ghostCtr = 0;
   }
-
 }
 
+
+/* ******************************************************************************************************************************
+   | Put ghosts back in their starting spot                                                                                     |
+   ******************************************************************************************************************************
+*/
 void putGhostsInBox() {
    sprAttr[RED_GHOST_SPRITENUM].x = 120;
    sprAttr[RED_GHOST_SPRITENUM].y = 40;
@@ -1448,9 +1602,6 @@ void putGhostsInBox() {
    sprAttr[RED_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
    sprAttr[RED_GHOST_EYES_SPRITENUM].color = WHITE;
    sprAttr[RED_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
-   //syncSpriteAttributesToHardware(RED_GHOST_SPRITENUM);
-   //syncSpriteAttributesToHardware(RED_GHOST_EYES_SPRITENUM);
-
 
    sprAttr[CYAN_GHOST_SPRITENUM].x = 130;
    sprAttr[CYAN_GHOST_SPRITENUM].y = 84;
@@ -1461,8 +1612,6 @@ void putGhostsInBox() {
    sprAttr[CYAN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
    sprAttr[CYAN_GHOST_EYES_SPRITENUM].color = WHITE;
    sprAttr[CYAN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
-   //syncSpriteAttributesToHardware(CYAN_GHOST_SPRITENUM);
-   //syncSpriteAttributesToHardware(CYAN_GHOST_EYES_SPRITENUM);
 
    sprAttr[PINK_GHOST_SPRITENUM].x = 122;
    sprAttr[PINK_GHOST_SPRITENUM].y = 84;
@@ -1473,8 +1622,6 @@ void putGhostsInBox() {
    sprAttr[PINK_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
    sprAttr[PINK_GHOST_EYES_SPRITENUM].color = WHITE;
    sprAttr[PINK_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
-   //syncSpriteAttributesToHardware(PINK_GHOST_EYES_SPRITENUM);
-   //syncSpriteAttributesToHardware(PINK_GHOST_SPRITENUM);
 
    sprAttr[BROWN_GHOST_SPRITENUM].x = 114;
    sprAttr[BROWN_GHOST_SPRITENUM].y = 84;
@@ -1485,19 +1632,26 @@ void putGhostsInBox() {
    sprAttr[BROWN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
    sprAttr[BROWN_GHOST_EYES_SPRITENUM].color = WHITE;
    sprAttr[BROWN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
-   //syncSpriteAttributesToHardware(BROWN_GHOST_EYES_SPRITENUM);
-   //syncSpriteAttributesToHardware(BROWN_GHOST_SPRITENUM);
 }
 
 
+/* ******************************************************************************************************************************
+   | playLeft / playRight - play a note on the TRS80MXS                                                                         |
+   ******************************************************************************************************************************
+*/
 #ifdef GCC_COMPILED
-    #define playLeft(NOTE)     printf("playLeft(NOTE) is undefined for GCC_COMPILED mode\n");
-    #define playRight(NOTE)    printf("playRight(NOTE) is undefined for GCC_COMPILED mode\n");
+    #define playLeft(NOTE)     //printf("playLeft(NOTE) is undefined for GCC_COMPILED mode\n");
+    #define playRight(NOTE)    //printf("playRight(NOTE) is undefined for GCC_COMPILED mode\n");
 #else
     #define playLeft(NOTE) PORTX82 = notes[NOTE].b1; PORTX82 = notes[NOTE].b2;
     #define playRight(NOTE) PORTX83 = notes[NOTE].b1; PORTX83 = notes[NOTE].b2;
 #endif
 
+
+/* ******************************************************************************************************************************
+   | cycle through all audio ports on the TRS80MXS and shut off all 4 voices per chip                                           |
+   ******************************************************************************************************************************
+*/
 void audioSilence() {
   static int j;
 
@@ -1512,11 +1666,19 @@ void audioSilence() {
 }
 
 
+/* ******************************************************************************************************************************
+   | set left and right volumes up                                                                                              |
+   ******************************************************************************************************************************
+*/
 void volumeup() {
   soundOut(LEFT_POS,9);  soundOut(RIGHT_POS,9);
 }
 
 
+/* ******************************************************************************************************************************
+   | turn off audio, wait a certain amount of time, reset the volume back up ("musical rest")                                   |
+   ******************************************************************************************************************************
+*/
 void rest(unsigned int x) {
   audioSilence(); 
   hold(x); 
@@ -1531,8 +1693,10 @@ void rest(unsigned int x) {
 #define TWOFIFTYSIXTHNOTE 32
 
 
-
-
+/* ******************************************************************************************************************************
+   | Make pacman wakka wakka sound                                                                                              |
+   ******************************************************************************************************************************
+*/
 void wakka() {
   volumeup();
   playLeft(C2);
@@ -1552,7 +1716,10 @@ void wakka() {
   audioSilence();
 }
 
-
+/* ******************************************************************************************************************************
+   | movePacman one step and eat dot if one is under him                                                                        |
+   ******************************************************************************************************************************
+*/
 void movePacman() {
     static unsigned char c;
     static int x;
@@ -1593,24 +1760,16 @@ void movePacman() {
     if(anPos > 1 || anPos < 1) 
       anDir = -anDir;
 
-    if(yd < 0) {
+    if(yd < 0) 
         sprAttr[PACMAN_SPRITENUM].patt = anPos + NORTH_PACMAN_PAT_OFFSET;
-        //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
-    }
     else 
-        if(yd > 0) {
+        if(yd > 0) 
             sprAttr[PACMAN_SPRITENUM].patt = anPos + SOUTH_PACMAN_PAT_OFFSET;
-            //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
-        }
         else
-            if(xd < 0) {
+            if(xd < 0) 
                 sprAttr[PACMAN_SPRITENUM].patt = anPos + WEST_PACMAN_PAT_OFFSET;
-                //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
-            } 
-            else {
+            else 
                 sprAttr[PACMAN_SPRITENUM].patt = anPos + EAST_PACMAN_PAT_OFFSET;
-                //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
-            }
 
     x = x >> 3;
     y = y >> 3;
@@ -1644,6 +1803,10 @@ void movePacman() {
 }
 
 
+/* ******************************************************************************************************************************
+   | read joystick or keyboard and set pacman sprite direction                                                                  |
+   ******************************************************************************************************************************
+*/
 void checkControls() {
         static unsigned char k;
         k = getJoystick(LEFT_POS);
@@ -1672,9 +1835,10 @@ void checkControls() {
               bRunning = FALSE;
 }
 
-
-
-
+/* ******************************************************************************************************************************
+   | play introduction music                                                                                                    |
+   ******************************************************************************************************************************
+*/
 void introMusic() {
   #ifdef GCC_COMPILED
       return;
@@ -1729,7 +1893,10 @@ void introMusic() {
   audioSilence();
 }
 
-
+/* ******************************************************************************************************************************
+   | resets the maze back to normal                                                                                             |
+   ******************************************************************************************************************************
+*/
 void resetMap() {
       energizerctr = 0;
       putGhostsInBox();
@@ -1738,6 +1905,11 @@ void resetMap() {
       sprAttr[PACMAN_SPRITENUM].y = 128;
 }
 
+
+/* ******************************************************************************************************************************
+   | decide if all 260 dots have been eaten, if so, flash the maze                                                              |
+   ******************************************************************************************************************************
+*/
 void checkForAllDotsGone() {
       static char cc;
       if(dotctr == 260) {
@@ -1767,7 +1939,10 @@ void checkForAllDotsGone() {
     }
 }
 
-
+/* ******************************************************************************************************************************
+   | dead pac-man animation, and map reset                                                                                      |
+   ******************************************************************************************************************************
+*/
 void pacmanDead() {
   static int i;
 
@@ -1790,13 +1965,16 @@ void pacmanDead() {
     resetMap();
 }
 
+/* ******************************************************************************************************************************
+   | check collision between pacman and ghosts                                                                                  |
+   ******************************************************************************************************************************
+*/
 void checkCollisions()  {
   static int px;
   static int py;
   static int pxl;
   static int pyl;
   static int i;
-
   static int gx;
   static int gy;
   static int gxl;
@@ -1806,9 +1984,6 @@ void checkCollisions()  {
   py = sprAttr[PACMAN_SPRITENUM].y+2;
   pxl = px + 14;
   pyl = py + 14;
-
-  //  sprintf(buf,"(%d,%d)-(%d,%d) / (%d,%d)", px,py,pxl,pyl,sprAttr[RED_GHOST_SPRITENUM].x,sprAttr[RED_GHOST_SPRITENUM].y);
-  //  setCharactersAt(0,0,buf);
 
   sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
 
@@ -1820,7 +1995,7 @@ void checkCollisions()  {
     if (px  < gxl &&
         pxl > gx &&
         py  < gyl &&
-        pyl > gy) 
+        pyl > gy) {
       if(energizerctr == 0)
           pacmanDead();
       else {
@@ -1839,14 +2014,16 @@ void checkCollisions()  {
           sprAttr[i].y = 84;
           sprAttr[i].prevdir = WEST;
           ghostCtr = ghostCtr + 400;
-
           updateScore(ghostCtr);
-      }
-          
+      }    
+    }      
   }
 }
 
-
+/* ******************************************************************************************************************************
+   | clear maze and turn sprites off                                                                                            |
+   ******************************************************************************************************************************
+*/
 void clearMazeShutOffSprites() {
   static unsigned char k;
   static unsigned char j;
@@ -1862,17 +2039,19 @@ void clearMazeShutOffSprites() {
 }
 
 
+/* ******************************************************************************************************************************
+   | main code                                                                                                                  |
+   ******************************************************************************************************************************
+*/
 int main()
 {
    int j;
    unsigned int k;
    unsigned int i;
 
-
    #ifdef GCC_COMPILED
    SDLSetup();
    #endif
-
 
    clearTRSScreen();
 
@@ -1925,44 +2104,75 @@ int main()
 
    printf("8..."); 
 
-                        
-   setSpritePattern(PATT_PACMAN_E1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (east)
-   setSpritePattern(PATT_PACMAN_E2,            "0000071F3F3F7F7F787F7F3F3F1F07000000C0F0F8F8E0000000E0F8F8F0C000"); // PACMAN, mouth open 1 (east)
-   setSpritePattern(PATT_PACMAN_E3,            "0000071F3F3F7E7C787C7E3F3F1F07000000C0C0800000000000000080C0C000"); // PACMAN, mouth open 2 (east)
-   setSpritePattern(PATT_PACMAN_N1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (north)
-   setSpritePattern(PATT_PACMAN_N2,            "00000018383C7C7C7E7E7E3F3F1F07000000003038787C7CFCFCFCF8F8F0C000"); // PACMAN, mouth open 1 (north)
-   setSpritePattern(PATT_PACMAN_N3,            "0000000000006070787C7E3F3F1F07000000000000000C1C3C7CFCF8F8F0C000"); // PACMAN, mouth open 2 (north)
-   setSpritePattern(PATT_PACMAN_W1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (west)
-   setSpritePattern(PATT_PACMAN_W2,            "0000030F1F1F07000000071F1F0F03000000E0F8FCFCFEFE1EFEFEFCFCF8E000"); // PACMAN, mouth open 1 (west)
-   setSpritePattern(PATT_PACMAN_W3,            "000003030100000000000000010303000000E0F8FCFC7E3E1E3E7EFCFCF8E000"); // PACMAN, mouth open 2 (west)
-   setSpritePattern(PATT_PACMAN_S1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (south)
-   setSpritePattern(PATT_PACMAN_S2,            "0000071F3F3F7E7E7E7C7C3C381800000000C0F0F8F8FCFCFC7C7C7838300000"); // PACMAN, mouth open 1 (south)
-   setSpritePattern(PATT_PACMAN_S3,            "0000071F3F3F7E7C78706000000000000000C0F0F8F8FC7C3C1C0C0000000000"); // PACMAN, mouth open 2 (south)
+   static char pacman_e1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_e2[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x78,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xE0,0x00,0x00,0x00,0xE0,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_e3[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7C,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xC0,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xC0,0xC0,0x00};
+   static char pacman_n1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_n2[32] = {0x00,0x00,0x00,0x18,0x38,0x3C,0x7C,0x7C,0x7E,0x7E,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x30,0x38,0x78,0x7C,0x7C,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_n3[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x60,0x70,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0C,0x1C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_w1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_w2[32] = {0x00,0x00,0x03,0x0F,0x1F,0x1F,0x07,0x00,0x00,0x00,0x07,0x1F,0x1F,0x0F,0x03,0x00,0x00,0x00,0xE0,0xF8,0xFC,0xFC,0xFE,0xFE,0x1E,0xFE,0xFE,0xFC,0xFC,0xF8,0xE0,0x00};
+   static char pacman_w3[32] = {0x00,0x00,0x03,0x03,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x03,0x00,0x00,0x00,0xE0,0xF8,0xFC,0xFC,0x7E,0x3E,0x1E,0x3E,0x7E,0xFC,0xFC,0xF8,0xE0,0x00};
+   static char pacman_s1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_s2[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7E,0x7E,0x7C,0x7C,0x3C,0x38,0x18,0x00,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0x7C,0x7C,0x78,0x38,0x30,0x00,0x00};
+   static char pacman_s3[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7C,0x78,0x70,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0x7C,0x3C,0x1C,0x0C,0x00,0x00,0x00,0x00,0x00};
+
+   setSpritePatternByArray(PATT_PACMAN_E1, pacman_e1,32);
+   setSpritePatternByArray(PATT_PACMAN_E2, pacman_e2,32);
+   setSpritePatternByArray(PATT_PACMAN_E3, pacman_e3,32);
+   setSpritePatternByArray(PATT_PACMAN_W1, pacman_w1,32);
+   setSpritePatternByArray(PATT_PACMAN_W2, pacman_w2,32);
+   setSpritePatternByArray(PATT_PACMAN_W3, pacman_w3,32);
+   setSpritePatternByArray(PATT_PACMAN_N1, pacman_n1,32);
+   setSpritePatternByArray(PATT_PACMAN_N2, pacman_n2,32);
+   setSpritePatternByArray(PATT_PACMAN_N3, pacman_n3,32);
+   setSpritePatternByArray(PATT_PACMAN_S1, pacman_s1,32);
+   setSpritePatternByArray(PATT_PACMAN_S2, pacman_s2,32);
+   setSpritePatternByArray(PATT_PACMAN_S3, pacman_s3,32);
 
    printf("9..."); 
 
-   setSpritePattern(PATT_NORMAL_GHOST_1,       "00030F1F33212121737F7F7F7F7F6C440080E0F0980808089CFCFCFCFCFCECC4"); // GHOST (1)
-   setSpritePattern(PATT_NORMAL_GHOST_2,       "00030F1F33212121737F7F7F7F7F7B310080E0F0980808089CFCFCFCFCFCDC88"); // GHOST (2)
-   setSpritePattern(PATT_NORMAL_GHOST_EYES_N,  "0000000000121E1E0C00000000000000000000000090F0F06000000000000000"); // eyes
-   setSpritePattern(PATT_NORMAL_GHOST_EYES_S,  "000000000C1E1E1200000000000000000000000060F0F0900000000000000000"); // eyes
-   setSpritePattern(PATT_NORMAL_GHOST_EYES_E,  "000000000C1E18180C000000000000000000000060F0C0C06000000000000000"); // eyes
-   setSpritePattern(PATT_NORMAL_GHOST_EYES_W,  "000000000C1E06060C000000000000000000000060F030306000000000000000"); // eyes
-   setSpritePattern(PATT_SCARED_GHOST,         "00030F1F3F3F3F79797F7F66597F6E4600C0F0F8FCFCFC9E9EFEFE669AFE7662"); // scared ghost
+   static char normal_ghost_1[32] =      {0x00,0x03,0x0F,0x1F,0x33,0x21,0x21,0x21,0x73,0x7F,0x7F,0x7F,0x7F,0x7F,0x6C,0x44,0x00,0x80,0xE0,0xF0,0x98,0x08,0x08,0x08,0x9C,0xFC,0xFC,0xFC,0xFC,0xFC,0xEC,0xC4};
+   static char normal_ghost_2[32] =      {0x00,0x03,0x0F,0x1F,0x33,0x21,0x21,0x21,0x73,0x7F,0x7F,0x7F,0x7F,0x7F,0x7B,0x31,0x00,0x80,0xE0,0xF0,0x98,0x08,0x08,0x08,0x9C,0xFC,0xFC,0xFC,0xFC,0xFC,0xDC,0x88};
+   static char normal_ghost_eyes_n[32] = {0x00,0x00,0x00,0x00,0x00,0x12,0x1E,0x1E,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x90,0xF0,0xF0,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char normal_ghost_eyes_s[32] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x1E,0x12,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0xF0,0x90,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char normal_ghost_eyes_e[32] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x18,0x18,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0xC0,0xC0,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char normal_ghost_eyes_w[32] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x06,0x06,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0x30,0x30,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char scared_ghost[32] =        {0x00,0x03,0x0F,0x1F,0x3F,0x3F,0x3F,0x79,0x79,0x7F,0x7F,0x66,0x59,0x7F,0x6E,0x46,0x00,0xC0,0xF0,0xF8,0xFC,0xFC,0xFC,0x9E,0x9E,0xFE,0xFE,0x66,0x9A,0xFE,0x76,0x62};
+
+   setSpritePatternByArray(PATT_NORMAL_GHOST_1, normal_ghost_1,32);
+   setSpritePatternByArray(PATT_NORMAL_GHOST_2, normal_ghost_2,32);
+   setSpritePatternByArray(PATT_NORMAL_GHOST_EYES_N, normal_ghost_eyes_n, 32);
+   setSpritePatternByArray(PATT_NORMAL_GHOST_EYES_S, normal_ghost_eyes_s, 32);
+   setSpritePatternByArray(PATT_NORMAL_GHOST_EYES_E, normal_ghost_eyes_e, 32);
+   setSpritePatternByArray(PATT_NORMAL_GHOST_EYES_W, normal_ghost_eyes_w, 32);
+   setSpritePatternByArray(PATT_SCARED_GHOST, scared_ghost, 32);
 
    printf("10...");
 
-   setSpritePattern(PATT_PACMAN_DYING_START,   "0000000000006070787C7E3F3F1F07000000000000000C1C3C7CFCF8F8F0C000"); // pacman dying 1
-   setSpritePattern(PATT_PACMAN_DYING_1,       "0000000000000020787C7E3F3F1F060000000000000000083C7CFCF8F8F0C000"); // pacman dying 2
-   setSpritePattern(PATT_PACMAN_DYING_2,       "000000000000000000707C7F3F1F06000000000000000000001C7CFCF8F0C000"); // pacman dying 3
-   setSpritePattern(PATT_PACMAN_DYING_3,       "0000000000000000000000707F3F0E0000000000000000000000001CFCF8E000"); // pacman dying 4
-   setSpritePattern(PATT_PACMAN_DYING_4,       "0000000000000000000000000F7F3F0E000000000000000000000000E0FCF8E0"); // pacman dying 5
-   setSpritePattern(PATT_PACMAN_DYING_5,       "00000000000000000000030F3F7F3E0C0000000000000000000080E0F8FCF860"); // pacman dying 6
-   setSpritePattern(PATT_PACMAN_DYING_6,       "00000000000000000001030F1F7F7E3C0000000000000000000080E0F0FCFC78"); // pacman dying 7
-   setSpritePattern(PATT_PACMAN_DYING_7,       "000000000000000000010307070F1F0E0000000000000000000080C0C0E0F0E0"); // pacman dying 8
-   setSpritePattern(PATT_PACMAN_DYING_8,       "000000000000000000010103030307020000000000000000000000808080C080"); // pacman dying 9
-   setSpritePattern(PATT_PACMAN_DYING_9,       "0000000000000000000101010101010000000000000000000000000000000000"); // pacman dying 10
-   setSpritePattern(PATT_PACMAN_DYING_END,     "000000040210080000300000081002040000002040081000000C000010084020"); // pacman dying 11
+   static char pacman_dying_start[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x60,0x70,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0C,0x1C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_dying_1[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_dying_2[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x70,0x7C,0x7F,0x3F,0x1F,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1C,0x7C,0xFC,0xF8,0xF0,0xC0,0x00};
+   static char pacman_dying_3[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x70,0x7F,0x3F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1C,0xFC,0xF8,0xE0,0x00};
+   static char pacman_dying_4[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0F,0x7F,0x3F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xE0,0xFC,0xF8,0xE0};
+   static char pacman_dying_5[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x0F,0x3F,0x7F,0x3E,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xE0,0xF8,0xFC,0xF8,0x60};
+   static char pacman_dying_6[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x0F,0x1F,0x7F,0x7E,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xE0,0xF0,0xFC,0xFC,0x78};
+   static char pacman_dying_7[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x07,0x07,0x0F,0x1F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xC0,0xC0,0xE0,0xF0,0xE0};
+   static char pacman_dying_8[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x03,0x03,0x03,0x07,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x80,0x80,0xC0,0x80};
+   static char pacman_dying_9[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char pacman_dying_end[32]   = {0x00,0x00,0x00,0x04,0x02,0x10,0x08,0x00,0x00,0x30,0x00,0x00,0x08,0x10,0x02,0x04,0x00,0x00,0x00,0x20,0x40,0x08,0x10,0x00,0x00,0x0C,0x00,0x00,0x10,0x08,0x40,0x20};
 
+   setSpritePatternByArray(PATT_PACMAN_DYING_START, pacman_dying_start,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_1, pacman_dying_1,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_2, pacman_dying_2,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_3, pacman_dying_3,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_4, pacman_dying_4,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_5, pacman_dying_5,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_6, pacman_dying_6,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_7, pacman_dying_7,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_8, pacman_dying_8,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_9, pacman_dying_9,32);
+   setSpritePatternByArray(PATT_PACMAN_DYING_END, pacman_dying_end,32);
    
    sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
 
@@ -1997,6 +2207,8 @@ int main()
    }
 
    clearMazeShutOffSprites();
+
+   setCharactersAt(12,11,"GAME OVER");
 
    printf("DONE!");
 
