@@ -5,13 +5,11 @@
 
 #ifdef __APPLE__
 // compiled under GCC-8 rather than ZCC
-    #define GCC_COMPILED
+#define GCC_COMPILED
 #endif
 
 #ifdef GCC_COMPILED
     #include <SDL2/SDL.h>
-    unsigned char getCharAt(unsigned char x, unsigned char y);
-    unsigned char getVDPRAM(unsigned int addr);
     #define SCREEN_WIDTH 512
     #define SCREEN_HEIGHT 384
 #endif
@@ -20,6 +18,8 @@
 // port addresses
 #define LEFT_POS 0x82
 #define RIGHT_POS 0x83
+#define LEFT2_POS 0x84
+#define RIGHT2_POS 0x85
 
 // colors
 #define TRANSPARENT 0
@@ -51,16 +51,60 @@
 #define J_BUTTON 247
 
 
+#define PATT_PACMAN_E1 0
+#define PATT_PACMAN_E2 1
+#define PATT_PACMAN_E3 2
+#define PATT_PACMAN_N1 3
+#define PATT_PACMAN_N2 4
+#define PATT_PACMAN_N3 5
+#define PATT_PACMAN_W1 6
+#define PATT_PACMAN_W2 7
+#define PATT_PACMAN_W3 8
+#define PATT_PACMAN_S1 9
+#define PATT_PACMAN_S2 10
+#define PATT_PACMAN_S3 11
+#define PATT_NORMAL_GHOST_1 12
+#define PATT_NORMAL_GHOST_2 13
+#define PATT_NORMAL_GHOST_EYES_N 14
+#define PATT_NORMAL_GHOST_EYES_S 15
+#define PATT_NORMAL_GHOST_EYES_E 16
+#define PATT_NORMAL_GHOST_EYES_W 17
+#define PATT_SCARED_GHOST 18
+
+#define PATT_PACMAN_DYING_START 19
+#define PATT_PACMAN_DYING_1 20
+#define PATT_PACMAN_DYING_2 21
+#define PATT_PACMAN_DYING_3 22
+#define PATT_PACMAN_DYING_4 23
+#define PATT_PACMAN_DYING_5 24
+#define PATT_PACMAN_DYING_6 25
+#define PATT_PACMAN_DYING_7 26
+#define PATT_PACMAN_DYING_8 27
+#define PATT_PACMAN_DYING_9 28
+#define PATT_PACMAN_DYING_END 29
+
+
+
+
 // pattern setting function macro
 #define SETPATTERN(XXX,YYY) strcpy(buf,YYY); setCharPattern(XXX,buf);
 
 
 // sprite identifiers
 #define PACMAN_SPRITENUM 0
-#define RED_GHOST_SPRITENUM 1
-#define CYAN_GHOST_SPRITENUM 2
-#define PINK_GHOST_SPRITENUM 3
-#define BROWN_GHOST_SPRITENUM 4
+
+#define RED_GHOST_EYES_SPRITENUM 1
+#define CYAN_GHOST_EYES_SPRITENUM 2
+#define PINK_GHOST_EYES_SPRITENUM 3
+#define BROWN_GHOST_EYES_SPRITENUM 4
+
+#define RED_GHOST_SPRITENUM 5
+#define CYAN_GHOST_SPRITENUM 6
+#define PINK_GHOST_SPRITENUM 7
+#define BROWN_GHOST_SPRITENUM 8
+
+#define MAX_SPRITENUM 8
+
 
 #define EAST_PACMAN_PAT_OFFSET 0
 #define NORTH_PACMAN_PAT_OFFSET 3 
@@ -77,6 +121,8 @@ __sfr __at 0x80 PORTX80;
 __sfr __at 0x81 PORTX81;
 __sfr __at 0x82 PORTX82;
 __sfr __at 0x83 PORTX83;
+__sfr __at 0x84 PORTX84;
+__sfr __at 0x85 PORTX85;
 #else
    char screen_buffer[65535];
    char VDPRegisters[8];
@@ -97,6 +143,12 @@ __sfr __at 0x83 PORTX83;
 // booleans
 #define TRUE 1
 #define FALSE 0
+
+
+#define NORTH 0
+#define SOUTH 1
+#define WEST 2
+#define EAST 3
 
 
 typedef struct {
@@ -122,33 +174,62 @@ typedef struct {
   int xdir;
   int ydir;
   int patt;
+  char prevdir;
 } spriteAttr;
 
-
+char buf[33];
 unsigned char bRunning = FALSE;  // main game loop control
 unsigned int anPos = 0;         // animation position
 int anDir = 1;                  // 1, -1 counter direction
 graphicsSetup g;                // graphics mode struct
 spriteAttr sprAttr[32];         // sprite struct array
-unsigned int score = 0;
+unsigned long score = 0;
 unsigned int dotctr = 0; 
+unsigned int energizerctr = 0;
+unsigned int ghostCtr = 0;
+
+
+#define getRand256() ((unsigned char)(rand() % 256))
+
+
 
 
 /* *************************************************************
-   | get the more-or-less random value of the R register       |
+   | Pull byte from VDP RAM                                    |
    *************************************************************
 */
-unsigned char getRRegister() {
+unsigned char getVDPRAM(unsigned int addr) {
 #ifdef GCC_COMPILED
-    return rand() % 256;
+    return screen_buffer[addr];
 #else
-    #pragma asm
-    ld a,r
-    ld h,0
-    ld l,a
-    #pragma endasm
+    static unsigned int addr_2;
+    static unsigned int addr_1;
+    
+    addr_2 = (addr >> 8);
+    addr_1 = addr - (addr_2 << 8);
+
+    PORTX81 = (unsigned char)addr_1;
+    PORTX81 = (unsigned char)addr_2;
+    return PORTX80;
 #endif
 }
+
+/* *************************************************************
+   | Retrieve character at position                            |
+   *************************************************************
+*/
+unsigned char getCharAt(unsigned char x, unsigned char y) {
+    static unsigned int addr;
+    addr = g.NameTableAddr;
+
+    if(g.graphicsMode == TEXTMODE)
+      addr = addr + (y*40) + x;
+    else
+      addr = addr + (y<<5) + x;
+
+    return getVDPRAM(addr);
+}
+
 
 
 
@@ -292,8 +373,11 @@ void plotCharOnSDLPixels(int xTMS9118, int yTMS9118, unsigned char c) {
 
 
 void drawCharacters() {
-  for(int x=0;x<32;x++) {
-    for(int y=0;y<24;y++) {
+  static int x;
+  static int y;
+
+  for(x=0;x<32;x++) {
+    for(y=0;y<24;y++) {
       plotCharOnSDLPixels(x,y,getCharAt(x,y));
     }
   }
@@ -303,101 +387,97 @@ void drawCharacters() {
 void drawSprites() {
   static int x;
   static int y;
+  static Uint32 addr;
 
-  Uint32 addr = g.SpritePatternTableAddr;
+  for(int i=32;i>=0;i--) {
+      if(sprAttr[i].patt != -1 && sprAttr[i].color != TRANSPARENT) {
+        addr = g.SpritePatternTableAddr;
 
-  for(int i=0;i<32;i++) {
-      if(sprAttr[i].patt != -1) {
-      if(g.sprites16x16Enabled == TRUE) 
-          addr = addr + (sprAttr[i].patt << 5);
-      else
-          addr = addr + (sprAttr[i].patt << 3);
+        if(g.sprites16x16Enabled == TRUE) 
+            addr = addr + (sprAttr[i].patt << 5);
+        else
+            addr = addr + (sprAttr[i].patt << 3);
 
-        Uint32 clr = getARGBFromTMS9118Color(sprAttr[i].color);
-        x = sprAttr[i].x;
-        y = sprAttr[i].y;
+          Uint32 clr = getARGBFromTMS9118Color(sprAttr[i].color);
+          x = sprAttr[i].x;
+          y = sprAttr[i].y;
+          for(int j=0;j<16;j++) {
+            unsigned char c = screen_buffer[addr+j];
 
-        for(int j=0;j<16;j++) {
-          unsigned char c = screen_buffer[addr+j];
+            if(c >= 128) {
+                plotSDLPixel(x,y+j,clr);
+                c=c-128;
+            }
+            if(c >= 64) {
+                plotSDLPixel(x+1, y+j,clr);
+                c=c-64;
+            }
+            if(c >= 32) {
+                plotSDLPixel(x+2, y+j,clr);
+                c=c-32;
+            }
+            if(c >= 16) {
+                plotSDLPixel(x+3, y+j,clr);
+                c=c-16;
+            }
+            if(c >= 8) {
+                plotSDLPixel(x+4, y+j,clr);
+                c=c-8;
+            }
+            if(c >= 4) {
+                plotSDLPixel(x+5, y+j,clr);
+                c=c-4;
+            }
+            if(c >= 2) {
+                plotSDLPixel(x+6, y+j,clr);
+                c=c-2;
+            }
+            if(c >= 1) {
+                plotSDLPixel(x+7, y+j,clr);
+                c=c-1;
+            }
+          }
+          for(int j=16;j<32;j++) {
+            unsigned char c = screen_buffer[addr+j];
 
-
-          if(c >= 128) {
-              plotSDLPixel(x,y+j,clr);
-              c=c-128;
+            if(c >= 128) {
+                plotSDLPixel(x+8, y+j-16,clr);
+                c=c-128;
+            }
+            if(c >= 64) {
+                plotSDLPixel(x+9, y+j-16,clr);
+                c=c-64;
+            }
+            if(c >= 32) {
+                plotSDLPixel(x+10, y+j-16,clr);
+                c=c-32;
+            }
+            if(c >= 16) {
+                plotSDLPixel(x+11, y+j-16,clr);
+                c=c-16;
+            }
+            if(c >= 8) {
+                plotSDLPixel(x+12, y+j-16,clr);
+                c=c-8;
+            }
+            if(c >= 4) {
+                plotSDLPixel(x+13, y+j-16,clr);
+                c=c-4;
+            }
+            if(c >= 2) {
+                plotSDLPixel(x+14, y+j-16,clr);
+                c=c-2;
+            }
+            if(c >= 1) {
+                plotSDLPixel(x+15, y+j-16,clr);
+                c=c-1;
+            }
           }
-          if(c >= 64) {
-              plotSDLPixel(x+1, y+j,clr);
-              c=c-64;
-          }
-          if(c >= 32) {
-              plotSDLPixel(x+2, y+j,clr);
-              c=c-32;
-          }
-          if(c >= 16) {
-              plotSDLPixel(x+3, y+j,clr);
-              c=c-16;
-          }
-          if(c >= 8) {
-              plotSDLPixel(x+4, y+j,clr);
-              c=c-8;
-          }
-          if(c >= 4) {
-              plotSDLPixel(x+5, y+j,clr);
-              c=c-4;
-          }
-          if(c >= 2) {
-              plotSDLPixel(x+6, y+j,clr);
-              c=c-2;
-          }
-          if(c >= 1) {
-              plotSDLPixel(x+7, y+j,clr);
-              c=c-1;
-          }
-        }
-        for(int j=16;j<32;j++) {
-          unsigned char c = screen_buffer[addr+j];
-
-          if(c >= 128) {
-              plotSDLPixel(x+8, y+j-16,clr);
-              c=c-128;
-          }
-          if(c >= 64) {
-              plotSDLPixel(x+9, y+j-16,clr);
-              c=c-64;
-          }
-          if(c >= 32) {
-              plotSDLPixel(x+10, y+j-16,clr);
-              c=c-32;
-          }
-          if(c >= 16) {
-              plotSDLPixel(x+11, y+j-16,clr);
-              c=c-16;
-          }
-          if(c >= 8) {
-              plotSDLPixel(x+12, y+j-16,clr);
-              c=c-8;
-          }
-          if(c >= 4) {
-              plotSDLPixel(x+13, y+j-16,clr);
-              c=c-4;
-          }
-          if(c >= 2) {
-              plotSDLPixel(x+14, y+j-16,clr);
-              c=c-2;
-          }
-          if(c >= 1) {
-              plotSDLPixel(x+15, y+j-16,clr);
-              c=c-1;
-          }
-        }
       }
   }
 }
 
 void updateEmulatedVDPScreen() {
-  if(!bRunning)
-    return;
-
   setBGColor();
   drawCharacters();
   drawSprites();
@@ -446,10 +526,9 @@ void SDLShutdown() {
 void setVDPRegister(unsigned char reg,unsigned char dat) {
 #ifdef GCC_COMPILED
     VDPRegisters[reg] = dat;
-    updateEmulatedVDPScreen();
 #else
     PORTX81 = dat;
-    reg=reg+128;
+    reg = reg+128;
     PORTX81 = reg;
 #endif
 }
@@ -462,7 +541,6 @@ void setVDPRegister(unsigned char reg,unsigned char dat) {
 void setVDPRAM(unsigned int addr, unsigned char dat) {
 #ifdef GCC_COMPILED
     screen_buffer[addr] = dat;
-    updateEmulatedVDPScreen();
 #else
     static unsigned int addr_2;
     static unsigned int addr_1;
@@ -481,33 +559,11 @@ void setVDPRAM(unsigned int addr, unsigned char dat) {
 }
 
 /* *************************************************************
-   | Pull byte from VDP RAM                                    |
-   *************************************************************
-*/
-unsigned char getVDPRAM(unsigned int addr) {
-#ifdef GCC_COMPILED
-    return screen_buffer[addr];
-#else
-    static unsigned int addr_2;
-    static unsigned int addr_1;
-    
-    addr_2 = (addr >> 8);
-    addr_1 = addr - (addr_2 << 8);
-
-    PORTX81 = (unsigned char)addr_1;
-    PORTX81 = (unsigned char)addr_2;
-    return PORTX80;
-#endif
-}
-
-/* *************************************************************
    | Set sound byte to left or right sound chip                |
    *************************************************************
 */
 void soundOut(unsigned char LeftOrRight, unsigned char dat) {
 #ifdef GCC_COMPILED
-    #warning soundOut() is undefined for GCC_COMPILED mode
-    //printf("soundOut() is undefined for GCC_COMPILED mode\n");
 #else
     if(LeftOrRight == LEFT_POS) 
         PORTX82 = dat;
@@ -554,31 +610,12 @@ unsigned char getJoystick(unsigned char LeftOrRight) {
 void setCharacterAt(unsigned char x, unsigned char y, unsigned char c) {
     static unsigned int addr;
     addr = g.NameTableAddr;
-
-    if(g.graphicsMode == TEXTMODE)
-      addr = addr + (y*40) + x;
-    else
-      addr = addr + (y<<5) + x;
+    addr = addr + (y<<5) + x;
 
     setVDPRAM(addr,c);
 }
 
 
-/* *************************************************************
-   | Retrieve character at position                            |
-   *************************************************************
-*/
-unsigned char getCharAt(unsigned char x, unsigned char y) {
-    static unsigned int addr;
-    addr = g.NameTableAddr;
-
-    if(g.graphicsMode == TEXTMODE)
-      addr = addr + (y*40) + x;
-    else
-      addr = addr + (y<<5) + x;
-
-    return getVDPRAM(addr);
-}
 
 /* *************************************************************
    | Write a string at screen position                         |
@@ -589,10 +626,7 @@ void setCharactersAt(unsigned char x, unsigned char y, char* s) {
     static unsigned char c;
 
     addr = g.NameTableAddr;
-    if(g.graphicsMode == TEXTMODE)
-      addr = addr + (y*40) + x;
-    else
-      addr = addr + (y<<5) + x;
+    addr = addr + (y<<5) + x;
 
     for(int i=0;i<strlen(s);i++) {
         c = *(s+i);
@@ -638,8 +672,8 @@ unsigned char setCharacterGroupColor(unsigned char colorGroup, unsigned char for
 
 
 void setPatterns() {
-   unsigned int i;
-   unsigned char buf[17];
+   static unsigned int i;
+   static unsigned char buf[17];
    
    for(i=0;i<256;i++)
        setCharPattern(i,"0000000000000000");   
@@ -690,6 +724,7 @@ void setPatterns() {
    SETPATTERN('r',"C0C0000000000000");  //          .
    SETPATTERN('q',"C0C00000000000FF");  //          _
    SETPATTERN('s',"00000000000000FF");  //          _
+   SETPATTERN('t',"387CFEFEFE7C3800");  //       energizer
 
    SETPATTERN('A',"788484FC84848400");
    SETPATTERN('B',"F88484F88484F800");
@@ -733,7 +768,7 @@ void setPatterns() {
 
 
 void setGraphicsMode() {
-  unsigned char b;
+  static unsigned char b;
 
   b = 0;
   if(g.graphicsMode == GRAPHICSMODE2) 
@@ -789,9 +824,8 @@ void setSpritePattern(unsigned char spriteNumber, char* patt) {
   static unsigned char x;
   static unsigned int addr;
   static unsigned char slen;
+
   duple[2] = 0x0;
-
-
   addr = g.SpritePatternTableAddr;
   if(g.sprites16x16Enabled == TRUE) 
       addr = addr + (spriteNumber << 5);
@@ -809,7 +843,7 @@ void setSpritePattern(unsigned char spriteNumber, char* patt) {
 }
 
 
- void setSpriteAttribute(unsigned char spriteNum, unsigned char patternNumber) {
+ void syncSpriteAttributesToHardware(unsigned char spriteNum) {
   static unsigned int addr;
   static unsigned char vert;
   static int horiz;
@@ -817,9 +851,9 @@ void setSpritePattern(unsigned char spriteNumber, char* patt) {
   static int x;
   static unsigned int y;
   static unsigned char color;
+  static unsigned char patt;
 
-
-  sprAttr[spriteNum].patt = patternNumber;
+  patt = sprAttr[spriteNum].patt;
   x = sprAttr[spriteNum].x;
   y = sprAttr[spriteNum].y;
   color = sprAttr[spriteNum].color;
@@ -836,7 +870,7 @@ void setSpritePattern(unsigned char spriteNumber, char* patt) {
 
   setVDPRAM(addr, vert);
   setVDPRAM(addr+1, (unsigned char)horiz);
-  setVDPRAM(addr+2, patternNumber<<2);
+  setVDPRAM(addr+2, patt<<2);
   setVDPRAM(addr+3, b5);
 }
 
@@ -850,9 +884,6 @@ void clearTRSScreen() {
 
 void drawDots() {
   static unsigned char k;
-
-  // dots
-
 
   for(k=2;k<31;k++) {
     setCharacterAt(k,3,'r');
@@ -906,12 +937,17 @@ void drawDots() {
     setCharacterAt(19,k,'r');
   }
 
+  setCharacterAt(2,5,'t');
+  setCharacterAt(2,19,'t');
+  setCharacterAt(30,5,'t');
+  setCharacterAt(30,19,'t');
+
 }
 
 
 void setEverythingWhite() {
   static unsigned char j;
-  static unsigned char k;
+
   for(j=0;j<32;j++)
      setCharacterGroupColor(j, WHITE, BLACK);  // set all characters to blue on black
   for(j=8;j<=11;j++)
@@ -920,7 +956,7 @@ void setEverythingWhite() {
 
 void setMazeColors() {
   static unsigned char j;
-  static unsigned char k;
+
   for(j=0;j<32;j++)
      setCharacterGroupColor(j, DARKBLUE, BLACK);  // set all characters to blue on black
   for(j=8;j<=11;j++)
@@ -930,6 +966,14 @@ void setMazeColors() {
 
    setCharacterGroupColor(14,WHITE,BLACK);
 }
+
+
+void updateScore(int incr) {
+  score = score + incr;
+  sprintf(buf, "%08ld", score);
+  setCharactersAt(24,0,buf);
+}
+
 
 void drawMaze() {
   static unsigned char j;
@@ -941,7 +985,6 @@ void drawMaze() {
   for(k=0;k<24;k++)
       for(j=0;j<32;j++)
           setCharacterAt(j,k,' ');
-
 
    for(j=3;j<=9;j++) {
        setCharacterAt(0,j,'a');
@@ -959,6 +1002,7 @@ void drawMaze() {
    }
 
    setCharactersAt(18,0,"SCORE:");
+   updateScore(0);
 
    for(j=5;j<=9;j++) {
        setCharacterAt(3, j, 'a');
@@ -1107,9 +1151,6 @@ unsigned char canGoSouth(unsigned char spriteNum) {
         return TRUE;
     }
 
-    if(y >= 174)
-      return FALSE;
-
     return FALSE;
 }
 
@@ -1147,10 +1188,6 @@ unsigned char canGoNorth(unsigned char spriteNum) {
     if(y == 152) 
       if(x == 184 || x == 56)
         return TRUE;
-
-
-    if(y <= 16)
-      return FALSE;
 
     return FALSE;
 }
@@ -1262,6 +1299,259 @@ void hold(unsigned int x) {
 }
 
 
+void goNorth(int i) {
+        sprAttr[i].ydir = -2;
+        sprAttr[i].xdir = 0;
+        sprAttr[i].prevdir = NORTH;
+        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_N;
+}
+
+void goSouth(int i) {
+        sprAttr[i].ydir = 2;
+        sprAttr[i].xdir = 0;
+        sprAttr[i].prevdir = SOUTH;
+        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_S;
+}
+
+void goEast(int i) {
+        sprAttr[i].xdir = 2;
+        sprAttr[i].ydir = 0;
+        sprAttr[i].prevdir = EAST;
+        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_E;
+}
+
+void goWest(int i) {
+        sprAttr[i].xdir = -2;
+        sprAttr[i].ydir = 0;
+        sprAttr[i].prevdir = WEST;
+        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_W;
+        //syncSpriteAttributesToHardware(i-4);
+}
+
+void setAvailableGhostDirection(int i) {
+  static unsigned char bFoundOne;
+  static unsigned char r;
+
+    bFoundOne = FALSE;
+
+    while(bFoundOne == FALSE) {
+      r = getRand256();
+      if(r < 64 && canGoWest(i)) {
+        goWest(i);
+        bFoundOne = TRUE;  
+      }
+      else
+      if(r < 128 && canGoEast(i)) {
+        goEast(i);
+        bFoundOne = TRUE;
+      }
+      else
+      if(r < 192 && canGoSouth(i)) {
+        goSouth(i);
+        bFoundOne = TRUE;
+      }
+      else
+      if(canGoNorth(i)) {
+        goNorth(i);
+        bFoundOne = TRUE;
+      }  
+    }
+}
+
+
+void ghostsNormal() {
+    static int i;
+    sprAttr[RED_GHOST_SPRITENUM].color = DARKRED;
+    sprAttr[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
+    sprAttr[CYAN_GHOST_SPRITENUM].color = CYAN;
+    sprAttr[PINK_GHOST_SPRITENUM].color = LIGHTRED;
+    for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;i++) {
+      sprAttr[i-4].color = WHITE;
+    }
+}
+
+void moveGhosts() {
+  static int ctr = 0;
+  static int i;
+
+  for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;i++) {
+      if(sprAttr[i].prevdir == NORTH && canGoNorth(i) == FALSE) 
+        setAvailableGhostDirection(i);
+      else
+        if(sprAttr[i].prevdir == SOUTH && canGoSouth(i) == FALSE) 
+          setAvailableGhostDirection(i);
+        else
+          if(sprAttr[i].prevdir == EAST && canGoEast(i) == FALSE) 
+            setAvailableGhostDirection(i);
+          else 
+            if(sprAttr[i].prevdir == WEST && canGoWest(i) == FALSE) 
+              setAvailableGhostDirection(i);
+
+      if(getRand256() > 240) {
+        setAvailableGhostDirection(i);
+      }
+
+      // while the ghosts are in the box, make it more likely for them to go north
+      if(sprAttr[i].y == 84 && sprAttr[i].x >= 114 && sprAttr[i].x <= 138) {
+          if(canGoNorth(i)) {
+            sprAttr[i].ydir = -2;
+            sprAttr[i].xdir = 0;
+            sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_N;
+          }
+      }
+
+      if(getRand256() > 64 - (i<<3) )  { // slows down ghosts randomly
+          sprAttr[i].x = sprAttr[i].x + sprAttr[i].xdir;
+          sprAttr[i].y = sprAttr[i].y + sprAttr[i].ydir;
+      }
+
+      if(energizerctr == 0) {
+        ctr++;
+        if( ctr < 24 )  
+          sprAttr[i].patt = PATT_NORMAL_GHOST_1;
+        else 
+          sprAttr[i].patt = PATT_NORMAL_GHOST_2;
+        
+        if(ctr > 47) ctr = 0;
+      }
+      else {
+        sprAttr[i].patt = PATT_SCARED_GHOST;
+      }
+  }
+
+  for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;i++) {
+    sprAttr[i-4].x = sprAttr[i].x;
+    sprAttr[i-4].y = sprAttr[i].y;
+    if(energizerctr > 0) {
+      sprAttr[i-4].color = TRANSPARENT;
+      sprAttr[i].color = DARKBLUE;
+    }
+
+     //syncSpriteAttributesToHardware(i);
+     //syncSpriteAttributesToHardware(i-4);
+  }
+
+  if(energizerctr == 1) {
+    ghostsNormal();
+    ghostCtr = 0;
+  }
+
+}
+
+void putGhostsInBox() {
+   sprAttr[RED_GHOST_SPRITENUM].x = 120;
+   sprAttr[RED_GHOST_SPRITENUM].y = 40;
+   sprAttr[RED_GHOST_SPRITENUM].color = DARKRED;
+   sprAttr[RED_GHOST_SPRITENUM].prevdir = EAST;
+   sprAttr[RED_GHOST_SPRITENUM].xdir = 2;
+   sprAttr[RED_GHOST_SPRITENUM].ydir = 0;
+   sprAttr[RED_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
+   sprAttr[RED_GHOST_EYES_SPRITENUM].color = WHITE;
+   sprAttr[RED_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   //syncSpriteAttributesToHardware(RED_GHOST_SPRITENUM);
+   //syncSpriteAttributesToHardware(RED_GHOST_EYES_SPRITENUM);
+
+
+   sprAttr[CYAN_GHOST_SPRITENUM].x = 130;
+   sprAttr[CYAN_GHOST_SPRITENUM].y = 84;
+   sprAttr[CYAN_GHOST_SPRITENUM].color = CYAN;
+   sprAttr[CYAN_GHOST_SPRITENUM].prevdir = EAST;
+   sprAttr[CYAN_GHOST_SPRITENUM].xdir = 2;
+   sprAttr[CYAN_GHOST_SPRITENUM].ydir = 0;
+   sprAttr[CYAN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
+   sprAttr[CYAN_GHOST_EYES_SPRITENUM].color = WHITE;
+   sprAttr[CYAN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   //syncSpriteAttributesToHardware(CYAN_GHOST_SPRITENUM);
+   //syncSpriteAttributesToHardware(CYAN_GHOST_EYES_SPRITENUM);
+
+   sprAttr[PINK_GHOST_SPRITENUM].x = 122;
+   sprAttr[PINK_GHOST_SPRITENUM].y = 84;
+   sprAttr[PINK_GHOST_SPRITENUM].color = LIGHTRED;
+   sprAttr[PINK_GHOST_SPRITENUM].prevdir = WEST;
+   sprAttr[PINK_GHOST_SPRITENUM].xdir = -2;
+   sprAttr[PINK_GHOST_SPRITENUM].ydir = 0;
+   sprAttr[PINK_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
+   sprAttr[PINK_GHOST_EYES_SPRITENUM].color = WHITE;
+   sprAttr[PINK_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   //syncSpriteAttributesToHardware(PINK_GHOST_EYES_SPRITENUM);
+   //syncSpriteAttributesToHardware(PINK_GHOST_SPRITENUM);
+
+   sprAttr[BROWN_GHOST_SPRITENUM].x = 114;
+   sprAttr[BROWN_GHOST_SPRITENUM].y = 84;
+   sprAttr[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
+   sprAttr[BROWN_GHOST_SPRITENUM].prevdir = WEST;
+   sprAttr[BROWN_GHOST_SPRITENUM].xdir = -2;
+   sprAttr[BROWN_GHOST_SPRITENUM].ydir = 0;
+   sprAttr[BROWN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
+   sprAttr[BROWN_GHOST_EYES_SPRITENUM].color = WHITE;
+   sprAttr[BROWN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   //syncSpriteAttributesToHardware(BROWN_GHOST_EYES_SPRITENUM);
+   //syncSpriteAttributesToHardware(BROWN_GHOST_SPRITENUM);
+}
+
+
+#ifdef GCC_COMPILED
+    #define playLeft(NOTE)     printf("playLeft(NOTE) is undefined for GCC_COMPILED mode\n");
+    #define playRight(NOTE)    printf("playRight(NOTE) is undefined for GCC_COMPILED mode\n");
+#else
+    #define playLeft(NOTE) PORTX82 = notes[NOTE].b1; PORTX82 = notes[NOTE].b2;
+    #define playRight(NOTE) PORTX83 = notes[NOTE].b1; PORTX83 = notes[NOTE].b2;
+#endif
+
+void audioSilence() {
+  static int j;
+
+#ifndef GCC_COMPILED
+    for(j=249;j<=255;j=j+2) {
+      PORTX85 = j;
+      PORTX84 = j;
+      PORTX83 = j;
+      PORTX82 = j;
+    }
+#endif
+}
+
+
+void volumeup() {
+  soundOut(LEFT_POS,9);  soundOut(RIGHT_POS,9);
+}
+
+
+void rest(unsigned int x) {
+  audioSilence(); 
+  hold(x); 
+  volumeup();
+}
+
+#define EIGHTHNOTE 1000
+#define SIXTEENTHNOTE 500
+#define THIRTYSECONDNOTE 250
+#define SIXTYFOURTHNOTE 125
+#define ONETWENTYEIGHTHNOTE 63
+#define TWOFIFTYSIXTHNOTE 32
+
+
+
+
+void wakka() {
+  volumeup();
+  playLeft(C2);
+  hold(4);
+  playLeft(A3);
+  hold(4);
+  playLeft(C2);
+  hold(4);
+  playLeft(C1);
+  hold(4);
+  playLeft(A0);
+  hold(4);
+  playLeft(C1);
+  hold(4);
+  playLeft(G1);
+  hold(4);
+  audioSilence();
+}
+
 
 void movePacman() {
     static unsigned char c;
@@ -1270,6 +1560,8 @@ void movePacman() {
     static int xd;
     static int yd;
     static char cc;
+    static unsigned char xx;
+    static unsigned char yy;
 
     x = sprAttr[PACMAN_SPRITENUM].x;
     y = sprAttr[PACMAN_SPRITENUM].y;
@@ -1301,59 +1593,53 @@ void movePacman() {
     if(anPos > 1 || anPos < 1) 
       anDir = -anDir;
 
-   
-    if(yd < 0)
-        setSpriteAttribute(PACMAN_SPRITENUM, anPos + NORTH_PACMAN_PAT_OFFSET);
+    if(yd < 0) {
+        sprAttr[PACMAN_SPRITENUM].patt = anPos + NORTH_PACMAN_PAT_OFFSET;
+        //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
+    }
     else 
-        if(yd > 0)
-            setSpriteAttribute(PACMAN_SPRITENUM, anPos + SOUTH_PACMAN_PAT_OFFSET);
+        if(yd > 0) {
+            sprAttr[PACMAN_SPRITENUM].patt = anPos + SOUTH_PACMAN_PAT_OFFSET;
+            //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
+        }
         else
-            if(xd < 0)
-                setSpriteAttribute(PACMAN_SPRITENUM, anPos + WEST_PACMAN_PAT_OFFSET);
-            else
-                setSpriteAttribute(PACMAN_SPRITENUM, anPos + EAST_PACMAN_PAT_OFFSET);
+            if(xd < 0) {
+                sprAttr[PACMAN_SPRITENUM].patt = anPos + WEST_PACMAN_PAT_OFFSET;
+                //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
+            } 
+            else {
+                sprAttr[PACMAN_SPRITENUM].patt = anPos + EAST_PACMAN_PAT_OFFSET;
+                //syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
+            }
 
     x = x >> 3;
     y = y >> 3;
-    cc = getCharAt(x+1,y+1);
-    if(cc == 'r') {
-      score = score + 10;
+
+    xx = (unsigned char) x + 1;
+    yy = (unsigned char) y + 1;
+
+    cc = getCharAt(xx,yy);
+    if(cc == 'r' || cc == 't') {
+      updateScore(10);
       dotctr++;
+      wakka();
+      setCharacterAt(xx,yy,' ');
+      if(cc == 't') 
+        energizerctr = 200;
     }
 
-    setCharacterAt(x+1,y+1,' ');
+    if(energizerctr > 0)
+      energizerctr--;
+
     if(y == 21) {
-      cc = getCharAt(x+1,y+2);
+      yy++;
+      cc = getCharAt(xx,yy);
       if(cc == 'q') {
-        score = score + 10;
+        updateScore(10);
         dotctr++;
+        wakka();
+        setCharacterAt(xx,yy,'s');
       }
-      setCharacterAt(x+1,y+2,'s');
-    }
-
-    if(dotctr == 260) {
-      for(cc = 0; cc < 3; cc++) {
-        setEverythingWhite();
-        #ifdef GCC_COMPILED
-            SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
-            SDL_RenderClear(renderer);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            SDL_RenderPresent(renderer);
-        #endif
-        hold(1000);
-        setMazeColors();
-        #ifdef GCC_COMPILED
-            SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
-            SDL_RenderClear(renderer);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            SDL_RenderPresent(renderer);
-        #endif
-        hold(1000);
-      }
-      sprAttr[PACMAN_SPRITENUM].x = 120;
-      sprAttr[PACMAN_SPRITENUM].y = 128;
-      dotctr = 0;
-      drawDots();
     }
 }
 
@@ -1388,41 +1674,6 @@ void checkControls() {
 
 
 
-void audioSilence() {
-  soundOut(LEFT_POS,255); soundOut(RIGHT_POS,255);
-  soundOut(LEFT_POS,253); soundOut(RIGHT_POS,253);
-  soundOut(LEFT_POS,251); soundOut(RIGHT_POS,251);
-  soundOut(LEFT_POS,249); soundOut(RIGHT_POS,249);
-}
-
-
-void volumeup() {
-  soundOut(LEFT_POS,9);  soundOut(RIGHT_POS,9);
-}
-
-
-void rest(unsigned int x) {
-  audioSilence(); 
-  hold(x); 
-  volumeup();
-}
-
-
-#define EIGHTHNOTE 1000
-#define SIXTEENTHNOTE 500
-#define THIRTYSECONDNOTE 250
-#define SIXTYFOURTHNOTE 125
-#define ONETWENTYEIGHTHNOTE 63
-#define TWOFIFTYSIXTHNOTE 32
-
-
-#ifdef GCC_COMPILED
-    #define playLeft(NOTE)     printf("playLeft(NOTE) is undefined for GCC_COMPILED mode\n");
-    #define playRight(NOTE)    printf("playRight(NOTE) is undefined for GCC_COMPILED mode\n");
-#else
-    #define playLeft(NOTE) PORTX82 = notes[NOTE].b1; PORTX82 = notes[NOTE].b2;
-    #define playRight(NOTE) PORTX83 = notes[NOTE].b1; PORTX83 = notes[NOTE].b2;
-#endif
 
 void introMusic() {
   #ifdef GCC_COMPILED
@@ -1479,13 +1730,143 @@ void introMusic() {
 }
 
 
+void resetMap() {
+      energizerctr = 0;
+      putGhostsInBox();
+      ghostsNormal();  
+      sprAttr[PACMAN_SPRITENUM].x = 120;
+      sprAttr[PACMAN_SPRITENUM].y = 128;
+}
+
+void checkForAllDotsGone() {
+      static char cc;
+      if(dotctr == 260) {
+        for(cc = 0; cc < 6; cc++) {
+          hold(1000);
+          setEverythingWhite();
+          #ifdef GCC_COMPILED
+              updateEmulatedVDPScreen();
+              SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
+              SDL_RenderClear(renderer);
+              SDL_RenderCopy(renderer, texture, NULL, NULL);
+              SDL_RenderPresent(renderer);
+          #endif
+          hold(1000);
+          setMazeColors();
+          #ifdef GCC_COMPILED
+              updateEmulatedVDPScreen();
+              SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
+              SDL_RenderClear(renderer);
+              SDL_RenderCopy(renderer, texture, NULL, NULL);
+              SDL_RenderPresent(renderer);
+          #endif
+        }
+      dotctr = 0;
+      drawDots();
+      resetMap();
+    }
+}
+
+
+void pacmanDead() {
+  static int i;
+
+  sprAttr[PACMAN_SPRITENUM].xdir = 0;
+  sprAttr[PACMAN_SPRITENUM].ydir = 0;
+
+    for(i=PATT_PACMAN_DYING_START;i<=PATT_PACMAN_DYING_END;i++) {
+      hold(500);
+      sprAttr[PACMAN_SPRITENUM].patt = i;
+      syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
+      #ifdef GCC_COMPILED
+          updateEmulatedVDPScreen();
+          SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
+          SDL_RenderClear(renderer);
+          SDL_RenderCopy(renderer, texture, NULL, NULL);
+          SDL_RenderPresent(renderer);
+      #endif
+    }
+
+    resetMap();
+}
+
+void checkCollisions()  {
+  static int px;
+  static int py;
+  static int pxl;
+  static int pyl;
+  static int i;
+
+  static int gx;
+  static int gy;
+  static int gxl;
+  static int gyl;
+
+  px = sprAttr[PACMAN_SPRITENUM].x+2;
+  py = sprAttr[PACMAN_SPRITENUM].y+2;
+  pxl = px + 14;
+  pyl = py + 14;
+
+  //  sprintf(buf,"(%d,%d)-(%d,%d) / (%d,%d)", px,py,pxl,pyl,sprAttr[RED_GHOST_SPRITENUM].x,sprAttr[RED_GHOST_SPRITENUM].y);
+  //  setCharactersAt(0,0,buf);
+
+  sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
+
+  for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;i++) {
+    gx = sprAttr[i].x+2;
+    gy = sprAttr[i].y+2;
+    gxl = sprAttr[i].x+14;
+    gyl = sprAttr[i].y+14;
+    if (px  < gxl &&
+        pxl > gx &&
+        py  < gyl &&
+        pyl > gy) 
+      if(energizerctr == 0)
+          pacmanDead();
+      else {
+        if(i == RED_GHOST_SPRITENUM) 
+          sprAttr[i].color = DARKRED;
+        else if(i == BROWN_GHOST_SPRITENUM)
+          sprAttr[i].color = DARKYELLOW;
+        else if(i == CYAN_GHOST_SPRITENUM)
+          sprAttr[i].color = CYAN;
+        else
+          sprAttr[i].color = LIGHTRED;
+
+          sprAttr[i].xdir = 0;
+          sprAttr[i].ydir = -2;
+          sprAttr[i].x = 120;
+          sprAttr[i].y = 84;
+          sprAttr[i].prevdir = WEST;
+          ghostCtr = ghostCtr + 400;
+
+          updateScore(ghostCtr);
+      }
+          
+  }
+}
+
+
+void clearMazeShutOffSprites() {
+  static unsigned char k;
+  static unsigned char j;
+
+   for(k=0;k<24;k++)
+     for(j=0;j<32;j++)
+        setCharacterAt(j,k,' ');
+
+   for(j=0;j<=MAX_SPRITENUM;j++) {
+    sprAttr[j].color = BLACK;
+    syncSpriteAttributesToHardware(j);
+   }
+}
+
+
 int main()
 {
    int j;
    unsigned int k;
    unsigned int i;
-
-   char buf[33];
 
 
    #ifdef GCC_COMPILED
@@ -1510,7 +1891,7 @@ int main()
    initNoteData();
 
    printf("3...");
-   srand(getRRegister());
+   srand(getRand256());
 
    printf("4...");
 
@@ -1524,14 +1905,17 @@ int main()
    setGraphicsMode();
 
    printf("5...");
-   sprAttr[PACMAN_SPRITENUM].x = 120;
-   sprAttr[PACMAN_SPRITENUM].y = 128;
-   sprAttr[PACMAN_SPRITENUM].color = BLACK;
-   setSpriteAttribute(PACMAN_SPRITENUM,anPos);
 
+   memset(sprAttr,0x0,sizeof(sprAttr));
    for(i=0;i<32;i++)
     sprAttr[i].patt = -1;
 
+   sprAttr[PACMAN_SPRITENUM].x = 120;
+   sprAttr[PACMAN_SPRITENUM].y = 128;
+   sprAttr[PACMAN_SPRITENUM].patt = anPos;
+   
+   clearMazeShutOffSprites();
+   putGhostsInBox();
 
    printf("6...");
    setPatterns();
@@ -1541,52 +1925,78 @@ int main()
 
    printf("8..."); 
 
-   setSpritePattern(0, "071F3F7F7FFFFFFFFFFFFF7F7F3F1F07E0F8FCDEFEFFFF80FFFFFFFEFEFCF8E0"); // PACMAN, mouth closed (east)
-   setSpritePattern(1, "071F3F7F7FFFFFFFFFFFFF7F7F3F1F07E0F8FCDEFFFCE080E0FCFFFEFEFCF8E0"); // PACMAN, mouth open 1 (east)
-   setSpritePattern(2, "071F3F7F7FFFFFFFFFFFFF7F7F3F1F07E0F8FCDEF8E080000080E0F8FEFCF8E0"); // PACMAN, mouth open 2 (east)
-   
-   setSpritePattern(3, "061E3E7E7EEEFEFFFFFFFF7F7F3F1F07E0F8FCFEFEFFFFFFFFFFFFFEFEFCF8E0"); // PACMAN, mouth closed (north)
-   setSpritePattern(4, "08183C7C7CEEFEFFFFFFFF7F7F3F1F0720387C7E7EFFFFFFFFFFFFFEFEFCF8E0"); // PACMAN, mouth open 1 (north)
-   setSpritePattern(5, "0010307878ECFCFEFFFFFF7F7F3F1F0700080C1E1E3F3F7FFFFFFFFEFEFCF8E0"); // PACMAN, mouth open 2 (north)
-   
-   setSpritePattern(6, "071F3F7B7FFFFF01FFFFFF7F7F3F1F07E0F8FCFEFEFFFFFFFFFFFFFEFEFCF8E0"); // PACMAN, mouth closed (west)
-   setSpritePattern(7, "071F3F7BFF3F0701073FFF7F7F3F1F07E0F8FCFEFEFFFFFFFFFFFFFEFEFCF8E0"); // PACMAN, mouth open 1 (west)
-   setSpritePattern(8, "071F3F7B1F0701000001071F7F3F1F07E0F8FCFEFEFFFFFFFFFFFFFEFEFCF8E0"); // PACMAN, mouth open 2 (west)
-   
-   setSpritePattern(9, "071F3F7F7FFFFFFFFFFEEE7E7E3E1E06E0F8FCFEFEFFFFFFFFFFFFFEFEFCF8E0"); // PACMAN, mouth closed (south)
-   setSpritePattern(10,"071F3F7F7FFFFFFFFFFEEE7C7C3C1808E0F8FCFEFEFFFFFFFFFFFF7E7E7C3820"); // PACMAN, mouth open 1 (south)
-   setSpritePattern(11,"071F3F7F7FFFFFFFFEFCEC7878301000E0F8FCFEFEFFFFFF7F3F3F1E1E0C0800"); // PACMAN, mouth open 2 (south)
-   
-   setSpritePattern(12,"070F0F1D193A383F3F3F3F3F3F3F1D08F0F8F8DCCCAE8EFEFEFEFEFEFEFEDC88"); // GHOST (1)
-   setSpritePattern(13,"0F1F1F3F3375717F7F7F7F7F7F7F6E24E0F0F0F8985C1CFCFCFCFCFCFCFCEC48"); // GHOST (2)
+                        
+   setSpritePattern(PATT_PACMAN_E1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (east)
+   setSpritePattern(PATT_PACMAN_E2,            "0000071F3F3F7F7F787F7F3F3F1F07000000C0F0F8F8E0000000E0F8F8F0C000"); // PACMAN, mouth open 1 (east)
+   setSpritePattern(PATT_PACMAN_E3,            "0000071F3F3F7E7C787C7E3F3F1F07000000C0C0800000000000000080C0C000"); // PACMAN, mouth open 2 (east)
+   setSpritePattern(PATT_PACMAN_N1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (north)
+   setSpritePattern(PATT_PACMAN_N2,            "00000018383C7C7C7E7E7E3F3F1F07000000003038787C7CFCFCFCF8F8F0C000"); // PACMAN, mouth open 1 (north)
+   setSpritePattern(PATT_PACMAN_N3,            "0000000000006070787C7E3F3F1F07000000000000000C1C3C7CFCF8F8F0C000"); // PACMAN, mouth open 2 (north)
+   setSpritePattern(PATT_PACMAN_W1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (west)
+   setSpritePattern(PATT_PACMAN_W2,            "0000030F1F1F07000000071F1F0F03000000E0F8FCFCFEFE1EFEFEFCFCF8E000"); // PACMAN, mouth open 1 (west)
+   setSpritePattern(PATT_PACMAN_W3,            "000003030100000000000000010303000000E0F8FCFC7E3E1E3E7EFCFCF8E000"); // PACMAN, mouth open 2 (west)
+   setSpritePattern(PATT_PACMAN_S1,            "0000071F3F3F7F7F7F7F7F3F3F1F07000000C0F0F8F8FCFCFCFCFCF8F8F0C000"); // PACMAN, mouth closed (south)
+   setSpritePattern(PATT_PACMAN_S2,            "0000071F3F3F7E7E7E7C7C3C381800000000C0F0F8F8FCFCFC7C7C7838300000"); // PACMAN, mouth open 1 (south)
+   setSpritePattern(PATT_PACMAN_S3,            "0000071F3F3F7E7C78706000000000000000C0F0F8F8FC7C3C1C0C0000000000"); // PACMAN, mouth open 2 (south)
+
+   printf("9..."); 
+
+   setSpritePattern(PATT_NORMAL_GHOST_1,       "00030F1F33212121737F7F7F7F7F6C440080E0F0980808089CFCFCFCFCFCECC4"); // GHOST (1)
+   setSpritePattern(PATT_NORMAL_GHOST_2,       "00030F1F33212121737F7F7F7F7F7B310080E0F0980808089CFCFCFCFCFCDC88"); // GHOST (2)
+   setSpritePattern(PATT_NORMAL_GHOST_EYES_N,  "0000000000121E1E0C00000000000000000000000090F0F06000000000000000"); // eyes
+   setSpritePattern(PATT_NORMAL_GHOST_EYES_S,  "000000000C1E1E1200000000000000000000000060F0F0900000000000000000"); // eyes
+   setSpritePattern(PATT_NORMAL_GHOST_EYES_E,  "000000000C1E18180C000000000000000000000060F0C0C06000000000000000"); // eyes
+   setSpritePattern(PATT_NORMAL_GHOST_EYES_W,  "000000000C1E06060C000000000000000000000060F030306000000000000000"); // eyes
+   setSpritePattern(PATT_SCARED_GHOST,         "00030F1F3F3F3F79797F7F66597F6E4600C0F0F8FCFCFC9E9EFEFE669AFE7662"); // scared ghost
+
+   printf("10...");
+
+   setSpritePattern(PATT_PACMAN_DYING_START,   "0000000000006070787C7E3F3F1F07000000000000000C1C3C7CFCF8F8F0C000"); // pacman dying 1
+   setSpritePattern(PATT_PACMAN_DYING_1,       "0000000000000020787C7E3F3F1F060000000000000000083C7CFCF8F8F0C000"); // pacman dying 2
+   setSpritePattern(PATT_PACMAN_DYING_2,       "000000000000000000707C7F3F1F06000000000000000000001C7CFCF8F0C000"); // pacman dying 3
+   setSpritePattern(PATT_PACMAN_DYING_3,       "0000000000000000000000707F3F0E0000000000000000000000001CFCF8E000"); // pacman dying 4
+   setSpritePattern(PATT_PACMAN_DYING_4,       "0000000000000000000000000F7F3F0E000000000000000000000000E0FCF8E0"); // pacman dying 5
+   setSpritePattern(PATT_PACMAN_DYING_5,       "00000000000000000000030F3F7F3E0C0000000000000000000080E0F8FCF860"); // pacman dying 6
+   setSpritePattern(PATT_PACMAN_DYING_6,       "00000000000000000001030F1F7F7E3C0000000000000000000080E0F0FCFC78"); // pacman dying 7
+   setSpritePattern(PATT_PACMAN_DYING_7,       "000000000000000000010307070F1F0E0000000000000000000080C0C0E0F0E0"); // pacman dying 8
+   setSpritePattern(PATT_PACMAN_DYING_8,       "000000000000000000010103030307020000000000000000000000808080C080"); // pacman dying 9
+   setSpritePattern(PATT_PACMAN_DYING_9,       "0000000000000000000101010101010000000000000000000000000000000000"); // pacman dying 10
+   setSpritePattern(PATT_PACMAN_DYING_END,     "000000040210080000300000081002040000002040081000000C000010084020"); // pacman dying 11
+
    
    sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
 
-   printf("9...");
+   printf("11...");
    introMusic(); 
 
-   printf("10...\n");  
+   printf("12...\n");  
 
    bRunning = TRUE;
 
    while(bRunning == TRUE) {
-        #ifdef GCC_COMPILED
-            SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
-        #endif
+        for(j=0; j <= MAX_SPRITENUM ;j++)
+          syncSpriteAttributesToHardware(j);
 
         checkControls();
         movePacman();
+        checkForAllDotsGone();
+        moveGhosts();
+        checkCollisions();
 
-
-        sprintf(buf, "%08d", score);
-        setCharactersAt(24,0,buf);
+        #ifdef GCC_COMPILED
+            updateEmulatedVDPScreen();
+            SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
+        #endif
 
         #ifdef GCC_COMPILED
             SDL_RenderClear(renderer);
             SDL_RenderCopy(renderer, texture, NULL, NULL);
             SDL_RenderPresent(renderer);
+            hold(300);
         #endif
    }
+
+   clearMazeShutOffSprites();
 
    printf("DONE!");
 

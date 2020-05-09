@@ -30,6 +30,14 @@ of the Teensy unit.
 Build Notes
 ===========
 
+May 9, 2020
+
+Well, with the pandemic I've had a little time to work on the project some more.  I haven't worked on the wifi board recently,
+but I decided to put together at least one piece of software that demonstrates the graphics/sound/gaming capabilities of the 
+TRS80MXS.  [Here's a little video of the Pac-Man clone.](https://www.youtube.com/watch?v=qCoKyEAExw0)  It's a work in progress, but it's at least starting to look like a 
+playable game.
+
+
 January 1, 2020
 
 Well, we're in the new house, and semi-settled.  Always a million things to do when you move to a new house.  
