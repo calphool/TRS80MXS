@@ -104,7 +104,8 @@
 #define PATT_PACMAN_DYING_9 28
 #define PATT_PACMAN_DYING_END 29
 
-
+#define ENERGIZER_RIGHT_CHAR 128
+#define ENERGIZER_LEFT_CHAR 129
 
 
 // sprite identifiers
@@ -126,6 +127,14 @@
 #define NORTH_PACMAN_PAT_OFFSET 3 
 #define WEST_PACMAN_PAT_OFFSET 6
 #define SOUTH_PACMAN_PAT_OFFSET 9
+
+
+#define EIGHTHNOTE 1000
+#define SIXTEENTHNOTE 500
+#define THIRTYSECONDNOTE 250
+#define SIXTYFOURTHNOTE 125
+#define ONETWENTYEIGHTHNOTE 63
+#define TWOFIFTYSIXTHNOTE 32
 
 
 /* 0x82 = SOUND 1 when OUT */
@@ -206,6 +215,9 @@ unsigned long score = 0;        // score field
 unsigned int dotctr = 0;        // counter to decide when we're done with a screen
 unsigned int energizerctr = 0;  // count down counter when an energizer is eaten
 unsigned int ghostCtr = 0;      // score counter that adds up with each ghost being eaten
+int lives = 3;                  // pacman lives
+unsigned int gameCtr = 0;       // number that counts up each frame as game plays
+
 
 
 #define getRand256() ((unsigned char)(rand() % 256))
@@ -246,6 +258,23 @@ unsigned char getCharAt(unsigned char x, unsigned char y) {
 
     return getVDPRAM(addr);
 }
+
+/* ******************************************************************************************************************************
+   | do nothing X times                                                                                                         |
+   ******************************************************************************************************************************
+*/
+void hold(unsigned int x) {
+#ifdef GCC_COMPILED
+    SDL_Delay(x >> 3);
+#else
+    for(unsigned int y = 0; y<x;y++) {
+      #pragma asm
+      nop
+      #pragma endasm
+    }
+#endif
+}
+
 
 
 #ifdef GCC_COMPILED
@@ -570,6 +599,17 @@ void SDLShutdown() {
    SDL_DestroyWindow(window);
    SDL_Quit();
 }
+
+
+void emulateTMS9118HardwareUpdate() {
+    updateEmulatedVDPScreen();
+    SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+    hold(300);
+}
+
 #endif
 
 
@@ -744,6 +784,8 @@ void setPatterns() {
    static char t[8] =  {0xc0,0xe0,0xf0,0xf0,0xe0,0xc0,0x00,0x00};
    static char u[8] =  {0x00,0x01,0x03,0x03,0x01,0x00,0x00,0x00};
 
+   static char x[8] =  {0x38,0x7C,0x3E,0x0E,0x3E,0x7C,0x38,0x00};
+
    static char AU[8] = {0x78,0x84,0x84,0xFC,0x84,0x84,0x84,0x00};
    static char BU[8] = {0xF8,0x84,0x84,0xF8,0x84,0x84,0xF8,0x00};
    static char CU[8] = {0x78,0x84,0x80,0x80,0x80,0x84,0x78,0x00};
@@ -817,8 +859,12 @@ void setPatterns() {
    setCharPatternByArray('r',r,8);      //          .
    setCharPatternByArray('q',q,8);      //          _
    setCharPatternByArray('s',s,8);      //          _
-   setCharPatternByArray('t',t,8);      //       energizer (right)
-   setCharPatternByArray('u',u,8);      //       energizer (left)
+
+
+   setCharPatternByArray(ENERGIZER_RIGHT_CHAR,t,8);      //       energizer (right)
+   setCharPatternByArray(ENERGIZER_LEFT_CHAR,u,8);      //       energizer (left)
+
+   setCharPatternByArray('x',x,8);      //       small pac-man
 
    setCharPatternByArray('A',AU,8);      
    setCharPatternByArray('B',BU,8);      
@@ -1038,14 +1084,14 @@ void drawDots() {
     setCharacterAt(19,k,'r');
   }
 
-  setCharacterAt(2,5,'t');   // energizer
-  setCharacterAt(2,19,'t');  // energizer
-  setCharacterAt(30,5,'t');  // energizer
-  setCharacterAt(30,19,'t'); // energizer
-  setCharacterAt(1,5,'u');
-  setCharacterAt(1,19,'u');
-  setCharacterAt(29,5,'u');
-  setCharacterAt(29,19,'u');
+  setCharacterAt(2,5,ENERGIZER_RIGHT_CHAR);   // energizer
+  setCharacterAt(2,19,ENERGIZER_RIGHT_CHAR);  // energizer
+  setCharacterAt(30,5,ENERGIZER_RIGHT_CHAR);  // energizer
+  setCharacterAt(30,19,ENERGIZER_RIGHT_CHAR); // energizer
+  setCharacterAt(1,5,ENERGIZER_LEFT_CHAR);
+  setCharacterAt(1,19,ENERGIZER_LEFT_CHAR);
+  setCharacterAt(29,5,ENERGIZER_LEFT_CHAR);
+  setCharacterAt(29,19,ENERGIZER_LEFT_CHAR);
 }
 
 /* ******************************************************************************************************************************
@@ -1075,18 +1121,47 @@ void setMazeColors() {
   for(j=6;j<=7;j++)
      setCharacterGroupColor(j, WHITE, BLACK);     // set chars 48 - 63 to white on black
 
-   setCharacterGroupColor(14,WHITE,BLACK);
+   setCharacterGroupColor(14,WHITE,BLACK); // dots
+
+   setCharacterGroupColor(15,DARKYELLOW,BLACK); // little pacmen
+
+   setCharacterGroupColor(16,WHITE,BLACK); // energizers
 }
+
+/* ******************************************************************************************************************************
+   | Draw pacman lives icons at top                                                                                             |
+   ******************************************************************************************************************************
+*/
+void drawPacmanLives() {
+  setCharactersAt(2,0,"          ");
+  for(int i=0;i<lives;i++) {
+    setCharacterAt(i+2,0,'x');
+  }
+}
+
 
 /* ********************************************************************************************************************************
    | update the score and show it on the screen (sprintf is expensive, so we don't do it all the time -- just when score updates) |
    ********************************************************************************************************************************
 */
 void updateScore(int incr) {
+  static unsigned long oldscore = 0;
+
   score = score + incr;
   sprintf(buf, "%08ld", score);
   setCharactersAt(24,0,buf);
+  if((oldscore < 10000 && score >= 10000) || 
+     (oldscore < 50000 && score >= 50000) ||
+     (oldscore < 100000 && score >= 100000) || 
+     (oldscore < 500000 && score >= 500000) ||
+     (oldscore < 1000000 && score >= 1000000) )
+  {
+    lives++;
+    drawPacmanLives();
+  }
+  oldscore = score;
 }
+
 
 /* ***************************
    | draw characters of maze |
@@ -1229,6 +1304,8 @@ void drawMaze() {
   setCharacterAt(22,15,'m');
   
   drawDots();  
+
+  drawPacmanLives();
 }
 
 /* ******************************************************************************************************************************
@@ -1413,22 +1490,6 @@ unsigned char canGoWest(unsigned char spriteNum) {
     return FALSE;
 }
 
-
-/* ******************************************************************************************************************************
-   | do nothing X times                                                                                                         |
-   ******************************************************************************************************************************
-*/
-void hold(unsigned int x) {
-#ifdef GCC_COMPILED
-    SDL_Delay(x >> 3);
-#else
-    for(unsigned int y = 0; y<x;y++) {
-      #pragma asm
-      nop
-      #pragma endasm
-    }
-#endif
-}
 
 /* ******************************************************************************************************************************
    | set ghost direction - NORTH                                                                                                |
@@ -1692,13 +1753,6 @@ void rest(unsigned int x) {
   volumeup();
 }
 
-#define EIGHTHNOTE 1000
-#define SIXTEENTHNOTE 500
-#define THIRTYSECONDNOTE 250
-#define SIXTYFOURTHNOTE 125
-#define ONETWENTYEIGHTHNOTE 63
-#define TWOFIFTYSIXTHNOTE 32
-
 
 /* ******************************************************************************************************************************
    | Make pacman wakka wakka sound                                                                                              |
@@ -1723,6 +1777,7 @@ void wakka() {
   audioSilence();
 }
 
+
 /* ******************************************************************************************************************************
    | movePacman one step and eat dot if one is under him                                                                        |
    ******************************************************************************************************************************
@@ -1733,7 +1788,7 @@ void movePacman() {
     static int y;
     static int xd;
     static int yd;
-    static char cc;
+    static unsigned char cc;
     static unsigned char xx;
     static unsigned char yy;
 
@@ -1785,12 +1840,13 @@ void movePacman() {
     yy = (unsigned char) y + 1;
 
     cc = getCharAt(xx,yy);
-    if(cc == 'r' || cc == 't') {
+
+    if(cc == 'r' || cc == ENERGIZER_RIGHT_CHAR) {
       updateScore(10);
       dotctr++;
       wakka();
       setCharacterAt(xx,yy,' ');
-      if(cc == 't') {
+      if(cc == ENERGIZER_RIGHT_CHAR) {
         energizerctr = 200;
         setCharacterAt(xx-1,yy,' ');
       }
@@ -2005,8 +2061,13 @@ void checkCollisions()  {
         pxl > gx &&
         py  < gyl &&
         pyl > gy) {
-      if(energizerctr == 0)
+      if(energizerctr == 0) {
           pacmanDead();
+          lives--;
+          drawPacmanLives();
+          if(lives == -1)
+            bRunning = FALSE;
+      }
       else {
         if(i == RED_GHOST_SPRITENUM) 
           sprAttr[i].color = DARKRED;
@@ -2042,13 +2103,16 @@ void clearMazeShutOffSprites() {
         setCharacterAt(j,k,' ');
 
    for(j=0;j<=MAX_SPRITENUM;j++) {
-    sprAttr[j].color = BLACK;
+    sprAttr[j].color = TRANSPARENT;
     syncSpriteAttributesToHardware(j);
    }
 }
 
 
-
+/* ******************************************************************************************************************************
+   | game setup stuff...                                                                                                        |
+   ******************************************************************************************************************************
+*/
 void setupGame() {
    static int i;
 
@@ -2185,6 +2249,9 @@ void setupGame() {
    printf("12...\n");  
 }
 
+
+#define blinkEnergizers() if(gameCtr & 0x0004) setCharacterGroupColor(16,WHITE,BLACK);  else  setCharacterGroupColor(16,BLACK,BLACK);
+
 /* ******************************************************************************************************************************
    | main code                                                                                                                  |
    ******************************************************************************************************************************
@@ -2198,6 +2265,7 @@ int main()
    // main game loop
    bRunning = TRUE;
    while(bRunning == TRUE) {
+        gameCtr++;
         for(j=0; j <= MAX_SPRITENUM ;j++)
           syncSpriteAttributesToHardware(j);
 
@@ -2206,29 +2274,21 @@ int main()
         checkForAllDotsGone();
         moveGhosts();
         checkCollisions();
+        blinkEnergizers();     
 
         #ifdef GCC_COMPILED
-            updateEmulatedVDPScreen();
-            SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
-        #endif
-
-        #ifdef GCC_COMPILED
-            SDL_RenderClear(renderer);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            SDL_RenderPresent(renderer);
-            hold(300);
+            emulateTMS9118HardwareUpdate();       
         #endif
    }
 
    clearMazeShutOffSprites();
-
    setCharactersAt(12,11,"GAME OVER");
-
    printf("DONE!");
-
    #ifdef GCC_COMPILED
-   SDLShutdown();
+      emulateTMS9118HardwareUpdate();
+      hold(10000);
+      SDLShutdown();
    #endif
 
-   exit(-1);
+   exit(0);
 }
