@@ -22,6 +22,8 @@
 // zcc  +trs80 -O3 -lndos -lm -create-app --list -subtype=disk pacman.c
 // or
 // gcc-9 pacman.c -o pacman -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2 -lfluidsynth
+//
+// Note: gcc requires that you've installed fluidsynth and SDL2 on your machine (use brew install fluidsynth and brew install SDL on a Mac)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +40,7 @@
 #ifdef GCC_COMPILED
     #include <SDL2/SDL.h>
     #include <fluidsynth.h>
+    #include <time.h>
     #define SCREEN_WIDTH 512
     #define SCREEN_HEIGHT 384
    fluid_settings_t *settings;
@@ -499,7 +502,6 @@ __sfr __at 0x85 PORTX85;
 #define WEST 2
 #define EAST 3
 
-
 // chip identifiers
 #define AUDIOCHIP0 0x82
 #define AUDIOCHIP1 0x83
@@ -532,7 +534,6 @@ typedef struct {
   int ydir;
   int patt;
   char prevdir;
-  char bHasHat;
 } spriteAttr;
 
 char buf[33];                   // work buffer
@@ -547,6 +548,7 @@ unsigned int energizerctr = 0;  // count down counter when an energizer is eaten
 unsigned int ghostCtr = 0;      // score counter that adds up with each ghost being eaten
 int lives = 3;                  // pacman lives
 unsigned int gameCtr = 0;       // number that counts up each frame as game plays
+byte GhostWithHat = 255;       // which ghost has the hat?
 
 int direction = 0;
 
@@ -556,6 +558,7 @@ int direction = 0;
 #define getRand256() ((unsigned char)(rand() % 256))
 
 
+// circular buffer used in audio management
 typedef struct {
     int * buffer;
     byte head;
@@ -567,8 +570,8 @@ typedef struct {
 // circular buffer defining macro
 #define CIRC_BBUF_DEF(x,y)                        \
     int x##_data_space[y];                        \
-    circ_bbuf_t x = {                              \
-        x##_data_space,                            \
+    circ_bbuf_t x = {                             \
+        x##_data_space,                           \
         0,                                        \
         0,                                        \
         y};                                                                               
@@ -576,7 +579,7 @@ typedef struct {
 CIRC_BBUF_DEF(audio_circ_buffer_x83_0,32)
 
 
-int circ_bbuf_pop(circ_bbuf_t *c, int *data)  
+int circ_bbuf_pop(circ_bbuf_t *c, int *data)  // used to pop a value off of a circular buffer
 {                                                 
     int next;                                     
     if (c->head == c->tail)                       
@@ -588,7 +591,7 @@ int circ_bbuf_pop(circ_bbuf_t *c, int *data)
     c->tail = next;             
     return 0;  
 }
-int circ_bbuf_push(circ_bbuf_t *c, int data)
+int circ_bbuf_push(circ_bbuf_t *c, int data)  // used to push a value onto a circular buffer
 {
     int next;
     next = c->head + 1;
@@ -600,7 +603,7 @@ int circ_bbuf_push(circ_bbuf_t *c, int data)
     c->head = next;
     return 0;
 }
-int circ_bbuf_empty(circ_bbuf_t *c) {
+int circ_bbuf_empty(circ_bbuf_t *c) {         // check if circular buffer is empty or not
     if(c->head == c->tail)
       return 1;
 
@@ -609,7 +612,10 @@ int circ_bbuf_empty(circ_bbuf_t *c) {
 
 
 
-// audio pitch lookup table for pitches 0 - 1023
+// audio pitch lookup table for pitches 0 - 1023  
+// these bytes were generated through an algorithm that is necessary to feed the the right bits to the SN76489 chips
+// there is some documentation at https://www.smspower.org/Development/SN76489
+//
 byte audioBytes[] = {
 1,0,129,0,65,0,193,0,33,0,161,0,97,0,225,0,17,0,145,0,81,0,209,0,49,0,177,0,113,0,241,0,1,128,129,128,65,128,193,128,33,128,161,128,97,
 128,225,128,17,128,145,128,81,128,209,128,49,128,177,128,113,128,241,128,1,64,129,64,65,64,193,64,33,64,161,64,97,64,225,64,17,64,145,64,
@@ -677,6 +683,7 @@ void setVolume(byte chipID, byte voiceNum, byte bVolume) {
        midichan = (chipID - 0x82)*3 + voiceNum;
        fluid_synth_cc(synth, midichan, 7, (int) bVolume*8+7);
   #else 
+      // precalculated bytes for the SN76489 chips (TRS80MXS has four of them)
       static byte bVolumeLookup[4][16] = {
             249,121,185,57,217,89,153,25,233,105,169,41,201,73,137,9,
             253,125,189,61,221,93,157,29,237,109,173,45,205,77,141,13,
@@ -701,22 +708,6 @@ void setVolume(byte chipID, byte voiceNum, byte bVolume) {
   #endif
 }
 
-/*
-double getFrequencyForPitchInt(int pitchint) {
-    double d;
-    double x;
-
-    x = 0.0000357604;
-    d = (double)pitchint * (double)pitchint;
-    d = (d * x);
-    x = (0.00000480705f * (double)pitchint);
-    d = d + x + 0.0000674753f; 
-    d = (double) pitchint / d;
-
-    return d;
-}
-*/
-
 
 /* *******************************************************************************************************************************
    | Play a pitch in a given port (chip 0x82 - 0x85), on a given channel (3 per chip for tonal notes), at a given volume         |
@@ -735,17 +726,19 @@ void play(byte chipID, byte voiceNum, int pitch, byte volume) {
         fluid_synth_noteon(synth, midichan, pitch, (int)volume*8+7);
         prevNoteForThisChannel[midichan] = pitch;
     #else
-
         static byte leftsixbits;
         static byte b1;
+        static int pdoub;
+
+        pdoub = pitch << 1;
 
         setVolume(chipID, voiceNum, volume);
 
-        b1 = *(audioBytes+(pitch*2));
-        leftsixbits = *(audioBytes+(pitch*2)+1);
+        b1 = *(audioBytes+pdoub);                    // offset into audioBytes buffer based on pitch value
+        leftsixbits = *(audioBytes+pdoub+1);         // offset into audioBytes buffer + 1
 
-        if(voiceNum == 1)
-          b1 = b1 + 4;
+        if(voiceNum == 1)                            // the audioBytes data has to be updated based on which voice you are playing
+          b1 = b1 + 4;                               // the audioBytes data itself is only for voice 0
         else
           if(voiceNum == 2)
             b1 = b1 + 2;
@@ -779,7 +772,7 @@ void play(byte chipID, byte voiceNum, int pitch, byte volume) {
 
 
 /* *******************************************************************************************************************************
-   | Pull byte from VDP RAM                                                                                                      |
+   | Pull byte from VDP RAM on the TMS9118                                                                                       |
    *******************************************************************************************************************************
 */
 byte getVDPRAM(unsigned int addr) 
@@ -803,23 +796,20 @@ byte getVDPRAM(unsigned int addr)
 }
 
 /* ******************************************************************************************************************************
-   | Retrieve character at position                                                                                             |
+   | Retrieve character at position (x,y) on the screen                                                                         |
    ******************************************************************************************************************************
 */
-byte getCharAt(byte x, byte y) {
+byte getCharAt(byte x, byte y)
+{
     static unsigned int addr;
     addr = g.NameTableAddr;
-
-    if(g.graphicsMode == TEXTMODE)
-      addr = addr + (y*40) + x;
-    else
-      addr = addr + (y<<5) + x;
+    addr = addr + (y<<5) + x;
 
     return getVDPRAM(addr);
 }
 
 /* ******************************************************************************************************************************
-   | do nothing X times                                                                                                         |
+   | do nothing X times, used for timing                                                                                        |
    ******************************************************************************************************************************
 */
 void hold(unsigned int x) 
@@ -837,6 +827,7 @@ void hold(unsigned int x)
     }
 #endif
 }
+
 
 
 
@@ -1008,7 +999,7 @@ void plotCharOnSDLPixels(int xTMS9118, int yTMS9118, byte c) {
    | draw entire screen worth of characters from RAM to SDL window                                                              |
    ******************************************************************************************************************************
 */
-void drawCharacters() 
+void drawCharacters(void) 
 {
   static int x;
   static int y;
@@ -1024,7 +1015,7 @@ void drawCharacters()
    | draw sprites onto SDL window                                                                                               |
    ******************************************************************************************************************************
 */
-void drawSprites() 
+void drawSprites(void) 
 {
   static int x;
   static int y;
@@ -1119,10 +1110,10 @@ void drawSprites()
 }
 
 /* ******************************************************************************************************************************
-   | draw out entire screen on SDL window                                                                                       |
+   | paint entire screen on SDL window                                                                                          |
    ******************************************************************************************************************************
 */
-void updateEmulatedVDPScreen() 
+void updateEmulatedVDPScreen(void) 
 {
   setBGColor();
   drawCharacters();
@@ -1131,10 +1122,10 @@ void updateEmulatedVDPScreen()
 
 
 /* ******************************************************************************************************************************
-   | draw out entire screen on SDL window                                                                                       |
+   | Setup SDL and turn on fluidsynth if running on Mac                                                                         |
    ******************************************************************************************************************************
 */
-void SDLSetup() 
+void SDLSetup(void) 
 {
    static int sample_nr;
    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -1186,7 +1177,7 @@ void SDLSetup()
    }
 
     // set the program change to 81 (synthesizer) for all channels
-   for(int i=0;i<16;i++)
+   for(int i=0;i<16;++i)
       fluid_synth_program_change(synth, i, 81);
 }
 
@@ -1195,7 +1186,7 @@ void SDLSetup()
    | Shutdown SDL                                                                                                               |
    ******************************************************************************************************************************
 */
-void SDLShutdown() 
+void SDLShutdown(void) 
 {
    SDL_DestroyTexture(texture);
    SDL_DestroyRenderer(renderer);
@@ -1207,21 +1198,21 @@ void SDLShutdown()
 }
 
 
-void emulateTMS9118HardwareUpdate() 
+void emulateTMS9118HardwareUpdate(void) 
 {
     updateEmulatedVDPScreen();
     SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    hold(300);
+    hold(400);
 }
 
 #endif
 
 
 /* ******************************************************************************************************************************
-   | VDP register set (low level register change)                                                                               |
+   | VDP register set (low level register change in TMS9918)                                                                    |
    ******************************************************************************************************************************
 */
 void setVDPRegister(byte reg,byte dat) {
@@ -1263,6 +1254,9 @@ void setVDPRAM(unsigned int addr, byte dat) {
    | get left or right joystick position                                                                                        |
    ******************************************************************************************************************************
 */
+#define getFastLeftJoystick() PORTX82
+#define getFastRightJoystick() PORTX83
+
 byte getJoystick(byte LeftOrRight) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
@@ -1303,7 +1297,7 @@ byte getJoystick(byte LeftOrRight)
 
     return 0;
 #else
-    if(LeftOrRight == LEFT_POS)
+    if(LeftOrRight == RIGHT_POS)
         return PORTX83;
     else
         return PORTX82;
@@ -1376,7 +1370,7 @@ byte setCharacterGroupColor(byte colorGroup, byte foreground, byte background)
    | load character patterns                                                                                                    |
    ******************************************************************************************************************************
 */
-void setPatterns() 
+void setPatterns(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1477,7 +1471,6 @@ void setPatterns()
    setCharPatternByArray('X',XU,8);      
    setCharPatternByArray('Y',YU,8);      
    setCharPatternByArray('Z',ZU,8);      
-
                                         //     SHAPE  
    setCharPatternByArray('a',a,8);      //      | |   
                                         //      | |   
@@ -1530,7 +1523,7 @@ void setPatterns()
    setCharPatternByArray(':',NC,8); 
    setCharPatternByArray('-',ND,8); 
 
-   static char BLK1[] = {0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE, 0xFF};
+   static char BLK1[] = {0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE, 0xFF}; // characters for the attract screen
    static char BLK2[] = {0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
    static char BLK3[] = {0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80};
    static char BLK4[] = {0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF};
@@ -1547,7 +1540,7 @@ void setPatterns()
    | set TMS9118 hardware registers and graphic structure                                                                       |
    ******************************************************************************************************************************
 */
-void setGraphicsMode() 
+void setGraphicsMode(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1628,7 +1621,7 @@ void setSpritePatternByArray(byte patternNumber, char* p, char l)
    | move sprite data out of sprite attribute struct and move it into registers                                                 |
    ******************************************************************************************************************************
 */
-void syncSpriteAttributesToHardware(byte spriteNum) 
+void syncSpriteAttributesToHardware(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1639,42 +1632,46 @@ void syncSpriteAttributesToHardware(byte spriteNum)
   static byte b5;
   static int x;
   static unsigned int y;
-  static byte color;
   static byte patt;
 
-  patt = sprAttr[spriteNum].patt;
-  x = sprAttr[spriteNum].x;
-  y = sprAttr[spriteNum].y;
-  color = sprAttr[spriteNum].color;
-  addr = g.SpriteAttrTableAddr + (spriteNum << 2);
+  for(int spriteNum = 0;spriteNum <= MAX_SPRITENUM; spriteNum++) {
+      patt = sprAttr[spriteNum].patt;
+      x = sprAttr[spriteNum].x;
+      y = sprAttr[spriteNum].y;
+      addr = g.SpriteAttrTableAddr + (spriteNum << 2);
 
-  b5 = color;
-  vert = y ;
+      b5 = sprAttr[spriteNum].color;
+      vert = y ;
 
-  if(x<0) {
-    b5 = b5 | 0x80;
-    x = x + 32;
+      if(x<0) {
+        b5 = b5 | 0x80;
+        x = x + 32;
+      }
+      horiz = x ;
+
+      setVDPRAM(addr, vert);
+      setVDPRAM(addr+1, (byte)horiz);
+      setVDPRAM(addr+2, patt<<2);
+      setVDPRAM(addr+3, b5);
   }
-  horiz = x ;
-
-  setVDPRAM(addr, vert);
-  setVDPRAM(addr+1, (byte)horiz);
-  setVDPRAM(addr+2, patt<<2);
-  setVDPRAM(addr+3, b5);
 }
 
 
 /* ******************************************************************************************************************************
-   | clear TRS-80 screen by scrolling it 16 times                                                                               |
+   | clear TRS-80 screen                                                                                                        |
    ******************************************************************************************************************************
 */
-void clearTRSScreen() 
+void clearTRSScreen(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
 {
-  for(int i=0;i<16;++i)
-    printf("\n");
+  #ifdef GCC_COMPILED
+      for(int i=0;i<40;++i) printf("\n");
+  #else
+      void* p = 0x3c00;
+      memset(p, ' ', 0x3ff);
+  #endif
 }
 
 
@@ -1682,7 +1679,7 @@ void clearTRSScreen()
    | draw dots into maze                                                                                                        |
    ******************************************************************************************************************************
 */
-void drawDots() 
+void drawDots(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1755,7 +1752,7 @@ void drawDots()
    | make all the characters white (except the ones in the alphabetic text)                                                     |
    ******************************************************************************************************************************
 */
-void setEverythingWhite() 
+void setEverythingWhite(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1772,7 +1769,7 @@ void setEverythingWhite()
    | set the color groups at the right colors for the maze                                                                      |
    ******************************************************************************************************************************
 */
-void setMazeColors() 
+void setMazeColors(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1787,9 +1784,7 @@ void setMazeColors()
      setCharacterGroupColor(j, WHITE, BLACK);     // set chars 48 - 63 to white on black
 
    setCharacterGroupColor(14,WHITE,BLACK); // dots
-
    setCharacterGroupColor(15,DARKYELLOW,BLACK); // little pacmen
-
    setCharacterGroupColor(16,WHITE,BLACK); // energizers
 }
 
@@ -1797,7 +1792,7 @@ void setMazeColors()
    | Draw pacman lives icons at top                                                                                             |
    ******************************************************************************************************************************
 */
-void drawPacmanLives() 
+void drawPacmanLives(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1823,6 +1818,8 @@ void updateScore(int incr)
   score = score + incr;
   sprintf(buf, "%08ld", score);
   setCharactersAt(24,0,buf);
+
+  // free guy routine
   if((oldscore < 10000 && score >= 10000) || 
      (oldscore < 50000 && score >= 50000) ||
      (oldscore < 100000 && score >= 100000) || 
@@ -1831,6 +1828,8 @@ void updateScore(int incr)
   {
     lives++;
 
+    // play some beeps when you get a free guy by putting the beeps onto the circular buffer and letting the main
+    // game loop pick them up
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
@@ -1859,7 +1858,7 @@ void updateScore(int incr)
    | draw characters of maze |
    ***************************
 */
-void drawMaze() {
+void drawMaze(void) {
   static byte j;
   static byte k;
 
@@ -2271,7 +2270,60 @@ void setAvailableGhostDirection(int i)
 {
   static byte bFoundOne;
   static byte r;
+  static int x;
+  static int y;
+  static int px;
+  static int py;
 
+    if(getRand256() > 64) {  // most of the time we'll use this routine that pursues and evades
+      x = sprAttr[i].x;
+      y = sprAttr[i].y;
+      px = sprAttr[PACMAN_SPRITENUM].x;
+      py = sprAttr[PACMAN_SPRITENUM].y;
+
+      if(energizerctr > 0) {
+        if(x < px && canGoWest(i)) {
+          goWest(i);
+          return;
+        }
+        else
+        if(x > px && canGoEast(i)) {
+          goEast(i);
+          return;
+        }
+        else
+        if(y < py && canGoNorth(i)) {
+          goNorth(i);
+          return;
+        }
+        if(y > py && canGoSouth(i)) {
+          goSouth(i);
+          return;
+        }
+      }
+      else {
+        if(x < px && canGoEast(i)) {
+          goEast(i);
+          return;
+        }
+        else
+        if(x > px && canGoWest(i)) {
+          goWest(i);
+          return;
+        }
+        else
+        if(y < py && canGoSouth(i)) {
+          goSouth(i);
+          return;
+        }
+        if(y > py && canGoNorth(i)) {
+          goNorth(i);
+          return;
+        }
+      }
+    }
+
+    // however, if we don't use the pursue / evade algorithm we use this random behavior algorithm
     bFoundOne = FALSE;
 
     while(bFoundOne == FALSE) {
@@ -2296,6 +2348,8 @@ void setAvailableGhostDirection(int i)
         bFoundOne = TRUE;
       }  
     }
+
+
 }
 
 
@@ -2329,8 +2383,11 @@ void moveGhosts(void)
 {
   static int ctr = 0;
   static int i;
+  static byte r;
 
   for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;++i) {
+
+      // this code redirects a ghost if he would get stuck
       if(sprAttr[i].prevdir == NORTH && canGoNorth(i) == FALSE) 
         setAvailableGhostDirection(i);
       else
@@ -2343,8 +2400,9 @@ void moveGhosts(void)
             if(sprAttr[i].prevdir == WEST && canGoWest(i) == FALSE) 
               setAvailableGhostDirection(i);
 
-      // randomly override current ghost direction every once in a while
-      if(getRand256() > 240 && sprAttr[i].bHasHat == 0) {
+      r = getRand256();
+      // randomly override current ghost direction every once in a while (if he's not a hat-wearing ghost)
+      if(r > 240 && i != GhostWithHat) {
         setAvailableGhostDirection(i);
       }
 
@@ -2357,12 +2415,13 @@ void moveGhosts(void)
           }
       }
 
-      if(getRand256() > 64 - (i<<3) )  { // slows down ghosts randomly
+      if(r > 72 - (i<<3) )  { // slows down ghosts randomly, with each one having slightly different behavior
           sprAttr[i].x = sprAttr[i].x + sprAttr[i].xdir;
           sprAttr[i].y = sprAttr[i].y + sprAttr[i].ydir;
       }
 
       if(energizerctr == 0) {
+        // make the ghosts' "legs" swap back and forth if we're in normal mode
         ctr++;
         if( ctr < 24 )  
           sprAttr[i].patt = PATT_NORMAL_GHOST_1;
@@ -2372,23 +2431,21 @@ void moveGhosts(void)
         if(ctr > 47) ctr = 0;
       }
       else {
+        // otherwise make the ghosts appear in their "scared" version
         sprAttr[i].patt = PATT_SCARED_GHOST;
       }
-  }
 
-  
-  for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;++i) {
     sprAttr[i-4].x = sprAttr[i].x; //set eye location
     sprAttr[i-4].y = sprAttr[i].y; //set eye location
 
     // make ghosts blue if pac has eaten an energizer
     if(energizerctr > 0) {
-      sprAttr[i-4].color = TRANSPARENT;
-      sprAttr[i].color = DARKBLUE;
+      sprAttr[i-4].color = TRANSPARENT; // turn off eyes
+      sprAttr[i].color = DARKBLUE; // make ghost dark blue
     }
 
     // put hat on someone's head if they have it
-    if(sprAttr[i].bHasHat) {
+    if(i == GhostWithHat) {
       sprAttr[HAT_SPRITENUM].color = DARKGREEN;
       sprAttr[HAT_SPRITENUM].x = sprAttr[i].x-1;
       sprAttr[HAT_SPRITENUM].y = sprAttr[i].y-4;
@@ -2495,31 +2552,20 @@ void wakka(void)
 {
   if(circ_bbuf_empty(&audio_circ_buffer_x83_0)) {
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_E4);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_AS4);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_A5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_B5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_GS4);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_CS5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_GS4);
   }
 }
 
 void bloip(void) {
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_C5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_CS5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_D5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_DS5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_E5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_F5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_G5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_GS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_A5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_AS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_B5);
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_B6);
 }
 
@@ -2552,21 +2598,11 @@ void movePacman(void)
     if((yd < 0 && canGoNorth(PACMAN_SPRITENUM)) || (yd > 0 && canGoSouth(PACMAN_SPRITENUM)))
         sprAttr[PACMAN_SPRITENUM].y = y + yd;
 
-    if(x < -8)
-        sprAttr[PACMAN_SPRITENUM].x = -8;
-    if(x > 248)
-        sprAttr[PACMAN_SPRITENUM].x = 248;
-
-    if(y < 16)
-        sprAttr[PACMAN_SPRITENUM].y = 16;
-    if(y > 174)
-        sprAttr[PACMAN_SPRITENUM].y = 174;
-
-      if(x == 0)
-           sprAttr[PACMAN_SPRITENUM].x = 238;
-      else
-          if(x == 240)
-            sprAttr[PACMAN_SPRITENUM].x = 2;
+    if(x == 0)
+        sprAttr[PACMAN_SPRITENUM].x = 238;
+    else
+        if(x == 240)
+           sprAttr[PACMAN_SPRITENUM].x = 2;
    
     anPos = anPos + anDir;
     if(anPos > 1 || anPos < 1) 
@@ -2597,10 +2633,9 @@ void movePacman(void)
       wakka();
       setCharacterAt(xx,yy,' ');
       if(cc == ENERGIZER_RIGHT_CHAR) {
-        play(AUDIOCHIP0,2,BANK1_C6,15);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_C6);
         energizerctr = 200;
         setCharacterAt(xx-1,yy,' ');
-        setVolume(AUDIOCHIP0,2,0);
       }
     }
 
@@ -2631,7 +2666,11 @@ void checkControls(void)
 {
         static byte oldk;
         static byte k;
+        #ifdef GCC_COMPILED
         k = getJoystick(LEFT_POS);
+        #else
+        k = getFastLeftJoystick();
+        #endif
 
         if(k == J_E && canGoEast(PACMAN_SPRITENUM)) {
           sprAttr[PACMAN_SPRITENUM].xdir=2;
@@ -2652,55 +2691,38 @@ void checkControls(void)
           sprAttr[PACMAN_SPRITENUM].ydir=2;
           sprAttr[PACMAN_SPRITENUM].xdir=0;
         }
-        //else
-        //if(k == J_BUTTON)
-              //bRunning = FALSE;
 
+        #ifdef GCC_COMPILED
         k = getJoystick(RIGHT_POS);
+        #else
+        k = getFastRightJoystick();
+        #endif
+
         if(k == J_BUTTON && oldk != J_BUTTON) { // switch ghosts with the hat
-          if(sprAttr[RED_GHOST_SPRITENUM].bHasHat == 1) {
-            sprAttr[RED_GHOST_SPRITENUM].bHasHat = 0;
-            sprAttr[CYAN_GHOST_SPRITENUM].bHasHat = 1;
-          }
+          if(GhostWithHat == RED_GHOST_EYES_SPRITENUM)
+            GhostWithHat = CYAN_GHOST_SPRITENUM;
           else
-          if(sprAttr[CYAN_GHOST_SPRITENUM].bHasHat == 1) {
-            sprAttr[CYAN_GHOST_SPRITENUM].bHasHat = 0;
-            sprAttr[PINK_GHOST_SPRITENUM].bHasHat = 1;
-          }
+          if(GhostWithHat == CYAN_GHOST_EYES_SPRITENUM )
+            GhostWithHat = PINK_GHOST_SPRITENUM;
           else
-          if(sprAttr[PINK_GHOST_SPRITENUM].bHasHat == 1) {
-            sprAttr[PINK_GHOST_SPRITENUM].bHasHat = 0;
-            sprAttr[BROWN_GHOST_SPRITENUM].bHasHat = 1;
-          }
+          if(GhostWithHat == PINK_GHOST_SPRITENUM)
+            GhostWithHat = BROWN_GHOST_SPRITENUM;
           else
-          if(sprAttr[BROWN_GHOST_SPRITENUM].bHasHat == 1) {
-            sprAttr[BROWN_GHOST_SPRITENUM].bHasHat = 0;
-            sprAttr[RED_GHOST_SPRITENUM].bHasHat = 1;
-          }
-          else
-            sprAttr[RED_GHOST_SPRITENUM].bHasHat = 1;
+            GhostWithHat = RED_GHOST_SPRITENUM;
         }
         oldk = k;
 
-        for(int i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;i++) {
-          if(sprAttr[i].bHasHat == 1) {
-             if(k == J_E && canGoEast(i)) {
-                  goEast(i);
-             }
-             else
-             if(k == J_N && canGoNorth(i)) {
-                  goNorth(i);
-             }
-             else
-             if(k == J_W && canGoWest(i)) {
-                  goWest(i);
-             }
-             else
-             if(k == J_S && canGoSouth(i)) {
-                  goSouth(i);
-             }
-          }
-        }
+         if(k == J_E && canGoEast(GhostWithHat)) 
+              goEast(GhostWithHat);
+         else
+         if(k == J_N && canGoNorth(GhostWithHat)) 
+              goNorth(GhostWithHat);
+         else
+         if(k == J_W && canGoWest(GhostWithHat)) 
+              goWest(GhostWithHat);
+         else
+         if(k == J_S && canGoSouth(GhostWithHat)) 
+              goSouth(GhostWithHat);
 }
 
 /* ******************************************************************************************************************************
@@ -2838,7 +2860,7 @@ void pacmanDead(void)
       hold(500);
       play(AUDIOCHIP0,1,notes[i-PATT_PACMAN_DYING_START],15);
       sprAttr[PACMAN_SPRITENUM].patt = i;
-      syncSpriteAttributesToHardware(PACMAN_SPRITENUM);
+      syncSpriteAttributesToHardware();
       #ifdef GCC_COMPILED
           updateEmulatedVDPScreen();
           SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
@@ -2875,8 +2897,6 @@ void checkCollisions(void)
   pxl = px + 14;
   pyl = py + 14;
 
-  sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
-
   for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;++i) {
     gx = sprAttr[i].x+2;
     gy = sprAttr[i].y+2;
@@ -2892,6 +2912,7 @@ void checkCollisions(void)
           drawPacmanLives();
           if(lives == -1)
             bRunning = FALSE;
+          i = BROWN_GHOST_SPRITENUM+1; // not fair to die more than once
       }
       else {
         if(i == RED_GHOST_SPRITENUM) 
@@ -2911,13 +2932,15 @@ void checkCollisions(void)
           ghostCtr = ghostCtr + 400;
           bloip();
           updateScore(ghostCtr);
+          i = BROWN_GHOST_SPRITENUM+1; // get out if we've had a collision
       }    
     }      
   }
 }
 
+
 /* ******************************************************************************************************************************
-   | clear maze and turn sprites off                                                                                            |
+   | clear maze screen and turn sprites off                                                                                     |
    ******************************************************************************************************************************
 */
 void clearMazeShutOffSprites(void) 
@@ -2934,29 +2957,32 @@ void clearMazeShutOffSprites(void)
 
    for(j=0;j<=MAX_SPRITENUM;++j) {
     sprAttr[j].color = TRANSPARENT;
-    syncSpriteAttributesToHardware(j);
    }
+   syncSpriteAttributesToHardware();
 }
 
 
-
+/* ******************************************************************************************************************************
+   | Game attract screen                                                                                                        |
+   ******************************************************************************************************************************
+*/
 void attractScreen() {
     int x = 0;
     int y = 4;
-    int j;
+    byte j;
 
 
-    for(int i=0;i<32;i++)
+    for(int i=0;i<32;++i)
       setCharacterGroupColor(i,DARKBLUE,BLACK);
 
-    for(int i=12;i<=15;i++)
+    for(int i=12;i<=15;++i)
       setCharacterGroupColor(i,DARKRED,BLACK);
 
     setCharacterGroupColor(5,DARKYELLOW,BLACK);
 
     setCharactersAt(0,23,"dbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbf");
     setCharactersAt(0,0 , "dbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbf");
-    for(int i=1;i<23;i++)
+    for(int i=1;i<23;++i)
       setCharactersAt(0,i,"a                              a");
 
     setCharactersAt(4+x,y,   ",  , +,(");
@@ -2983,6 +3009,9 @@ void attractScreen() {
        if(getJoystick(LEFT_POS) == J_S) {
           audioSilence();
           clearMazeShutOffSprites();
+          #ifdef GCC_COMPILED
+          SDLShutdown();
+          #endif
           exit(0);
        }
 
@@ -3000,8 +3029,7 @@ void attractScreen() {
        sprAttr[HAT_SPRITENUM].color = DARKGREEN;
        sprAttr[HAT_SPRITENUM].patt = PATT_HAT;
 
-        for(j=0; j <= MAX_SPRITENUM ;++j)
-          syncSpriteAttributesToHardware(j);
+       syncSpriteAttributesToHardware();
 
        #ifdef GCC_COMPILED
        updateEmulatedVDPScreen();
@@ -3018,7 +3046,11 @@ void attractScreen() {
 }
 
 
-void clearScreenAndInitializeSprites() {
+/* ******************************************************************************************************************************
+   | Initializes global variables that set up graphics state, clears out sprite memory, and cleans off screen buffer            |
+   ******************************************************************************************************************************
+*/
+void clearScreenAndInitializeSprites(void) {
    static int i;
    g.graphicsMode = GRAPHICSMODE1;
    g.externalVideoEnabled = FALSE;
@@ -3040,6 +3072,7 @@ void clearScreenAndInitializeSprites() {
    clearMazeShutOffSprites();
 }
 
+
 /* ******************************************************************************************************************************
    | game setup stuff...                                                                                                        |
    ******************************************************************************************************************************
@@ -3051,18 +3084,14 @@ void setupGame(void)
 {
    static int i;
    score = 0;
+   direction = (int)fmax((double)abs(BANK1_GS5 - BANK1_DS5) / 6,(double)1); // wonky math necessary so direction works for both gcc and zcc
 
-   printf("1...");
+
    audioSilence();
 
-   printf("2...");
    srand(getRand256());
 
-   printf("3...");
-
    setPatterns();
-
-   printf("4...");
 
    clearScreenAndInitializeSprites();
 
@@ -3112,22 +3141,13 @@ void setupGame(void)
    setSpritePatternByArray(PATT_HAT, hat,32);
 
 
-   printf("5...");
-
    attractScreen();
-
-   printf("6...");
 
    clearScreenAndInitializeSprites();
 
    putGhostsInBox();
 
-   printf("7...");
-
    drawMaze();
-
-   printf("8...");
-
 
    static char pacman_dying_start[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x60,0x70,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0C,0x1C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
    static char pacman_dying_1[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
@@ -3156,8 +3176,6 @@ void setupGame(void)
    
    sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
 
-   printf("11...");
-
    moveGhosts();
 
    #ifdef GCC_COMPILED
@@ -3168,18 +3186,22 @@ void setupGame(void)
    SDL_RenderPresent(renderer);
    #endif
 
-
    sprAttr[HAT_SPRITENUM].x = 0;
    sprAttr[HAT_SPRITENUM].y = 0;
    sprAttr[HAT_SPRITENUM].patt = PATT_HAT;
    sprAttr[HAT_SPRITENUM].color = TRANSPARENT;
 
    introMusic(); 
-
-   printf("12...\n");  
 }
 
 
+
+/* ******************************************************************************************************************************
+   | This is the main audio routine.  It pulls data off the audio circular buffer (like munching sounds) and plays them         |
+   | It also makes the siren sound in the background that is so iconic to pac-man.                                              |
+   | This routine gets kicked once per game loop.                                                                               |
+   ******************************************************************************************************************************
+*/
 void audioBufferProcess(void)  
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
@@ -3187,14 +3209,10 @@ void audioBufferProcess(void)
 { 
   static int x = BANK1_GS5;
   static int y = 0;
-  if(direction == 0)
-    direction = (int)fmax((double)abs(BANK1_GS5 - BANK1_DS5) / 6,(double)1);
-
-
-
   static byte quiet = 0;
   static int circ_buf_data;
 
+  // if there's something sitting on the circular audio buffer, play it, otherwise shut down this audio channel
   if (circ_bbuf_pop(&audio_circ_buffer_x83_0, &circ_buf_data)) {                 
       if(quiet == 0) {                                                         
           setVolume(AUDIOCHIP0,0,0);                                                    
@@ -3212,21 +3230,23 @@ void audioBufferProcess(void)
       }                                                                         
   }
 
-  if(energizerctr == 0) {
-    x = x + direction;
+  if(gameCtr & 0x0001) {
+      if(energizerctr == 0) {
+        // siren sound in the background
+        x = x + direction;
 
-    if(x > BANK1_GS5)
-      direction = -direction;
-
-    if(x < BANK1_DS5)
-      direction = -direction;
-
-    play(AUDIOCHIP0,1,x,9);
-  }
-  else {
-    y = y + 2;
-    if(y > 15) y = 0;
-    play(AUDIOCHIP0,1,BANK1_C3,y);
+        if(x > BANK1_GS5)
+          direction = -direction;
+        if(x < BANK1_DS5)
+          direction = -direction;
+        play(AUDIOCHIP0,1,x,9);
+      }
+      else {
+        // sound that plays in the background when energizer has been eaten
+        y = y + 3;
+        if(y > 15) y = 0;
+        play(AUDIOCHIP0,1,BANK1_C4,y);
+      }
   }
 } 
 
@@ -3241,7 +3261,6 @@ void audioBufferProcess(void)
 */
 int main(void)
 {
-   byte j;
 
    #ifdef GCC_COMPILED
    SDLSetup();
@@ -3254,8 +3273,10 @@ int main(void)
    printf("(           YYYY-MM-DD-HH-MM-SS         )\n");
    printf("(              CKSUM               )\n");
    printf("'---------------------------------------'\n\n");
-   printf("THIS PROGRAM REQUIRES THE TRS-80 GRAPHICS ");
+   printf("THIS PROGRAM REQUIRES THE TRS80MXS GRAPHICS\n");
    printf("AND SOUND CARD V2.0+.\n\n");
+   printf("MAKE SURE YOUR TRS80MXS AUDIO AND VIDEO \n");
+   printf("CABLES ARE PLUGGED IN TO YOUR MONITOR!\n");
 
 
 top:
@@ -3267,19 +3288,13 @@ top:
         gameCtr++;
 
         audioBufferProcess();
-
-        for(j=0; j <= MAX_SPRITENUM ;++j)
-          syncSpriteAttributesToHardware(j);
-
+        syncSpriteAttributesToHardware();
         checkControls();
         movePacman();
         checkForAllDotsGone();
-
-        audioBufferProcess();
-
         moveGhosts();
         checkCollisions();
-        blinkEnergizers();     
+        blinkEnergizers();
 
         #ifdef GCC_COMPILED
             emulateTMS9118HardwareUpdate();       
@@ -3288,17 +3303,17 @@ top:
 
    clearMazeShutOffSprites();
    setCharactersAt(12,11,"GAME OVER");
-   printf("DONE!");
    audioSilence();
    
    #ifdef GCC_COMPILED
       emulateTMS9118HardwareUpdate();
-      hold(10000);
    #endif
+   hold(10000);
 
    goto top;
 
-quit:
+   #ifdef GCC_COMPILED
    SDLShutdown();
+   #endif
    exit(0);
 }
