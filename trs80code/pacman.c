@@ -529,12 +529,12 @@ typedef struct {
 typedef struct {
   int x;
   int y;
-  byte color;
+  int color;
   int xdir;
   int ydir;
   int patt;
-  char prevdir;
-  char isEyes;
+  int prevdir;
+  int isEyes;
 } spriteAttr;
 
 char buf[33];                   // work buffer
@@ -563,9 +563,9 @@ int direction = 0;
 // circular buffer used in audio management
 typedef struct {
     int * buffer;
-    byte head;
-    byte tail;
-    byte maxlen;
+    int head;
+    int tail;
+    int maxlen;
 } circ_bbuf_t;
 
 
@@ -1799,6 +1799,7 @@ void drawPacmanLives(void)
     __z88dk_fastcall
 #endif
 {
+  setCharacterGroupColor(15,DARKYELLOW,BLACK);
   setCharactersAt(2,0,"          ");
   for(int i=0;i<lives;++i) {
     setCharacterAt(i+2,0,'x');
@@ -1822,35 +1823,36 @@ void updateScore(int incr)
   setCharactersAt(24,0,buf);
 
   // free guy routine
-  if((oldscore < 10000 && score >= 10000) || 
-     (oldscore < 50000 && score >= 50000) ||
-     (oldscore < 100000 && score >= 100000) || 
-     (oldscore < 500000 && score >= 500000) ||
-     (oldscore < 1000000 && score >= 1000000) )
-  {
-    lives++;
+  if(lives < 10) {
+      if((oldscore < 10000 && score >= 10000) || 
+         (oldscore < 50000 && score >= 50000) ||
+         (oldscore < 100000 && score >= 100000) || 
+         (oldscore < 500000 && score >= 500000) ||
+         (oldscore < 1000000 && score >= 1000000) )
+      {
+        lives++;
+        drawPacmanLives();
 
-    // play some beeps when you get a free guy by putting the beeps onto the circular buffer and letting the main
-    // game loop pick them up
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
-
-    drawPacmanLives();
+        // play some beeps when you get a free guy by putting the beeps onto the circular buffer and letting the main
+        // game loop pick them up
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, -1);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+        circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_FS5);
+      }
   }
   oldscore = score;
 }
@@ -2270,7 +2272,7 @@ void setAvailableGhostDirection(int i)
     __z88dk_fastcall
 #endif
 {
-  static byte bFoundOne;
+  static int bFoundOne;
   static byte r;
   static int x;
   static int y;
@@ -2365,29 +2367,114 @@ void ghostsNormal(void)
 #endif
 {
     static int i;
-    sprAttr[RED_GHOST_SPRITENUM].color = DARKRED;
-    sprAttr[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
-    sprAttr[CYAN_GHOST_SPRITENUM].color = CYAN;
-    sprAttr[PINK_GHOST_SPRITENUM].color = LIGHTRED;
+    if(sprAttr[RED_GHOST_SPRITENUM].isEyes == FALSE)
+        sprAttr[RED_GHOST_SPRITENUM].color = DARKRED;
+
+    if(sprAttr[BROWN_GHOST_SPRITENUM].isEyes == FALSE)
+        sprAttr[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
+
+    if(sprAttr[CYAN_GHOST_SPRITENUM].isEyes == FALSE)
+        sprAttr[CYAN_GHOST_SPRITENUM].color = CYAN;
+
+    if(sprAttr[PINK_GHOST_SPRITENUM].isEyes == FALSE)
+        sprAttr[PINK_GHOST_SPRITENUM].color = LIGHTRED;
+
     for(i=RED_GHOST_EYES_SPRITENUM;i<=BROWN_GHOST_EYES_SPRITENUM;++i) {
       sprAttr[i].color = WHITE;
     }
 }
 
-/* ******************************************************************************************************************************
-   | Move ghosts one step                                                                                                       |
-   ******************************************************************************************************************************
-*/
-void moveGhosts(void) 
+
+void eyeBehavior(int i) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
 {
-  static int ctr = 0;
-  static int i;
-  static byte r;
+    static int x;
+    static int y;
+    static int px;
+    static int py;
+    static int foundOne;
 
-  for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;++i) {
+    x = sprAttr[i].x;
+    y = sprAttr[i].y;
+
+    // little alignment cleanups that happen because we made the eyes jump by 4 pixels rather than 2
+    if(y == 14) { sprAttr[i].y = 16; y = sprAttr[i].y;}
+    if(x == 6)  { sprAttr[i].x = 8;  x = sprAttr[i].x;}
+    if(x == 30) { sprAttr[i].x = 32; x = sprAttr[i].x;}
+
+    px = 120;
+    py = 84;
+    foundOne = FALSE;
+
+    if(x == px && y == py) {
+       sprAttr[i].isEyes = FALSE;
+       if(i == RED_GHOST_SPRITENUM) sprAttr[i].color = DARKRED;
+       if(i == PINK_GHOST_SPRITENUM) sprAttr[i].color = LIGHTRED;
+       if(i == BROWN_GHOST_SPRITENUM) sprAttr[i].color = DARKYELLOW;
+       if(i == CYAN_GHOST_SPRITENUM) sprAttr[i].color = CYAN;
+       return;
+    }
+
+    if(x < px && canGoEast(i) && sprAttr[i].prevdir != WEST) {
+        goEast(i);
+        foundOne = TRUE;
+    }
+    else
+    if(x > px && canGoWest(i) && sprAttr[i].prevdir != EAST) {
+        goWest(i);
+        foundOne = TRUE;
+    }
+    else
+    if(y < py && canGoSouth(i) && sprAttr[i].prevdir != NORTH) {
+        goSouth(i);
+        foundOne = TRUE;
+    }
+    else
+    if(y > py && canGoNorth(i) && sprAttr[i].prevdir != SOUTH) {
+        goNorth(i);
+        foundOne = TRUE;
+    }
+
+    if(foundOne == FALSE) {
+        if(canGoWest(i)) {
+            goWest(i);
+            foundOne = TRUE;
+        }
+        if(canGoNorth(i)) {
+            goNorth(i);
+            foundOne = TRUE;
+        }
+    }
+
+    if(foundOne == FALSE) {
+        // this shouldn't happen... force eyes into the box
+        printf("Ghost %d at (%d,%d), lost, alignment fix probably needed\n",i,sprAttr[i].x,sprAttr[i].y);
+        sprAttr[i].isEyes = FALSE;
+        sprAttr[i].x = 120;
+        sprAttr[i].y = 84;
+        return;
+    }
+
+    sprAttr[i].x = x + sprAttr[i].xdir*2;
+    sprAttr[i].y = y + sprAttr[i].ydir*2;
+    sprAttr[i-4].x = sprAttr[i].x; //set eye location
+    sprAttr[i-4].y = sprAttr[i].y; //set eye location
+}
+
+void normalGhostBehavior(int i) 
+#ifndef GCC_COMPILED 
+    __z88dk_fastcall
+#endif
+{
+      static int ctr = 0;
+      static byte r;
+      static int x;
+      static int y;
+
+      x = sprAttr[i].x;
+      y = sprAttr[i].y;
 
       // this code redirects a ghost if he would get stuck
       if(sprAttr[i].prevdir == NORTH && canGoNorth(i) == FALSE) 
@@ -2409,17 +2496,16 @@ void moveGhosts(void)
       }
 
       // while the ghosts are in the box, make it more likely for them to go north
-      if(sprAttr[i].y == 84 && sprAttr[i].x >= 114 && sprAttr[i].x <= 138) {
-          if(canGoNorth(i)) {
-            sprAttr[i].ydir = -2;
-            sprAttr[i].xdir = 0;
-            sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_N;
-          }
+      if(y == 84 && x >= 114 && x <= 138) {
+          if(canGoNorth(i))
+            goNorth(i);
       }
 
       if(r > 72 - (i<<3) )  { // slows down ghosts randomly, with each one having slightly different behavior
-          sprAttr[i].x = sprAttr[i].x + sprAttr[i].xdir;
-          sprAttr[i].y = sprAttr[i].y + sprAttr[i].ydir;
+          sprAttr[i].x = x + sprAttr[i].xdir;
+          sprAttr[i].y = y + sprAttr[i].ydir;
+          x = sprAttr[i].x;
+          y = sprAttr[i].y;
       }
 
       if(energizerctr == 0) {
@@ -2437,8 +2523,8 @@ void moveGhosts(void)
         sprAttr[i].patt = PATT_SCARED_GHOST;
       }
 
-    sprAttr[i-4].x = sprAttr[i].x; //set eye location
-    sprAttr[i-4].y = sprAttr[i].y; //set eye location
+    sprAttr[i-4].x = x; //set eye location
+    sprAttr[i-4].y = y; //set eye location
 
     // make ghosts blue if pac has eaten an energizer
     if(energizerctr > 0) {
@@ -2449,9 +2535,27 @@ void moveGhosts(void)
     // put hat on someone's head if they have it
     if(i == GhostWithHat) {
       sprAttr[HAT_SPRITENUM].color = DARKGREEN;
-      sprAttr[HAT_SPRITENUM].x = sprAttr[i].x-1;
-      sprAttr[HAT_SPRITENUM].y = sprAttr[i].y-4;
+      sprAttr[HAT_SPRITENUM].x = x-1;
+      sprAttr[HAT_SPRITENUM].y = y-4;
     }
+
+}
+/* ******************************************************************************************************************************
+   | Move ghosts one step                                                                                                       |
+   ******************************************************************************************************************************
+*/
+void moveGhosts(void) 
+#ifndef GCC_COMPILED 
+    __z88dk_fastcall
+#endif
+{
+  static int i;
+
+  for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;++i) {
+    if(sprAttr[i].isEyes == TRUE)
+        eyeBehavior(i);
+    else
+        normalGhostBehavior(i);
   }
 
   if(energizerctr == 1) {
@@ -2791,6 +2895,11 @@ void resetMap(void)
     __z88dk_fastcall
 #endif
 {
+      sprAttr[RED_GHOST_SPRITENUM].isEyes = FALSE;
+      sprAttr[CYAN_GHOST_SPRITENUM].isEyes = FALSE;
+      sprAttr[BROWN_GHOST_SPRITENUM].isEyes = FALSE;
+      sprAttr[PINK_GHOST_SPRITENUM].isEyes = FALSE;
+
       energizerctr = 0;
       putGhostsInBox();
       ghostsNormal();  
@@ -2875,6 +2984,19 @@ void pacmanDead(void)
     resetMap();
 }
 
+
+void ghostEaten(int i) 
+#ifndef GCC_COMPILED 
+    __z88dk_fastcall
+#endif
+{
+          sprAttr[i].color = TRANSPARENT;
+          sprAttr[i-4].color = WHITE;
+          sprAttr[i].isEyes = TRUE;
+          ghostCtr = ghostCtr + 400;
+          bloip();
+          updateScore(ghostCtr);
+}
 /* ******************************************************************************************************************************
    | check collision between pacman and ghosts                                                                                  |
    ******************************************************************************************************************************
@@ -2904,36 +3026,17 @@ void checkCollisions(void)
     gy = sprAttr[i].y+2;
     gxl = sprAttr[i].x+14;
     gyl = sprAttr[i].y+14;
-    if (px  < gxl &&
-        pxl > gx &&
-        py  < gyl &&
-        pyl > gy) {
+    if (sprAttr[i].isEyes == FALSE && px  < gxl && pxl > gx && py  < gyl && pyl > gy) {
       if(energizerctr == 0) {
           pacmanDead();
           lives--;
           drawPacmanLives();
-          if(lives == -1)
+          if(lives < 0)
             bRunning = FALSE;
           i = BROWN_GHOST_SPRITENUM+1; // not fair to die more than once
       }
       else {
-        if(i == RED_GHOST_SPRITENUM) 
-          sprAttr[i].color = DARKRED;
-        else if(i == BROWN_GHOST_SPRITENUM)
-          sprAttr[i].color = DARKYELLOW;
-        else if(i == CYAN_GHOST_SPRITENUM)
-          sprAttr[i].color = CYAN;
-        else
-          sprAttr[i].color = LIGHTRED;
-
-          sprAttr[i].xdir = 0;
-          sprAttr[i].ydir = -2;
-          sprAttr[i].x = 120;
-          sprAttr[i].y = 84;
-          sprAttr[i].prevdir = WEST;
-          ghostCtr = ghostCtr + 400;
-          bloip();
-          updateScore(ghostCtr);
+          ghostEaten(i);
           i = BROWN_GHOST_SPRITENUM+1; // get out if we've had a collision
       }    
     }      
@@ -2972,7 +3075,7 @@ void attractScreen() {
     int x = 0;
     int y = 4;
     byte j;
-
+    dotctr = 0;
 
     for(int i=0;i<32;++i)
       setCharacterGroupColor(i,DARKBLUE,BLACK);
