@@ -534,6 +534,7 @@ typedef struct {
   int ydir;
   int patt;
   char prevdir;
+  char isEyes;
 } spriteAttr;
 
 char buf[33];                   // work buffer
@@ -549,6 +550,7 @@ unsigned int ghostCtr = 0;      // score counter that adds up with each ghost be
 int lives = 3;                  // pacman lives
 unsigned int gameCtr = 0;       // number that counts up each frame as game plays
 byte GhostWithHat = 255;       // which ghost has the hat?
+
 
 int direction = 0;
 
