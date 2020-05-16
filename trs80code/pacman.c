@@ -115,9 +115,17 @@
 #define PATT_PACMAN_DYING_9 28
 #define PATT_PACMAN_DYING_END 29
 #define PATT_HAT 30
+#define PATT_200 31
+#define PATT_400 32
+#define PATT_800 33
+#define PATT_1600 34
+#define PATT_QUESTIONMARKS 35
+#define PATT_CHERRY 36
 
 #define ENERGIZER_RIGHT_CHAR 128
 #define ENERGIZER_LEFT_CHAR 129
+
+#define FLAG_CHAR 136
 
 
 // sprite identifiers
@@ -135,12 +143,18 @@
 #define PINK_GHOST_SPRITENUM 8
 #define BROWN_GHOST_SPRITENUM 9
 
-#define MAX_SPRITENUM 9
+#define POP_SCORE_SPRITENUM 10
+
+#define MAX_SPRITENUM 10
 
 #define EAST_PACMAN_PAT_OFFSET 0
 #define NORTH_PACMAN_PAT_OFFSET 3 
 #define WEST_PACMAN_PAT_OFFSET 6
 #define SOUTH_PACMAN_PAT_OFFSET 9
+
+
+#define PACMAN_HOME_X 120
+#define PACMAN_HOME_Y 128
 
 
 #define EIGHTHNOTE 1000
@@ -550,6 +564,8 @@ unsigned int ghostCtr = 0;      // score counter that adds up with each ghost be
 int lives = 3;                  // pacman lives
 unsigned int gameCtr = 0;       // number that counts up each frame as game plays
 byte GhostWithHat = 255;       // which ghost has the hat?
+unsigned int levelCtr = 1;     // what level am I on?
+int popScoreGameCtr = 0;       // gameCtr value when ghost was eaten (used to remove popup score)
 
 
 int direction = 0;
@@ -1442,6 +1458,8 @@ void setPatterns(void)
    static char N9[8] = {0x78,0x84,0x84,0x7C,0x04,0x08,0x70,0x00};
    static char NC[8] = {0x00,0x30,0x30,0x00,0x00,0x30,0x30,0x00};
    static char ND[8] = {0x00,0x00,0x00,0x7E,0x00,0x00,0x00,0x00};
+   static char flag[] ={0x8E,0xFE,0xFE,0xFE,0x72,0x02,0x02,0x02};
+   static char eq[] =  {0x00,0x00,0x00,0xFE,0x00,0xFE,0x00,0x00};
    
    for(i=0;i<256;++i)                   // set all characters to blank
           setCharPatternByArray(i,p0,8);
@@ -1523,7 +1541,8 @@ void setPatterns(void)
    setCharPatternByArray('8',N8,8); 
    setCharPatternByArray('9',N9,8); 
    setCharPatternByArray(':',NC,8); 
-   setCharPatternByArray('-',ND,8); 
+   setCharPatternByArray('-',ND,8);
+   setCharPatternByArray('=',eq,8);
 
    static char BLK1[] = {0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE, 0xFF}; // characters for the attract screen
    static char BLK2[] = {0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
@@ -1536,6 +1555,8 @@ void setPatterns(void)
    setCharPatternByArray('*', BLK3,8);
    setCharPatternByArray('+', BLK4,8);
    setCharPatternByArray(',', BLK5,8);
+
+   setCharPatternByArray(FLAG_CHAR,flag,8);
 }
 
 /* ******************************************************************************************************************************
@@ -1748,6 +1769,18 @@ void drawDots(void)
   setCharacterAt(1,19,ENERGIZER_LEFT_CHAR); // energizer (left side)
   setCharacterAt(29,5,ENERGIZER_LEFT_CHAR); // energizer (left side)
   setCharacterAt(29,19,ENERGIZER_LEFT_CHAR); // energizer (left side)
+
+  setCharacterGroupColor(17,DARKGREEN,BLACK);
+  if(levelCtr < 6) {
+      for(int i=0;i<levelCtr;i++) {
+               setCharacterAt(16 - i,0,FLAG_CHAR);
+      }
+  }
+  else {
+    sprintf(buf,"%c=%d   ", FLAG_CHAR,levelCtr);
+    setCharactersAt(12,0,buf);
+  }
+
 }
 
 /* ******************************************************************************************************************************
@@ -2529,7 +2562,20 @@ void normalGhostBehavior(int i)
     // make ghosts blue if pac has eaten an energizer
     if(energizerctr > 0) {
       sprAttr[i-4].color = TRANSPARENT; // turn off eyes
+
       sprAttr[i].color = DARKBLUE; // make ghost dark blue
+
+      if(energizerctr > 60 && energizerctr < 70)
+        sprAttr[i].color = WHITE;
+      else
+      if(energizerctr > 40 && energizerctr < 50)
+        sprAttr[i].color = WHITE;
+      else
+      if(energizerctr > 20 && energizerctr < 30)
+        sprAttr[i].color = WHITE;
+      else
+      if(energizerctr > 1 && energizerctr < 10)
+        sprAttr[i].color = WHITE;
     }
 
     // put hat on someone's head if they have it
@@ -2562,6 +2608,9 @@ void moveGhosts(void)
     ghostsNormal();
     ghostCtr = 0;
   }
+
+  if(gameCtr > popScoreGameCtr + 10)
+    sprAttr[POP_SCORE_SPRITENUM].color = TRANSPARENT;
 }
 
 
@@ -2903,8 +2952,8 @@ void resetMap(void)
       energizerctr = 0;
       putGhostsInBox();
       ghostsNormal();  
-      sprAttr[PACMAN_SPRITENUM].x = 120;
-      sprAttr[PACMAN_SPRITENUM].y = 128;
+      sprAttr[PACMAN_SPRITENUM].x = PACMAN_HOME_X;
+      sprAttr[PACMAN_SPRITENUM].y = PACMAN_HOME_Y;
       gameCtr = 0;
 }
 
@@ -2942,6 +2991,7 @@ void checkForAllDotsGone(void)
           #endif
         }
       dotctr = 0;
+      levelCtr++;
       drawDots();
       resetMap();
     }
@@ -2993,9 +3043,38 @@ void ghostEaten(int i)
           sprAttr[i].color = TRANSPARENT;
           sprAttr[i-4].color = WHITE;
           sprAttr[i].isEyes = TRUE;
-          ghostCtr = ghostCtr + 400;
+          ghostCtr = ghostCtr + 1;
+          popScoreGameCtr = gameCtr;
+
+          sprAttr[POP_SCORE_SPRITENUM].color = CYAN;
+          sprAttr[POP_SCORE_SPRITENUM].x = sprAttr[i].x;
+          sprAttr[POP_SCORE_SPRITENUM].y = sprAttr[i].y;
+
+          if(ghostCtr == 1) {
+              sprAttr[POP_SCORE_SPRITENUM].patt = PATT_200;
+              updateScore(200);
+          }
+          else
+            if(ghostCtr == 2) {
+                sprAttr[POP_SCORE_SPRITENUM].patt = PATT_400;
+                updateScore(400);
+            }
+            else
+                if(ghostCtr == 3) {
+                    sprAttr[POP_SCORE_SPRITENUM].patt = PATT_800; 
+                    updateScore(800); 
+                }
+                else
+                    if(ghostCtr == 4) {
+                        sprAttr[POP_SCORE_SPRITENUM].patt = PATT_1600;
+                        updateScore(1600);
+                    }
+                    else {
+                        sprAttr[POP_SCORE_SPRITENUM].patt = PATT_QUESTIONMARKS;
+                        updateScore(3200);
+                    }
+
           bloip();
-          updateScore(ghostCtr);
 }
 /* ******************************************************************************************************************************
    | check collision between pacman and ghosts                                                                                  |
@@ -3076,6 +3155,8 @@ void attractScreen() {
     int y = 4;
     byte j;
     dotctr = 0;
+    lives = 3;
+    levelCtr = 1;
 
     for(int i=0;i<32;++i)
       setCharacterGroupColor(i,DARKBLUE,BLACK);
@@ -3250,6 +3331,7 @@ void setupGame(void)
 
    clearScreenAndInitializeSprites();
 
+
    putGhostsInBox();
 
    drawMaze();
@@ -3278,7 +3360,21 @@ void setupGame(void)
    setSpritePatternByArray(PATT_PACMAN_DYING_9, pacman_dying_9,32);
    setSpritePatternByArray(PATT_PACMAN_DYING_END, pacman_dying_end,32);
 
+   static char TwoHundred[] =     {0x00, 0x00, 0x00, 0x00, 0x31, 0x4A, 0x0A, 0x0A, 0x32, 0x42, 0x42, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x52, 0x52, 0x52, 0x52, 0x52, 0x8C, 0x00, 0x00, 0x00, 0x00};
+   static char FourHundred[] =    {0x00, 0x00, 0x00, 0x00, 0x09, 0x1A, 0x2A, 0x4A, 0x7A, 0x0A, 0x0A, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x52, 0x52, 0x52, 0x52, 0x52, 0x8C, 0x00, 0x00, 0x00, 0x00};
+   static char EightHundred[] =   {0x00, 0x00, 0x00, 0x00, 0x31, 0x4A, 0x4A, 0x32, 0x4A, 0x4A, 0x4A, 0x31, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x52, 0x52, 0x52, 0x52, 0x52, 0x8C, 0x00, 0x00, 0x00, 0x00};
+   static char SixteenHundred[] = {0x00, 0x00, 0x00, 0x00, 0x88, 0x91, 0xA1, 0xA1, 0xB9, 0xA5, 0xA5, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x29, 0x29, 0x29, 0x29, 0x29, 0x29, 0xC6, 0x00, 0x00, 0x00, 0x00};
+   static char QuestionMarks[] =  {0x00, 0x00, 0x00, 0x31, 0x4A, 0x08, 0x08, 0x10, 0x21, 0x21, 0x00, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x42, 0x42, 0x84, 0x08, 0x08, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00};
    
+   static char Cherry[] = {0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x03, 0x06, 0x1C, 0x3E, 0x2E, 0x2E, 0x26, 0x1C, 0x00, 0x00, 0x00, 0x20, 0x60, 0xC0, 0x80, 0x00, 0x80, 0xC0, 0x78, 0x7C, 0x7C, 0x5C, 0x4C, 0x38, 0x00, 0x00};
+
+   setSpritePatternByArray(PATT_200,           TwoHundred,     32);
+   setSpritePatternByArray(PATT_400,           FourHundred,    32);
+   setSpritePatternByArray(PATT_800,           EightHundred,   32);
+   setSpritePatternByArray(PATT_1600,          SixteenHundred, 32);
+   setSpritePatternByArray(PATT_QUESTIONMARKS, QuestionMarks,  32);
+   setSpritePatternByArray(PATT_CHERRY,        Cherry,         32);
+
    sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
 
    moveGhosts();
