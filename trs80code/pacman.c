@@ -1227,7 +1227,10 @@ void SDLShutdown(void)
    delete_fluid_settings(settings);
 }
 
-
+/* ******************************************************************************************************************************
+   | Emulate TMS9118 hardware on SDL                                                                                            |
+   ******************************************************************************************************************************
+*/
 void emulateTMS9118HardwareUpdate(void) 
 {
     updateEmulatedVDPScreen();
@@ -1903,9 +1906,9 @@ void updateScore(int incr)
 }
 
 
-/* ***************************
-   | draw characters of maze |
-   ***************************
+/* ********************************************************************************************************************************
+   | draw characters of maze                                                                                                      |
+   ********************************************************************************************************************************
 */
 void drawMaze(void) {
   static byte j;
@@ -2429,7 +2432,10 @@ void ghostsNormal(void)
     }
 }
 
-
+/* ******************************************************************************************************************************
+   | manages how ghost eyes get back to the ghost box                                                                           |
+   ******************************************************************************************************************************
+*/
 void eyeBehavior(int i) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
@@ -2745,7 +2751,10 @@ void fruitEatenSound(void) {
 }
 
 
-
+/* ******************************************************************************************************************************
+   | Display one of the fruits                                                                                                  |
+   ******************************************************************************************************************************
+*/
 void displayCherry(void) {
     sprAttr[FRUIT_SPRITENUM].color = DARKRED;
     sprAttr[FRUIT_SPRITENUM].patt = PATT_CHERRY;
@@ -3138,6 +3147,10 @@ void pacmanDead(void)
 }
 
 
+/* ******************************************************************************************************************************
+   | animation for when a ghost gets eaten                                                                                      |
+   ******************************************************************************************************************************
+*/
 void ghostEaten(int i) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
@@ -3388,7 +3401,6 @@ void setupGame(void)
    score = 0;
    direction = (int)fmax((double)abs(BANK1_GS5 - BANK1_DS5) / 6,(double)1); // wonky math necessary so direction works for both gcc and zcc
 
-
    audioSilence();
 
    srand(getRand256());
@@ -3442,11 +3454,9 @@ void setupGame(void)
    static char hat[] = {0x00, 0x04, 0x0E, 0x0F, 0x0F, 0x9F, 0xFF, 0x7F, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x70, 0xF0, 0xF0, 0xF9, 0xFF, 0xFE, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
    setSpritePatternByArray(PATT_HAT, hat,32);
 
-
    attractScreen();
 
    clearScreenAndInitializeSprites();
-
 
    putGhostsInBox();
 
@@ -3506,10 +3516,9 @@ void setupGame(void)
    setSpritePatternByArray(PATT_MELON,            Melon,      32);
    setSpritePatternByArray(PATT_GALAXIAN,         Galaxian,   32);
 
-
    sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
 
-   moveGhosts();
+   moveGhosts(); // force the ghosts eyes to appear
 
    #ifdef GCC_COMPILED
    updateEmulatedVDPScreen();
@@ -3519,13 +3528,13 @@ void setupGame(void)
    SDL_RenderPresent(renderer);
    #endif
 
-   sprAttr[HAT_SPRITENUM].x = 0;
+   sprAttr[HAT_SPRITENUM].x = 0; // initialize the hat so it's invisible
    sprAttr[HAT_SPRITENUM].y = 0;
    sprAttr[HAT_SPRITENUM].patt = PATT_HAT;
    sprAttr[HAT_SPRITENUM].color = TRANSPARENT;
 
    introMusic(); 
-}
+} 
 
 
 
@@ -3587,6 +3596,56 @@ void audioBufferProcess(void)
 
 #define blinkEnergizers() if(gameCtr & 0x0004) setCharacterGroupColor(16,BLACK,BLACK);  else  setCharacterGroupColor(16,WHITE,BLACK);
 
+#ifndef GCC_COMPILED
+    #define charat(x,y,c)  memset(0x3c00+((y<<6) + x), c, 1);
+    void strat(byte x, byte y, char* s) {
+        for(uint i = 0; i < strlen(s); i++) {
+            charat(x+i,y,*(s+i));
+        }
+    }
+#endif
+
+
+void displayTRSScreen(void) {
+    char ch[65];
+
+   #ifdef GCC_COMPILED
+       printf(".---------------------------------------.\n");
+       printf("(                PACMAN!!               )\n");
+       printf("(           YYYY-MM-DD-HH-MM-SS         )\n");
+       printf("(              CKSUM               )\n");
+       printf("'---------------------------------------'\n\n");
+       printf("THIS IS THE SDL VERSION OF VS PACMAN.\n");
+   #else
+        strcpy(ch,"        XXXXXXXXXXXXX       ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 0,ch);
+        strcpy(ch,"    XXXXXXXXXXXXXXXXXXXXX   ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 1,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 2,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 3,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXXXXXXXX     ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 4,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXX           ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 5,ch);
+        strcpy(ch,"XXXXXXXXXXX                 ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 6,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXX           ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 7,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXXXXXXXX     ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 8,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 9,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,10,ch);
+        strcpy(ch,"    XXXXXXXXXXXXXXXXXXXXX   ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,11,ch);
+        strcpy(ch,"        XXXXXXXXXXXXX       ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,12,ch);
+        strat(28,14,"VS PACMAN");
+        strat(10,15,"BUILD INFO: YYYY-MM-DD-HH-MM-SS, CKSUM");
+        strat( 7, 1,"THIS PROGRAM ");
+        strat( 7, 2,"REQUIRES THE");
+        strat( 7, 3,"TRS80MXS");
+        strat( 7, 4,"GRAPHICS AND");
+        strat( 7, 5,"SOUND CARD V2.0+");
+        strat( 7, 7,"MAKE SURE YOUR");
+        strat( 7, 8,"TRS80MXS AUDIO");
+        strat( 7, 9,"AND VIDEO ");
+        strat( 7,10,"CABLES ARE ");
+        strat( 7,11,"PLUGGED IN TO");
+        strat( 7,12,"YOUR MONITOR.");
+   #endif
+}
+
 
 /* ******************************************************************************************************************************
    | main code                                                                                                                  |
@@ -3601,16 +3660,7 @@ int main(void)
 
    clearTRSScreen();
 
-   printf(".---------------------------------------.\n");
-   printf("(                PACMAN!!               )\n");
-   printf("(           YYYY-MM-DD-HH-MM-SS         )\n");
-   printf("(              CKSUM               )\n");
-   printf("'---------------------------------------'\n\n");
-   printf("THIS PROGRAM REQUIRES THE TRS80MXS GRAPHICS\n");
-   printf("AND SOUND CARD V2.0+.\n\n");
-   printf("MAKE SURE YOUR TRS80MXS AUDIO AND VIDEO \n");
-   printf("CABLES ARE PLUGGED IN TO YOUR MONITOR!\n");
-
+   displayTRSScreen();
 
 top:
    setupGame();
