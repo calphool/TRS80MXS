@@ -120,7 +120,16 @@
 #define PATT_800 33
 #define PATT_1600 34
 #define PATT_QUESTIONMARKS 35
+
 #define PATT_CHERRY 36
+#define PATT_STRAWBERRY 37
+#define PATT_APPLE 38
+#define PATT_PEACH 39
+#define PATT_MELON 40
+#define PATT_GALAXIAN 41
+#define PATT_BELL 42
+#define PATT_KEY 43
+
 
 #define ENERGIZER_RIGHT_CHAR 128
 #define ENERGIZER_LEFT_CHAR 129
@@ -145,7 +154,9 @@
 
 #define POP_SCORE_SPRITENUM 10
 
-#define MAX_SPRITENUM 10
+#define FRUIT_SPRITENUM 11
+
+#define MAX_SPRITENUM 11
 
 #define EAST_PACMAN_PAT_OFFSET 0
 #define NORTH_PACMAN_PAT_OFFSET 3 
@@ -566,6 +577,7 @@ unsigned int gameCtr = 0;       // number that counts up each frame as game play
 byte GhostWithHat = 255;       // which ghost has the hat?
 unsigned int levelCtr = 1;     // what level am I on?
 int popScoreGameCtr = 0;       // gameCtr value when ghost was eaten (used to remove popup score)
+int fruitEatenOnThisLevel = 0; // flag that flips if a fruit has been eaten
 
 
 int direction = 0;
@@ -2724,6 +2736,83 @@ void bloip(void) {
     circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_B6);
 }
 
+void fruitEatenSound(void) {
+    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_C3);
+    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_F3);
+    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_B3);
+    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_C4);
+    circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_F4);
+}
+
+
+
+void displayCherry(void) {
+    sprAttr[FRUIT_SPRITENUM].color = DARKRED;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_CHERRY;
+}
+void displayApple(void) {
+    sprAttr[FRUIT_SPRITENUM].color = DARKRED;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_APPLE;
+}
+void displayPeach(void) {
+    sprAttr[FRUIT_SPRITENUM].color = LIGHTRED;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_PEACH;
+}
+void displayMelon(void) {
+    sprAttr[FRUIT_SPRITENUM].color = DARKGREEN;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_MELON;
+}
+void displayStrawberry(void) {
+    sprAttr[FRUIT_SPRITENUM].color = DARKRED;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_STRAWBERRY;
+}
+void displayKey(void) {
+    sprAttr[FRUIT_SPRITENUM].color = GRAY;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_KEY;
+}
+void displayBell(void) {
+    sprAttr[FRUIT_SPRITENUM].color = LIGHTYELLOW;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_BELL;
+}
+void displayGalaxian(void) {
+    sprAttr[FRUIT_SPRITENUM].color = LIGHTYELLOW;
+    sprAttr[FRUIT_SPRITENUM].patt = PATT_GALAXIAN;
+}
+
+void displayFruit(int i) {
+      sprAttr[FRUIT_SPRITENUM].x = PACMAN_HOME_X;
+      sprAttr[FRUIT_SPRITENUM].y = PACMAN_HOME_Y;
+
+        switch(i) {
+            case 1:
+                displayCherry();
+            break;
+            case 2:
+                displayStrawberry();
+            break;
+            case 3:
+                displayPeach();
+            break;
+            case 4:
+                displayApple();
+            break;
+            case 5:
+                displayMelon();
+            break;
+            case 6:
+                displayGalaxian();
+            break;
+            case 7:
+                displayBell();
+            break;
+            case 8:
+                displayKey();
+            break;
+
+            default:
+                displayFruit((getRand256() % 7) + 1);
+        }
+}
 
 /* ******************************************************************************************************************************
    | movePacman one step and eat dot if one is under him                                                                        |
@@ -2807,6 +2896,16 @@ void movePacman(void)
         setCharacterAt(xx,yy,'s');
       }
     }
+
+
+    if((gameCtr >> 8) == 2 && fruitEatenOnThisLevel == 0) {
+        displayFruit(levelCtr);
+    }
+
+    if((gameCtr >> 8) == 4) {
+        sprAttr[FRUIT_SPRITENUM].color = TRANSPARENT;
+    }
+
 }
 
 
@@ -2954,7 +3053,11 @@ void resetMap(void)
       ghostsNormal();  
       sprAttr[PACMAN_SPRITENUM].x = PACMAN_HOME_X;
       sprAttr[PACMAN_SPRITENUM].y = PACMAN_HOME_Y;
+      sprAttr[FRUIT_SPRITENUM].x = PACMAN_HOME_X;
+      sprAttr[FRUIT_SPRITENUM].y = PACMAN_HOME_Y;
+      sprAttr[FRUIT_SPRITENUM].color = TRANSPARENT;
       gameCtr = 0;
+      fruitEatenOnThisLevel = 0;
 }
 
 
@@ -3119,6 +3222,19 @@ void checkCollisions(void)
           i = BROWN_GHOST_SPRITENUM+1; // get out if we've had a collision
       }    
     }      
+  }
+
+  if(sprAttr[FRUIT_SPRITENUM].color != TRANSPARENT) {
+        gx = sprAttr[FRUIT_SPRITENUM].x+2;
+        gy = sprAttr[FRUIT_SPRITENUM].y+2;
+        gxl = sprAttr[FRUIT_SPRITENUM].x+14;
+        gyl = sprAttr[FRUIT_SPRITENUM].y+14;    
+        if(px  < gxl && pxl > gx && py  < gyl && pyl > gy) {
+            updateScore(1000 * levelCtr);
+            fruitEatenSound();
+            fruitEatenOnThisLevel = 1;
+            sprAttr[FRUIT_SPRITENUM].color = TRANSPARENT;
+        }
   }
 }
 
@@ -3365,15 +3481,31 @@ void setupGame(void)
    static char EightHundred[] =   {0x00, 0x00, 0x00, 0x00, 0x31, 0x4A, 0x4A, 0x32, 0x4A, 0x4A, 0x4A, 0x31, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x52, 0x52, 0x52, 0x52, 0x52, 0x8C, 0x00, 0x00, 0x00, 0x00};
    static char SixteenHundred[] = {0x00, 0x00, 0x00, 0x00, 0x88, 0x91, 0xA1, 0xA1, 0xB9, 0xA5, 0xA5, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x29, 0x29, 0x29, 0x29, 0x29, 0x29, 0xC6, 0x00, 0x00, 0x00, 0x00};
    static char QuestionMarks[] =  {0x00, 0x00, 0x00, 0x31, 0x4A, 0x08, 0x08, 0x10, 0x21, 0x21, 0x00, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x42, 0x42, 0x84, 0x08, 0x08, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00};
-   
-   static char Cherry[] = {0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x03, 0x06, 0x1C, 0x3E, 0x2E, 0x2E, 0x26, 0x1C, 0x00, 0x00, 0x00, 0x20, 0x60, 0xC0, 0x80, 0x00, 0x80, 0xC0, 0x78, 0x7C, 0x7C, 0x5C, 0x4C, 0x38, 0x00, 0x00};
 
    setSpritePatternByArray(PATT_200,           TwoHundred,     32);
    setSpritePatternByArray(PATT_400,           FourHundred,    32);
    setSpritePatternByArray(PATT_800,           EightHundred,   32);
    setSpritePatternByArray(PATT_1600,          SixteenHundred, 32);
    setSpritePatternByArray(PATT_QUESTIONMARKS, QuestionMarks,  32);
-   setSpritePatternByArray(PATT_CHERRY,        Cherry,         32);
+   
+   static char Cherry[] =         {0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x03, 0x06, 0x1C, 0x3E, 0x2E, 0x2E, 0x26, 0x1C, 0x00, 0x00, 0x00, 0x20, 0x60, 0xC0, 0x80, 0x00, 0x80, 0xC0, 0x78, 0x7C, 0x7C, 0x5C, 0x4C, 0x38, 0x00, 0x00};
+   static char Apple[] =          {0x00, 0x00, 0x00, 0x1D, 0x3E, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x1F, 0x1F, 0x0F, 0x06, 0x00, 0x00, 0x00, 0x00, 0x80, 0x70, 0xF8, 0xFC, 0xFC, 0xFC, 0xEC, 0xEC, 0xD8, 0xF8, 0xF0, 0xE0, 0x00, 0x00};
+   static char Peach[] =          {0x00, 0x00, 0x00, 0x01, 0x01, 0x0B, 0x1D, 0x3E, 0x3F, 0x3F, 0x3F, 0x1F, 0x1F, 0x07, 0x00, 0x00, 0x00, 0x40, 0xF0, 0x60, 0x00, 0xB0, 0x78, 0xFC, 0xFC, 0xFC, 0xFC, 0xF8, 0xF8, 0xE0, 0x00, 0x00};
+   static char Strawberry[] =     {0x00, 0x00, 0x01, 0x07, 0x1B, 0x2C, 0x3B, 0x3F, 0x36, 0x1F, 0x1F, 0x0D, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xB0, 0x68, 0xF8, 0xB8, 0xE8, 0xF0, 0xB0, 0xE0, 0xC0, 0x00, 0x00, 0x00};
+   static char Bell[] =           {0x00, 0x00, 0x03, 0x0C, 0x1B, 0x17, 0x37, 0x3F, 0x6F, 0x6F, 0x7F, 0x61, 0x3F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xE0, 0xE0, 0xF0, 0xF0, 0xF8, 0xF8, 0xF8, 0x98, 0xF0, 0x80, 0x00, 0x00};
+   static char Key[] =            {0x00, 0x00, 0x03, 0x0C, 0x0F, 0x0F, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x80, 0x60, 0xE0, 0xE0, 0x80, 0xC0, 0x80, 0x40, 0x80, 0xC0, 0x80, 0x00, 0x00, 0x00};
+   static char Melon[] =          {0x00, 0x08, 0x07, 0x01, 0x02, 0x0F, 0x1B, 0x1F, 0x2F, 0x3D, 0x2F, 0x1F, 0x1B, 0x0F, 0x03, 0x00, 0x00, 0x00, 0x80, 0x00, 0x80, 0xE0, 0xF0, 0x70, 0xF8, 0xD8, 0xF8, 0x70, 0xF0, 0xE0, 0x80, 0x00};
+   static char Galaxian[] =       {0x00, 0x00, 0x01, 0x23, 0x27, 0x3C, 0x3E, 0x2F, 0x37, 0x1B, 0x0D, 0x05, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0xC8, 0x78, 0xF8, 0xE8, 0xD8, 0xB0, 0x60, 0x40, 0x00, 0x00, 0x00, 0x00};
+
+   setSpritePatternByArray(PATT_CHERRY,           Cherry,     32);
+   setSpritePatternByArray(PATT_APPLE,            Apple,      32);
+   setSpritePatternByArray(PATT_PEACH,            Peach,      32);
+   setSpritePatternByArray(PATT_STRAWBERRY,       Strawberry, 32);
+   setSpritePatternByArray(PATT_BELL,             Bell,       32);
+   setSpritePatternByArray(PATT_KEY,              Key,        32);
+   setSpritePatternByArray(PATT_MELON,            Melon,      32);
+   setSpritePatternByArray(PATT_GALAXIAN,         Galaxian,   32);
+
 
    sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
 

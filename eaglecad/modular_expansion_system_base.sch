@@ -30696,7 +30696,7 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 </instance>
 <instance part="U$2" gate="G$1" x="2.54" y="13.97" smashed="yes">
 <attribute name="NAME" x="-5.08" y="19.05" size="1.778" layer="95"/>
-<attribute name="VALUE" x="13.97" y="5.08" size="1.778" layer="96"/>
+<attribute name="VALUE" x="-11.43" y="25.4" size="1.778" layer="96"/>
 </instance>
 <instance part="D1" gate="G$1" x="96.52" y="29.21" smashed="yes" rot="R90">
 <attribute name="NAME" x="101.092" y="25.781" size="1.778" layer="95" font="vector" rot="R180"/>
