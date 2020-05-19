@@ -142,6 +142,7 @@
 
 #define HAT_SPRITENUM 1
 
+/*
 #define RED_GHOST_EYES_SPRITENUM 2
 #define CYAN_GHOST_EYES_SPRITENUM 3
 #define PINK_GHOST_EYES_SPRITENUM 4
@@ -151,6 +152,17 @@
 #define CYAN_GHOST_SPRITENUM 7
 #define PINK_GHOST_SPRITENUM 8
 #define BROWN_GHOST_SPRITENUM 9
+*/
+
+#define RED_GHOST_SPRITENUM 2
+#define CYAN_GHOST_SPRITENUM 3
+#define PINK_GHOST_SPRITENUM 4
+#define BROWN_GHOST_SPRITENUM 5
+
+#define RED_GHOST_EYES_SPRITENUM 6
+#define CYAN_GHOST_EYES_SPRITENUM 7
+#define PINK_GHOST_EYES_SPRITENUM 8
+#define BROWN_GHOST_EYES_SPRITENUM 9
 
 #define POP_SCORE_SPRITENUM 10
 
@@ -2263,7 +2275,7 @@ void goNorth(int i)
         sprAttr[i].ydir = -2;
         sprAttr[i].xdir = 0;
         sprAttr[i].prevdir = NORTH;
-        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_N;
+        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_N;
 }
 
 /* ******************************************************************************************************************************
@@ -2278,7 +2290,7 @@ void goSouth(int i)
         sprAttr[i].ydir = 2;
         sprAttr[i].xdir = 0;
         sprAttr[i].prevdir = SOUTH;
-        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_S;
+        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_S;
 }
 
 /* ******************************************************************************************************************************
@@ -2293,7 +2305,7 @@ void goEast(int i)
         sprAttr[i].xdir = 2;
         sprAttr[i].ydir = 0;
         sprAttr[i].prevdir = EAST;
-        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_E;
+        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_E;
 }
 
 /* ******************************************************************************************************************************
@@ -2308,7 +2320,7 @@ void goWest(int i)
         sprAttr[i].xdir = -2;
         sprAttr[i].ydir = 0;
         sprAttr[i].prevdir = WEST;
-        sprAttr[i-4].patt = PATT_NORMAL_GHOST_EYES_W;
+        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_W;
 }
 
 
@@ -2511,8 +2523,8 @@ void eyeBehavior(int i)
 
     sprAttr[i].x = x + sprAttr[i].xdir*2;
     sprAttr[i].y = y + sprAttr[i].ydir*2;
-    sprAttr[i-4].x = sprAttr[i].x; //set eye location
-    sprAttr[i-4].y = sprAttr[i].y; //set eye location
+    sprAttr[i+4].x = sprAttr[i].x; //set eye location
+    sprAttr[i+4].y = sprAttr[i].y; //set eye location
 }
 
 void normalGhostBehavior(int i) 
@@ -2575,12 +2587,12 @@ void normalGhostBehavior(int i)
         sprAttr[i].patt = PATT_SCARED_GHOST;
       }
 
-    sprAttr[i-4].x = x; //set eye location
-    sprAttr[i-4].y = y; //set eye location
+    sprAttr[i+4].x = x; //set eye location
+    sprAttr[i+4].y = y; //set eye location
 
     // make ghosts blue if pac has eaten an energizer
     if(energizerctr > 0) {
-      sprAttr[i-4].color = TRANSPARENT; // turn off eyes
+      sprAttr[i+4].color = TRANSPARENT; // turn off eyes
 
       sprAttr[i].color = DARKBLUE; // make ghost dark blue
 
@@ -3158,7 +3170,7 @@ void ghostEaten(int i)
 #endif
 {
           sprAttr[i].color = TRANSPARENT;
-          sprAttr[i-4].color = WHITE;
+          sprAttr[i+4].color = WHITE;
           sprAttr[i].isEyes = TRUE;
           ghostCtr = ghostCtr + 1;
           popScoreGameCtr = gameCtr;
