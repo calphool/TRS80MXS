@@ -1679,6 +1679,7 @@ void syncSpriteAttributesToHardware(void)
       addr = g.SpriteAttrTableAddr + (spriteNum << 2);
 
       b5 = sprAttr[spriteNum].color;
+      
       vert = y ;
 
       if(x<0) {
