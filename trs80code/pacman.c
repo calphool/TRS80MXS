@@ -32,7 +32,8 @@
 
 
 #define byte unsigned char
-  #ifdef __APPLE__
+
+#ifdef __APPLE__
   // compiled under GCC-9 rather than ZCC
   #define GCC_COMPILED
 #endif
@@ -130,7 +131,6 @@
 #define PATT_BELL 42
 #define PATT_KEY 43
 
-
 #define ENERGIZER_RIGHT_CHAR 128
 #define ENERGIZER_LEFT_CHAR 129
 
@@ -141,18 +141,6 @@
 #define PACMAN_SPRITENUM 0
 
 #define HAT_SPRITENUM 1
-
-/*
-#define RED_GHOST_EYES_SPRITENUM 2
-#define CYAN_GHOST_EYES_SPRITENUM 3
-#define PINK_GHOST_EYES_SPRITENUM 4
-#define BROWN_GHOST_EYES_SPRITENUM 5
-
-#define RED_GHOST_SPRITENUM 6
-#define CYAN_GHOST_SPRITENUM 7
-#define PINK_GHOST_SPRITENUM 8
-#define BROWN_GHOST_SPRITENUM 9
-*/
 
 #define RED_GHOST_SPRITENUM 2
 #define CYAN_GHOST_SPRITENUM 3
@@ -523,7 +511,7 @@ __sfr __at 0x85 PORTX85;
     #define BANK2_A0 21
 #endif
 
-// graphicsSetup constants
+// graphicsSetupStruct constants
 #define GRAPHICSMODE1 0
 #define GRAPHICSMODE2 1
 #define MULTICOLORMODE 2
@@ -557,9 +545,9 @@ typedef struct {
     unsigned int NameTableAddr;
     unsigned int ColorTableAddr;
     unsigned int PatternTableAddr;
-    unsigned int SpriteAttrTableAddr;
+    unsigned int spriteAttrStructTableAddr;
     unsigned int SpritePatternTableAddr;
-} graphicsSetup;
+} graphicsSetupStruct;
 
 
 //sprite attribute structure
@@ -572,33 +560,31 @@ typedef struct {
   int patt;
   int prevdir;
   int isEyes;
-} spriteAttr;
+} spriteAttrStruct;
 
-char buf[33];                   // work buffer
-byte bRunning = FALSE; // main game loop control
-unsigned int anPos = 0;         // animation position
-int anDir = 1;                  // 1, -1 counter direction
-graphicsSetup g;                // graphics mode struct
-spriteAttr sprAttr[32];         // sprite struct array
-unsigned long score = 0;        // score field
-unsigned int dotctr = 0;        // counter to decide when we're done with a screen
-unsigned int energizerctr = 0;  // count down counter when an energizer is eaten
-unsigned int ghostCtr = 0;      // score counter that adds up with each ghost being eaten
-int lives = 3;                  // pacman lives
-unsigned int gameCtr = 0;       // number that counts up each frame as game plays
-byte GhostWithHat = 255;       // which ghost has the hat?
-unsigned int levelCtr = 1;     // what level am I on?
-int popScoreGameCtr = 0;       // gameCtr value when ghost was eaten (used to remove popup score)
-int fruitEatenOnThisLevel = 0; // flag that flips if a fruit has been eaten
+char buf[33];                               // work buffer
+int gameLoopRunning = FALSE;                // main game loop control
+unsigned int pacmanAnimationPosition = 0;   // animation position
+int pacmanAnimationDirection = 1;           // 1, -1 counter direction
+graphicsSetupStruct g;                      // graphics mode struct
+spriteAttrStruct sprAttr[32];               // sprite struct array
+unsigned long score = 0;                    // score field
+unsigned int dotCtr = 0;                    // counter to decide when we're done with a screen
+unsigned int energizerCtr = 0;              // count down counter when an energizer is eaten
+unsigned int ghostCtr = 0;                  // score counter that adds up with each ghost being eaten
+int lives = 3;                              // pacman lives
+unsigned int gameCtr = 0;                   // number that counts up each frame as game plays
+int GhostWithHat = 255;                    // which ghost has the hat?
+unsigned int levelCtr = 1;                  // what level am I on?
+int popScoreGameCtr = 0;                    // gameCtr value when ghost was eaten (used to remove popup score)
+int fruitEatenOnThisLevel = 0;              // flag that flips if a fruit has been eaten
 
-
-int direction = 0;
+int bgMusicDirection = 0;
 
 
 
 
 #define getRand256() ((unsigned char)(rand() % 256))
-
 
 // circular buffer used in audio management
 typedef struct {
@@ -607,7 +593,6 @@ typedef struct {
     int tail;
     int maxlen;
 } circ_bbuf_t;
-
 
 // circular buffer defining macro
 #define CIRC_BBUF_DEF(x,y)                        \
@@ -760,7 +745,6 @@ void play(byte chipID, byte voiceNum, int pitch, byte volume) {
         static int midichan;
         static int prevNoteForThisChannel[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-
         midichan = (chipID - 0x82)*3 + voiceNum;
 
         fluid_synth_noteoff(synth, midichan, prevNoteForThisChannel[midichan]);
@@ -841,7 +825,7 @@ byte getVDPRAM(unsigned int addr)
    | Retrieve character at position (x,y) on the screen                                                                         |
    ******************************************************************************************************************************
 */
-byte getCharAt(byte x, byte y)
+byte getCharFromNameTable(byte x, byte y)
 {
     static unsigned int addr;
     addr = g.NameTableAddr;
@@ -869,8 +853,6 @@ void hold(unsigned int x)
     }
 #endif
 }
-
-
 
 
 #ifdef GCC_COMPILED
@@ -929,10 +911,9 @@ Uint32 getARGBFromTMS9118Color(char cTMS9118Color) {
    | Fill background with ARGB value                                                                                            |
    ******************************************************************************************************************************
 */
-void setBGColor() {
-      memset32(pixels, getARGBFromTMS9118Color(VDPRegisters[7] & 0x0f), SCREEN_WIDTH*SCREEN_HEIGHT);
+void paintBGColorOnSDLWindow() {
+    memset32(pixels, getARGBFromTMS9118Color(VDPRegisters[7] & 0x0f), SCREEN_WIDTH*SCREEN_HEIGHT);
 }
-
 
 /* ******************************************************************************************************************************
    | Plot a pixel on the SDL window                                                                                             |
@@ -942,7 +923,6 @@ void plotSDLPixel(int x, int y, Uint32 color) {    // x = 0 - 255, y = 0 - 191
     memset32(pixels + (x<<1) + y*SCREEN_WIDTH*2, color, 2); 
     memset32(pixels + (x<<1) + y*SCREEN_WIDTH*2 + SCREEN_WIDTH, color, 2);     
 }
-
 
 /* ******************************************************************************************************************************
    | get foreground ARGB color for a given character                                                                            |
@@ -1041,14 +1021,14 @@ void plotCharOnSDLPixels(int xTMS9118, int yTMS9118, byte c) {
    | draw entire screen worth of characters from RAM to SDL window                                                              |
    ******************************************************************************************************************************
 */
-void drawCharacters(void) 
+void syncNameTableToSDLWindow(void) 
 {
   static int x;
   static int y;
 
   for(x=0;x<32;x++) {
     for(y=0;y<24;y++) {
-      plotCharOnSDLPixels(x,y,getCharAt(x,y));
+      plotCharOnSDLPixels(x,y,getCharFromNameTable(x,y));
     }
   }
 }
@@ -1057,7 +1037,7 @@ void drawCharacters(void)
    | draw sprites onto SDL window                                                                                               |
    ******************************************************************************************************************************
 */
-void drawSprites(void) 
+void drawSpritesOnSDLWindow(void) 
 {
   static int x;
   static int y;
@@ -1157,9 +1137,9 @@ void drawSprites(void)
 */
 void updateEmulatedVDPScreen(void) 
 {
-  setBGColor();
-  drawCharacters();
-  drawSprites();
+  paintBGColorOnSDLWindow();
+  syncNameTableToSDLWindow();
+  drawSpritesOnSDLWindow();
 }
 
 
@@ -1191,7 +1171,6 @@ void SDLSetup(void)
    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
    memset(pixels, 255, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(Uint32));
 
-  
    settings = new_fluid_settings();
    if(settings == NULL) {
        printf("Unable to open fluidsynth settings object.\n");
@@ -1250,7 +1229,7 @@ void emulateTMS9118HardwareUpdate(void)
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    hold(400);
+    hold(300);
 }
 
 #endif
@@ -1338,7 +1317,7 @@ byte getJoystick(byte LeftOrRight)
     }
 
     if(keystates[SDL_SCANCODE_ESCAPE])
-      bRunning = FALSE;
+      gameLoopRunning = FALSE;
 
     return 0;
 #else
@@ -1353,7 +1332,7 @@ byte getJoystick(byte LeftOrRight)
    | Put character on screen at position                                                                                        |
    ******************************************************************************************************************************
 */
-void setCharacterAt(byte x, byte y, byte c) 
+void setCharInNameTable(byte x, byte y, byte c) 
 {
     static unsigned int addr;
     addr = g.NameTableAddr;
@@ -1367,7 +1346,7 @@ void setCharacterAt(byte x, byte y, byte c)
    | Write a string at screen position                                                                                          |
    ******************************************************************************************************************************
 */
-void setCharactersAt(byte x, byte y, char* s) 
+void setCharsInNameTable(byte x, byte y, char* s) 
 {
     static unsigned int addr;
     static byte c;
@@ -1385,7 +1364,7 @@ void setCharactersAt(byte x, byte y, char* s)
    | load pattern table with binary data                                                                                        |
    ******************************************************************************************************************************
 */
-void setCharPatternByArray(byte pos, char* p, int l) 
+void setPatternTableEntry(byte pos, char* p, int l) 
 {
   static unsigned int i;
   static unsigned int addr;
@@ -1400,7 +1379,7 @@ void setCharPatternByArray(byte pos, char* p, int l)
    | set foreground and background of a group of characters                                                                     |
    ******************************************************************************************************************************
 */
-byte setCharacterGroupColor(byte colorGroup, byte foreground, byte background) 
+byte setColorTableEntry(byte colorGroup, byte foreground, byte background) 
 {
     static byte c;
 
@@ -1422,154 +1401,153 @@ void setPatterns(void)
 {
    static unsigned int i;
    
-   static char p0[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char a[8] =  {0x81,0x81,0x81,0x81,0x81,0x81,0x81,0x81};
-   static char b[8] =  {0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
-   static char c[8] =  {0x3c,0x42,0x81,0x81,0x81,0x81,0x81,0x81};
-   static char d[8] =  {0x3F,0x40,0x80,0x80,0x80,0x80,0x40,0x3F};
-   static char e[8] =  {0x81,0x81,0x81,0x81,0x81,0x81,0x42,0x3C};
-   static char f[8] =  {0xFC,0x02,0x01,0x01,0x01,0x01,0x02,0xFC};
-   static char g[8] =  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
-   static char h[8] =  {0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80};
-   static char ii[8] = {0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char j[8] =  {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
-   static char k[8] =  {0x3F,0x40,0x80,0x80,0x80,0x80,0x80,0x80};
-   static char l[8] =  {0xFC,0x02,0x01,0x01,0x01,0x01,0x01,0x01};
-   static char m[8] =  {0x01,0x01,0x01,0x01,0x01,0x01,0x02,0xFC};
-   static char n[8] =  {0x80,0x80,0x80,0x80,0x80,0x80,0x40,0x3F};
+   static char p0[] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char a[] =  {0x81,0x81,0x81,0x81,0x81,0x81,0x81,0x81};
+   static char b[] =  {0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char c[] =  {0x3c,0x42,0x81,0x81,0x81,0x81,0x81,0x81};
+   static char d[] =  {0x3F,0x40,0x80,0x80,0x80,0x80,0x40,0x3F};
+   static char e[] =  {0x81,0x81,0x81,0x81,0x81,0x81,0x42,0x3C};
+   static char f[] =  {0xFC,0x02,0x01,0x01,0x01,0x01,0x02,0xFC};
+   static char g[] =  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char h[] =  {0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80};
+   static char ii[] = {0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char j[] =  {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
+   static char k[] =  {0x3F,0x40,0x80,0x80,0x80,0x80,0x80,0x80};
+   static char l[] =  {0xFC,0x02,0x01,0x01,0x01,0x01,0x01,0x01};
+   static char m[] =  {0x01,0x01,0x01,0x01,0x01,0x01,0x02,0xFC};
+   static char n[] =  {0x80,0x80,0x80,0x80,0x80,0x80,0x40,0x3F};
    
-   static char r[8] =  {0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char q[8] =  {0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0xFF};
-   static char s[8] =  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
-   static char t[8] =  {0xc0,0xe0,0xf0,0xf0,0xe0,0xc0,0x00,0x00};
-   static char u[8] =  {0x00,0x01,0x03,0x03,0x01,0x00,0x00,0x00};
+   static char r[] =  {0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char q[] =  {0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char s[] =  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
+   static char t[] =  {0xc0,0xe0,0xf0,0xf0,0xe0,0xc0,0x00,0x00};
+   static char u[] =  {0x00,0x01,0x03,0x03,0x01,0x00,0x00,0x00};
 
-   static char x[8] =  {0x38,0x7C,0x3E,0x0E,0x3E,0x7C,0x38,0x00};
+   static char x[] =  {0x38,0x7C,0x3E,0x0E,0x3E,0x7C,0x38,0x00};
 
-   static char AT[8] = {0x3C, 0x42, 0x99, 0xA1, 0xA1, 0x99, 0x42, 0x3C};
-   static char AU[8] = {0x78,0x84,0x84,0xFC,0x84,0x84,0x84,0x00};
-   static char BU[8] = {0xF8,0x84,0x84,0xF8,0x84,0x84,0xF8,0x00};
-   static char CU[8] = {0x78,0x84,0x80,0x80,0x80,0x84,0x78,0x00};
-   static char DU[8] = {0xF8,0x84,0x84,0x84,0x84,0x84,0xF8,0x00};
-   static char EU[8] = {0xFC,0x80,0x80,0xF8,0x80,0x80,0xFC,0x00};
-   static char FU[8] = {0xFC,0x80,0x80,0xF8,0x80,0x80,0x80,0x00};
-   static char GU[8] = {0x78,0x80,0x80,0xBC,0x84,0x84,0x78,0x00};
-   static char HU[8] = {0x84,0x84,0x84,0xFC,0x84,0x84,0x84,0x00};
-   static char IU[8] = {0xFC,0x30,0x30,0x30,0x30,0x30,0xFC,0x00};
-   static char JU[8] = {0x7C,0x10,0x10,0x10,0x90,0x90,0x70,0x00};
-   static char KU[8] = {0x84,0x98,0xA0,0xC0,0xA0,0x98,0x84,0x00};
-   static char LU[8] = {0x80,0x80,0x80,0x80,0x80,0x80,0xFC,0x00};
-   static char MU[8] = {0x84,0xCC,0xB4,0xB4,0x84,0x84,0x84,0x00};
-   static char NU[8] = {0x84,0xC4,0xA4,0xA4,0x94,0x8C,0x84,0x00};
-   static char OU[8] = {0x78,0x84,0x84,0x84,0x84,0x84,0x78,0x00};
-   static char PU[8] = {0xF8,0x84,0x84,0xF8,0x80,0x80,0x80,0x00};
-   static char QU[8] = {0x78,0x84,0x84,0x84,0x94,0x8C,0x7C,0x00};
-   static char RU[8] = {0xF8,0x84,0x88,0xF0,0x88,0x88,0x84,0x00};
-   static char SU[8] = {0x7C,0x80,0x80,0x78,0x04,0x04,0xF8,0x00};
-   static char TU[8] = {0xFC,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
-   static char UU[8] = {0x84,0x84,0x84,0x84,0x84,0x84,0x78,0x00};
-   static char VU[8] = {0x84,0x84,0x84,0x48,0x48,0x48,0x30,0x00};
-   static char WU[8] = {0x84,0x84,0x84,0xB4,0xB4,0xCC,0x84,0x00};
-   static char XU[8] = {0x84,0x84,0x48,0x30,0x48,0x84,0x84,0x00};
-   static char YU[8] = {0x84,0x48,0x48,0x30,0x30,0x30,0x30,0x00};
-   static char ZU[8] = {0xFC,0x08,0x10,0x10,0x20,0x40,0xFC,0x00};
-   static char N0[8] = {0x78,0x8C,0x94,0xB4,0xA4,0xC4,0x78,0x00};
-   static char N1[8] = {0x30,0x70,0x30,0x30,0x30,0x30,0xFC,0x00};
-   static char N2[8] = {0x78,0x84,0x84,0x18,0x60,0x80,0xFC,0x00};
-   static char N3[8] = {0x78,0x84,0x04,0x38,0x04,0x84,0x78,0x00};
-   static char N4[8] = {0xCC,0xCC,0xCC,0xFC,0x0C,0x0C,0x0C,0x00};
-   static char N5[8] = {0xFC,0x80,0x80,0x78,0x04,0x84,0x78,0x00};
-   static char N6[8] = {0x38,0x40,0x80,0xF8,0x84,0x84,0x78,0x00};
-   static char N7[8] = {0xFC,0x0C,0x18,0x18,0x30,0x30,0x60,0x00};
-   static char N8[8] = {0x78,0x84,0x84,0x78,0x84,0x84,0x78,0x00};
-   static char N9[8] = {0x78,0x84,0x84,0x7C,0x04,0x08,0x70,0x00};
-   static char NC[8] = {0x00,0x30,0x30,0x00,0x00,0x30,0x30,0x00};
-   static char ND[8] = {0x00,0x00,0x00,0x7E,0x00,0x00,0x00,0x00};
+   static char AT[] = {0x3C,0x42,0x99,0xA1,0xA1,0x99,0x42,0x3C};
+   static char AU[] = {0x78,0x84,0x84,0xFC,0x84,0x84,0x84,0x00};
+   static char BU[] = {0xF8,0x84,0x84,0xF8,0x84,0x84,0xF8,0x00};
+   static char CU[] = {0x78,0x84,0x80,0x80,0x80,0x84,0x78,0x00};
+   static char DU[] = {0xF8,0x84,0x84,0x84,0x84,0x84,0xF8,0x00};
+   static char EU[] = {0xFC,0x80,0x80,0xF8,0x80,0x80,0xFC,0x00};
+   static char FU[] = {0xFC,0x80,0x80,0xF8,0x80,0x80,0x80,0x00};
+   static char GU[] = {0x78,0x80,0x80,0xBC,0x84,0x84,0x78,0x00};
+   static char HU[] = {0x84,0x84,0x84,0xFC,0x84,0x84,0x84,0x00};
+   static char IU[] = {0xFC,0x30,0x30,0x30,0x30,0x30,0xFC,0x00};
+   static char JU[] = {0x7C,0x10,0x10,0x10,0x90,0x90,0x70,0x00};
+   static char KU[] = {0x84,0x98,0xA0,0xC0,0xA0,0x98,0x84,0x00};
+   static char LU[] = {0x80,0x80,0x80,0x80,0x80,0x80,0xFC,0x00};
+   static char MU[] = {0x84,0xCC,0xB4,0xB4,0x84,0x84,0x84,0x00};
+   static char NU[] = {0x84,0xC4,0xA4,0xA4,0x94,0x8C,0x84,0x00};
+   static char OU[] = {0x78,0x84,0x84,0x84,0x84,0x84,0x78,0x00};
+   static char PU[] = {0xF8,0x84,0x84,0xF8,0x80,0x80,0x80,0x00};
+   static char QU[] = {0x78,0x84,0x84,0x84,0x94,0x8C,0x7C,0x00};
+   static char RU[] = {0xF8,0x84,0x88,0xF0,0x88,0x88,0x84,0x00};
+   static char SU[] = {0x7C,0x80,0x80,0x78,0x04,0x04,0xF8,0x00};
+   static char TU[] = {0xFC,0x30,0x30,0x30,0x30,0x30,0x30,0x00};
+   static char UU[] = {0x84,0x84,0x84,0x84,0x84,0x84,0x78,0x00};
+   static char VU[] = {0x84,0x84,0x84,0x48,0x48,0x48,0x30,0x00};
+   static char WU[] = {0x84,0x84,0x84,0xB4,0xB4,0xCC,0x84,0x00};
+   static char XU[] = {0x84,0x84,0x48,0x30,0x48,0x84,0x84,0x00};
+   static char YU[] = {0x84,0x48,0x48,0x30,0x30,0x30,0x30,0x00};
+   static char ZU[] = {0xFC,0x08,0x10,0x10,0x20,0x40,0xFC,0x00};
+   static char N0[] = {0x78,0x8C,0x94,0xB4,0xA4,0xC4,0x78,0x00};
+   static char N1[] = {0x30,0x70,0x30,0x30,0x30,0x30,0xFC,0x00};
+   static char N2[] = {0x78,0x84,0x84,0x18,0x60,0x80,0xFC,0x00};
+   static char N3[] = {0x78,0x84,0x04,0x38,0x04,0x84,0x78,0x00};
+   static char N4[] = {0xCC,0xCC,0xCC,0xFC,0x0C,0x0C,0x0C,0x00};
+   static char N5[] = {0xFC,0x80,0x80,0x78,0x04,0x84,0x78,0x00};
+   static char N6[] = {0x38,0x40,0x80,0xF8,0x84,0x84,0x78,0x00};
+   static char N7[] = {0xFC,0x0C,0x18,0x18,0x30,0x30,0x60,0x00};
+   static char N8[] = {0x78,0x84,0x84,0x78,0x84,0x84,0x78,0x00};
+   static char N9[] = {0x78,0x84,0x84,0x7C,0x04,0x08,0x70,0x00};
+   static char NC[] = {0x00,0x30,0x30,0x00,0x00,0x30,0x30,0x00};
+   static char ND[] = {0x00,0x00,0x00,0x7E,0x00,0x00,0x00,0x00};
    static char flag[] ={0x8E,0xFE,0xFE,0xFE,0x72,0x02,0x02,0x02};
    static char eq[] =  {0x00,0x00,0x00,0xFE,0x00,0xFE,0x00,0x00};
    
    for(i=0;i<256;++i)                   // set all characters to blank
-          setCharPatternByArray(i,p0,8);
+          setPatternTableEntry(i,p0,8);
 
-   setCharPatternByArray('@',AT,8);
-   setCharPatternByArray('A',AU,8);      
-   setCharPatternByArray('B',BU,8);      
-   setCharPatternByArray('C',CU,8);      
-   setCharPatternByArray('D',DU,8);      
-   setCharPatternByArray('E',EU,8);      
-   setCharPatternByArray('F',FU,8);      
-   setCharPatternByArray('G',GU,8);      
-   setCharPatternByArray('H',HU,8);      
-   setCharPatternByArray('I',IU,8);      
-   setCharPatternByArray('J',JU,8);      
-   setCharPatternByArray('K',KU,8);      
-   setCharPatternByArray('L',LU,8);      
-   setCharPatternByArray('M',MU,8);      
-   setCharPatternByArray('N',NU,8);      
-   setCharPatternByArray('O',OU,8);      
-   setCharPatternByArray('P',PU,8);      
-   setCharPatternByArray('Q',QU,8);      
-   setCharPatternByArray('R',RU,8);      
-   setCharPatternByArray('S',SU,8);      
-   setCharPatternByArray('T',TU,8);      
-   setCharPatternByArray('U',UU,8);      
-   setCharPatternByArray('V',VU,8);      
-   setCharPatternByArray('W',WU,8);      
-   setCharPatternByArray('X',XU,8);      
-   setCharPatternByArray('Y',YU,8);      
-   setCharPatternByArray('Z',ZU,8);      
-                                        //     SHAPE  
-   setCharPatternByArray('a',a,8);      //      | |   
-                                        //      | |   
-   setCharPatternByArray('b',b,8);      //      ___  
-                                        //      ---   
-   setCharPatternByArray('c',c,8);      //      .--.
-                                        //      |  |  
-   setCharPatternByArray('d',d,8);      //       ___
-                                        //      {___  
-   setCharPatternByArray('e',e,8);      //      |  |
-                                        //      '--'  
-   setCharPatternByArray('f',f,8);      //       ___
-                                        //       ___}                 
-   setCharPatternByArray('g',g,8);      //       ___
+   setPatternTableEntry('@',AT,8);
+   setPatternTableEntry('A',AU,8);      
+   setPatternTableEntry('B',BU,8);      
+   setPatternTableEntry('C',CU,8);      
+   setPatternTableEntry('D',DU,8);      
+   setPatternTableEntry('E',EU,8);      
+   setPatternTableEntry('F',FU,8);      
+   setPatternTableEntry('G',GU,8);      
+   setPatternTableEntry('H',HU,8);      
+   setPatternTableEntry('I',IU,8);      
+   setPatternTableEntry('J',JU,8);      
+   setPatternTableEntry('K',KU,8);      
+   setPatternTableEntry('L',LU,8);      
+   setPatternTableEntry('M',MU,8);      
+   setPatternTableEntry('N',NU,8);      
+   setPatternTableEntry('O',OU,8);      
+   setPatternTableEntry('P',PU,8);      
+   setPatternTableEntry('Q',QU,8);      
+   setPatternTableEntry('R',RU,8);      
+   setPatternTableEntry('S',SU,8);      
+   setPatternTableEntry('T',TU,8);      
+   setPatternTableEntry('U',UU,8);      
+   setPatternTableEntry('V',VU,8);      
+   setPatternTableEntry('W',WU,8);      
+   setPatternTableEntry('X',XU,8);      
+   setPatternTableEntry('Y',YU,8);      
+   setPatternTableEntry('Z',ZU,8);      
+                                       //     SHAPE  
+   setPatternTableEntry('a',a,8);      //      | |   
+                                       //      | |   
+   setPatternTableEntry('b',b,8);      //      ___  
+                                       //      ---   
+   setPatternTableEntry('c',c,8);      //      .--.
+                                       //      |  |  
+   setPatternTableEntry('d',d,8);      //       ___
+                                       //      {___  
+   setPatternTableEntry('e',e,8);      //      |  |
+                                       //      '--'  
+   setPatternTableEntry('f',f,8);      //       ___
+                                       //       ___}                 
+   setPatternTableEntry('g',g,8);      //       ___
 
-   setCharPatternByArray('h',h,8);      //       |
-                                        //       |
-   setCharPatternByArray('i',ii,8);     //       --
-                                        //
-   setCharPatternByArray('j',j,8);      //         |
-                                        //         |
-   setCharPatternByArray('k',k,8);      //       ___
-                                        //      |
-   setCharPatternByArray('l',l,8);      //       ___
-                                        //          |
-   setCharPatternByArray('m',m,8);      //          |
-                                        //       ___|
-   setCharPatternByArray('n',n,8);      //       |
-                                        //       |___
-   setCharPatternByArray('r',r,8);      //          .
-   setCharPatternByArray('q',q,8);      //          _
-   setCharPatternByArray('s',s,8);      //          _
+   setPatternTableEntry('h',h,8);      //       |
+                                       //       |
+   setPatternTableEntry('i',ii,8);     //       --
+                                       //
+   setPatternTableEntry('j',j,8);      //         |
+                                       //         |
+   setPatternTableEntry('k',k,8);      //       ___
+                                       //      |
+   setPatternTableEntry('l',l,8);      //       ___
+                                       //          |
+   setPatternTableEntry('m',m,8);      //          |
+                                       //       ___|
+   setPatternTableEntry('n',n,8);      //       |
+                                       //       |___
+   setPatternTableEntry('r',r,8);      //          .
+   setPatternTableEntry('q',q,8);      //          _
+   setPatternTableEntry('s',s,8);      //          _
 
+   setPatternTableEntry(ENERGIZER_RIGHT_CHAR,t,8);      //       energizer (right)
+   setPatternTableEntry(ENERGIZER_LEFT_CHAR,u,8);      //       energizer (left)
 
-   setCharPatternByArray(ENERGIZER_RIGHT_CHAR,t,8);      //       energizer (right)
-   setCharPatternByArray(ENERGIZER_LEFT_CHAR,u,8);      //       energizer (left)
+   setPatternTableEntry('x',x,8);      //       small pac-man
 
-   setCharPatternByArray('x',x,8);      //       small pac-man
-
-   setCharPatternByArray('0',N0,8); 
-   setCharPatternByArray('1',N1,8); 
-   setCharPatternByArray('2',N2,8); 
-   setCharPatternByArray('3',N3,8); 
-   setCharPatternByArray('4',N4,8); 
-   setCharPatternByArray('5',N5,8); 
-   setCharPatternByArray('6',N6,8); 
-   setCharPatternByArray('7',N7,8); 
-   setCharPatternByArray('8',N8,8); 
-   setCharPatternByArray('9',N9,8); 
-   setCharPatternByArray(':',NC,8); 
-   setCharPatternByArray('-',ND,8);
-   setCharPatternByArray('=',eq,8);
+   setPatternTableEntry('0',N0,8); 
+   setPatternTableEntry('1',N1,8); 
+   setPatternTableEntry('2',N2,8); 
+   setPatternTableEntry('3',N3,8); 
+   setPatternTableEntry('4',N4,8); 
+   setPatternTableEntry('5',N5,8); 
+   setPatternTableEntry('6',N6,8); 
+   setPatternTableEntry('7',N7,8); 
+   setPatternTableEntry('8',N8,8); 
+   setPatternTableEntry('9',N9,8); 
+   setPatternTableEntry(':',NC,8); 
+   setPatternTableEntry('-',ND,8);
+   setPatternTableEntry('=',eq,8);
 
    static char BLK1[] = {0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE, 0xFF}; // characters for the attract screen
    static char BLK2[] = {0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
@@ -1577,13 +1555,13 @@ void setPatterns(void)
    static char BLK4[] = {0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF};
    static char BLK5[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-   setCharPatternByArray('(', BLK1,8);
-   setCharPatternByArray(')', BLK2,8);
-   setCharPatternByArray('*', BLK3,8);
-   setCharPatternByArray('+', BLK4,8);
-   setCharPatternByArray(',', BLK5,8);
+   setPatternTableEntry('(', BLK1,8);
+   setPatternTableEntry(')', BLK2,8);
+   setPatternTableEntry('*', BLK3,8);
+   setPatternTableEntry('+', BLK4,8);
+   setPatternTableEntry(',', BLK5,8);
 
-   setCharPatternByArray(FLAG_CHAR,flag,8);
+   setPatternTableEntry(FLAG_CHAR,flag,8);
 }
 
 /* ******************************************************************************************************************************
@@ -1635,7 +1613,7 @@ void setGraphicsMode(void)
   g.PatternTableAddr = 0x0000;
 
   setVDPRegister(5, 0x70);
-  g.SpriteAttrTableAddr = 0x3800;
+  g.spriteAttrStructTableAddr = 0x3800;
 
   setVDPRegister(6, 0x03);
   g.SpritePatternTableAddr = 0x1800;
@@ -1671,7 +1649,7 @@ void setSpritePatternByArray(byte patternNumber, char* p, char l)
    | move sprite data out of sprite attribute struct and move it into registers                                                 |
    ******************************************************************************************************************************
 */
-void syncSpriteAttributesToHardware(void) 
+void syncSpriteAttrStructsToHardware(void) 
 #ifndef GCC_COMPILED 
     __z88dk_fastcall
 #endif
@@ -1688,7 +1666,7 @@ void syncSpriteAttributesToHardware(void)
       patt = sprAttr[spriteNum].patt;
       x = sprAttr[spriteNum].x;
       y = sprAttr[spriteNum].y;
-      addr = g.SpriteAttrTableAddr + (spriteNum << 2);
+      addr = g.spriteAttrStructTableAddr + (spriteNum << 2);
 
       b5 = sprAttr[spriteNum].color;
       
@@ -1738,75 +1716,75 @@ void drawDots(void)
   static byte k;
 
   for(k=2;k<31;++k) {
-    setCharacterAt(k,3,'r');
-    setCharacterAt(k,23,'q');
+    setCharInNameTable(k,3,'r');
+    setCharInNameTable(k,23,'q');
   }
-  setCharacterAt(1,23,'s');
+  setCharInNameTable(1,23,'s');
 
   for(k=3;k<23;++k) {
-    setCharacterAt(2,k,'r');
-    setCharacterAt(30,k,'r');
-    setCharacterAt(5,k,'r');
-    setCharacterAt(27,k,'r');
+    setCharInNameTable(2,k,'r');
+    setCharInNameTable(30,k,'r');
+    setCharInNameTable(5,k,'r');
+    setCharInNameTable(27,k,'r');
     if(k < 21) {
-      setCharacterAt(8,k,'r');
-      setCharacterAt(24,k,'r');
+      setCharInNameTable(8,k,'r');
+      setCharInNameTable(24,k,'r');
     }
   } 
 
   for(k=5;k<27;++k) 
-    setCharacterAt(k,20,'r');
+    setCharInNameTable(k,20,'r');
 
   for(k=9;k<24;++k) {
-    setCharacterAt(k,17,'r');
-    setCharacterAt(k,6,'r');
+    setCharInNameTable(k,17,'r');
+    setCharInNameTable(k,6,'r');
   }
   for(k=2;k<5;++k) {
-    setCharacterAt(k,12,'r');
-    setCharacterAt(k+25,12,'r');
+    setCharInNameTable(k,12,'r');
+    setCharInNameTable(k+25,12,'r');
   }
   for(k=17;k<21;++k) {
-    setCharacterAt(16,k,'r');
-    setCharacterAt(16,k-11,'r');
+    setCharInNameTable(16,k,'r');
+    setCharInNameTable(16,k-11,'r');
   }
   for(k=11;k<22;++k) {
-    setCharacterAt(k,9,'r');
-    setCharacterAt(k,14,'r');
+    setCharInNameTable(k,9,'r');
+    setCharInNameTable(k,14,'r');
   }
   for(k=9;k<14;++k) {
-    setCharacterAt(11,k,'r');
-    setCharacterAt(21,k,'r');
+    setCharInNameTable(11,k,'r');
+    setCharInNameTable(21,k,'r');
   }
   for(k=8;k<12;++k) {
-    setCharacterAt(k,12,'r');
-    setCharacterAt(k+13,12,'r');
+    setCharInNameTable(k,12,'r');
+    setCharInNameTable(k+13,12,'r');
   }
   for(k=15;k<=17;++k) 
-    setCharacterAt(k,17,' ');
+    setCharInNameTable(k,17,' ');
 
   for(k=15;k<17;++k) {
-    setCharacterAt(13,k,'r');
-    setCharacterAt(19,k,'r');
+    setCharInNameTable(13,k,'r');
+    setCharInNameTable(19,k,'r');
   }
 
-  setCharacterAt(2,5,ENERGIZER_RIGHT_CHAR);   // energizer (right side)
-  setCharacterAt(2,19,ENERGIZER_RIGHT_CHAR);  // energizer (right side)
-  setCharacterAt(30,5,ENERGIZER_RIGHT_CHAR);  // energizer (right side)
-  setCharacterAt(30,19,ENERGIZER_RIGHT_CHAR); // energizer (right side)
-  setCharacterAt(1,5,ENERGIZER_LEFT_CHAR);  // energizer (left side)
-  setCharacterAt(1,19,ENERGIZER_LEFT_CHAR); // energizer (left side)
-  setCharacterAt(29,5,ENERGIZER_LEFT_CHAR); // energizer (left side)
-  setCharacterAt(29,19,ENERGIZER_LEFT_CHAR); // energizer (left side)
+  setCharInNameTable(2,5,ENERGIZER_RIGHT_CHAR);   // energizer (right side)
+  setCharInNameTable(2,19,ENERGIZER_RIGHT_CHAR);  // energizer (right side)
+  setCharInNameTable(30,5,ENERGIZER_RIGHT_CHAR);  // energizer (right side)
+  setCharInNameTable(30,19,ENERGIZER_RIGHT_CHAR); // energizer (right side)
+  setCharInNameTable(1,5,ENERGIZER_LEFT_CHAR);  // energizer (left side)
+  setCharInNameTable(1,19,ENERGIZER_LEFT_CHAR); // energizer (left side)
+  setCharInNameTable(29,5,ENERGIZER_LEFT_CHAR); // energizer (left side)
+  setCharInNameTable(29,19,ENERGIZER_LEFT_CHAR); // energizer (left side)
 
-  setCharacterGroupColor(17,DARKGREEN,BLACK);
+  setColorTableEntry(17,DARKGREEN,BLACK);
   if(levelCtr < 6) {
-      for(int i=0;i<levelCtr;i++) {
-               setCharacterAt(16 - i,0,FLAG_CHAR);
+      for(int i=0;i<levelCtr;++i) {
+               setCharInNameTable(16 - i,0,FLAG_CHAR);
       }
   }
   else {
     sprintf(buf,"%c=%d   ", FLAG_CHAR,levelCtr);
-    setCharactersAt(12,0,buf);
+    setCharsInNameTable(12,0,buf);
   }
 
 }
@@ -1823,9 +1801,9 @@ void setEverythingWhite(void)
   static byte j;
 
   for(j=0;j<32;++j)
-     setCharacterGroupColor(j, WHITE, BLACK);  // set all characters to blue on black
+     setColorTableEntry(j, WHITE, BLACK);  // set all characters to blue on black
   for(j=8;j<=11;++j)
-     setCharacterGroupColor(j, DARKRED, BLACK);   // set chars 64 - 95 to red on black 
+     setColorTableEntry(j, DARKRED, BLACK);   // set chars 64 - 95 to red on black 
 }
 
 /* ******************************************************************************************************************************
@@ -1840,15 +1818,15 @@ void setMazeColors(void)
   static byte j;
 
   for(j=0;j<32;++j)
-     setCharacterGroupColor(j, DARKBLUE, BLACK);  // set all characters to blue on black
+     setColorTableEntry(j, DARKBLUE, BLACK);  // set all characters to blue on black
   for(j=8;j<=11;++j)
-     setCharacterGroupColor(j, DARKRED, BLACK);   // set chars 64 - 95 to red on black 
+     setColorTableEntry(j, DARKRED, BLACK);   // set chars 64 - 95 to red on black 
   for(j=6;j<=7;++j)
-     setCharacterGroupColor(j, WHITE, BLACK);     // set chars 48 - 63 to white on black
+     setColorTableEntry(j, WHITE, BLACK);     // set chars 48 - 63 to white on black
 
-   setCharacterGroupColor(14,WHITE,BLACK); // dots
-   setCharacterGroupColor(15,DARKYELLOW,BLACK); // little pacmen
-   setCharacterGroupColor(16,WHITE,BLACK); // energizers
+   setColorTableEntry(14,WHITE,BLACK); // dots
+   setColorTableEntry(15,DARKYELLOW,BLACK); // little pacmen
+   setColorTableEntry(16,WHITE,BLACK); // energizers
 }
 
 /* ******************************************************************************************************************************
@@ -1860,10 +1838,10 @@ void drawPacmanLives(void)
     __z88dk_fastcall
 #endif
 {
-  setCharacterGroupColor(15,DARKYELLOW,BLACK);
-  setCharactersAt(2,0,"          ");
+  setColorTableEntry(15,DARKYELLOW,BLACK);
+  setCharsInNameTable(2,0,"          ");
   for(int i=0;i<lives;++i) {
-    setCharacterAt(i+2,0,'x');
+    setCharInNameTable(i+2,0,'x');
   }
 }
 
@@ -1881,7 +1859,7 @@ void updateScore(int incr)
 
   score = score + incr;
   sprintf(buf, "%08ld", score);
-  setCharactersAt(24,0,buf);
+  setCharsInNameTable(24,0,buf);
 
   // free guy routine
   if(lives < 10) {
@@ -1891,7 +1869,7 @@ void updateScore(int incr)
          (oldscore < 500000 && score >= 500000) ||
          (oldscore < 1000000 && score >= 1000000) )
       {
-        lives++;
+        ++lives;
         drawPacmanLives();
 
         // play some beeps when you get a free guy by putting the beeps onto the circular buffer and letting the main
@@ -1932,132 +1910,132 @@ void drawMaze(void) {
   // clear screen
   for(k=0;k<24;++k)
       for(j=0;j<32;++j)
-          setCharacterAt(j,k,' ');
+          setCharInNameTable(j,k,' ');
 
    for(j=3;j<=9;++j) {
-       setCharacterAt(0,j,'a');
-       setCharacterAt(31,j,'a');
+       setCharInNameTable(0,j,'a');
+       setCharInNameTable(31,j,'a');
    }
 
    for(j=14;j<=22;++j) {
-       setCharacterAt(0,j,'a');
-       setCharacterAt(31,j,'a');    
+       setCharInNameTable(0,j,'a');
+       setCharInNameTable(31,j,'a');    
    }
 
    for(j=0;j<32;++j) {
-       setCharacterAt(j,1,'g');
+       setCharInNameTable(j,1,'g');
    }
 
-   setCharactersAt(18,0,"SCORE:");
+   setCharsInNameTable(18,0,"SCORE:");
    updateScore(0);
 
    for(j=5;j<=9;++j) {
-       setCharacterAt(3, j, 'a');
-       setCharacterAt(28, j, 'a');
+       setCharInNameTable(3, j, 'a');
+       setCharInNameTable(28, j, 'a');
    }
 
    for(j=14;j<=20;++j) {
-       setCharacterAt(3, j, 'a');
-       setCharacterAt(28, j, 'a');
+       setCharInNameTable(3, j, 'a');
+       setCharInNameTable(28, j, 'a');
    }
 
    for(j=5;j<=17;++j) {
-       setCharacterAt(6, j, 'a');
-       setCharacterAt(25, j, 'a');
+       setCharInNameTable(6, j, 'a');
+       setCharInNameTable(25, j, 'a');
    }
 
    for(j=8;j<=9;++j) {
-       setCharacterAt(9, j, 'a');
-       setCharacterAt(22,j, 'a');
+       setCharInNameTable(9, j, 'a');
+       setCharInNameTable(22,j, 'a');
    }
 
-   setCharacterAt(9,14,'a');
-   setCharacterAt(22,14,'a');
+   setCharInNameTable(9,14,'a');
+   setCharInNameTable(22,14,'a');
 
    for(j=10;j<22;++j) 
-       setCharacterAt(j,4,'b');
+       setCharInNameTable(j,4,'b');
    
    for(j=10;j<=13;++j) {
-       setCharacterAt(j,7,'b');
-       setCharacterAt(j+8,7,'b');
+       setCharInNameTable(j,7,'b');
+       setCharInNameTable(j+8,7,'b');
    }
 
-   setCharacterAt(13, 10, 'i');
-   setCharacterAt(14, 10, 'i');
-   setCharacterAt(17, 10, 'i');
-   setCharacterAt(18, 10, 'i');
-   setCharacterAt(12, 11, 'h');
-   setCharacterAt(19, 11, 'j');
+   setCharInNameTable(13, 10, 'i');
+   setCharInNameTable(14, 10, 'i');
+   setCharInNameTable(17, 10, 'i');
+   setCharInNameTable(18, 10, 'i');
+   setCharInNameTable(12, 11, 'h');
+   setCharInNameTable(19, 11, 'j');
 
    for(j=13;j<=18;++j) 
-      setCharacterAt(j,12, 'g');
+      setCharInNameTable(j,12, 'g');
 
-   setCharacterAt(10,15, 'b');
-   setCharacterAt(21,15, 'b');
-   setCharacterAt(15,15, 'b');
-   setCharacterAt(16,15, 'b');
+   setCharInNameTable(10,15, 'b');
+   setCharInNameTable(21,15, 'b');
+   setCharInNameTable(15,15, 'b');
+   setCharInNameTable(16,15, 'b');
 
    for(j=10;j<=13;++j) {
-    setCharacterAt(j,18, 'b');
-    setCharacterAt(j+8,18, 'b');
+    setCharInNameTable(j,18, 'b');
+    setCharInNameTable(j+8,18, 'b');
    }
 
    for(j=7;j<=24;++j) 
-    setCharacterAt(j,21,'b');
+    setCharInNameTable(j,21,'b');
 
-  setCharacterAt(0,2,'c');
-  setCharacterAt(3,4,'c');
-  setCharacterAt(6,4,'c');
-  setCharacterAt(25,4,'c');
-  setCharacterAt(28,4,'c');
-  setCharacterAt(31,2,'c');
-  setCharacterAt(0,13,'c');
-  setCharacterAt(3,13,'c');
-  setCharacterAt(9,13,'c');
-  setCharacterAt(22,13,'c');
-  setCharacterAt(28,13,'c');
-  setCharacterAt(31,13,'c');
+  setCharInNameTable(0,2,'c');
+  setCharInNameTable(3,4,'c');
+  setCharInNameTable(6,4,'c');
+  setCharInNameTable(25,4,'c');
+  setCharInNameTable(28,4,'c');
+  setCharInNameTable(31,2,'c');
+  setCharInNameTable(0,13,'c');
+  setCharInNameTable(3,13,'c');
+  setCharInNameTable(9,13,'c');
+  setCharInNameTable(22,13,'c');
+  setCharInNameTable(28,13,'c');
+  setCharInNameTable(31,13,'c');
 
-  setCharacterAt(0,10,'e');
-  setCharacterAt(3,10,'e');
-  setCharacterAt(9,10,'e');
-  setCharacterAt(22,10,'e');
-  setCharacterAt(28,10,'e');
-  setCharacterAt(31,10,'e');
-  setCharacterAt(0,23,'e');
-  setCharacterAt(3,21,'e');
-  setCharacterAt(6,18,'e');
-  setCharacterAt(25,18,'e');
-  setCharacterAt(31,23,'e');
-  setCharacterAt(28,21,'e');
+  setCharInNameTable(0,10,'e');
+  setCharInNameTable(3,10,'e');
+  setCharInNameTable(9,10,'e');
+  setCharInNameTable(22,10,'e');
+  setCharInNameTable(28,10,'e');
+  setCharInNameTable(31,10,'e');
+  setCharInNameTable(0,23,'e');
+  setCharInNameTable(3,21,'e');
+  setCharInNameTable(6,18,'e');
+  setCharInNameTable(25,18,'e');
+  setCharInNameTable(31,23,'e');
+  setCharInNameTable(28,21,'e');
 
-  setCharacterAt(9, 4, 'd');
-  setCharacterAt(9, 18, 'd');
-  setCharacterAt(6, 21, 'd');
-  setCharacterAt(17,18, 'd');
-  setCharacterAt(20,15, 'd');
-  setCharacterAt(14,15, 'd');
-  setCharacterAt(17,7,'d');
+  setCharInNameTable(9, 4, 'd');
+  setCharInNameTable(9, 18, 'd');
+  setCharInNameTable(6, 21, 'd');
+  setCharInNameTable(17,18, 'd');
+  setCharInNameTable(20,15, 'd');
+  setCharInNameTable(14,15, 'd');
+  setCharInNameTable(17,7,'d');
 
-  setCharacterAt(22,4,'f');
-  setCharacterAt(17,15,'f');
-  setCharacterAt(14,18,'f');
-  setCharacterAt(22,18,'f');
-  setCharacterAt(25,21,'f');
-  setCharacterAt(11,15,'f');
-  setCharacterAt(14,7,'f');
+  setCharInNameTable(22,4,'f');
+  setCharInNameTable(17,15,'f');
+  setCharInNameTable(14,18,'f');
+  setCharInNameTable(22,18,'f');
+  setCharInNameTable(25,21,'f');
+  setCharInNameTable(11,15,'f');
+  setCharInNameTable(14,7,'f');
 
-  setCharacterAt(12,10,'k');
-  setCharacterAt(9,7,'k');
-  setCharacterAt(19,10,'l');
-  setCharacterAt(22,7,'l');
-  setCharacterAt(12,12,'n');
-  setCharacterAt(9,15,'n');
-  setCharacterAt(19,12,'m');
-  setCharacterAt(22,15,'m');
+  setCharInNameTable(12,10,'k');
+  setCharInNameTable(9,7,'k');
+  setCharInNameTable(19,10,'l');
+  setCharInNameTable(22,7,'l');
+  setCharInNameTable(12,12,'n');
+  setCharInNameTable(9,15,'n');
+  setCharInNameTable(19,12,'m');
+  setCharInNameTable(22,15,'m');
 
-  setCharacterAt(9,15,'n');
-  setCharacterAt(22,15,'m');
+  setCharInNameTable(9,15,'n');
+  setCharInNameTable(22,15,'m');
   
   drawDots();  
 
@@ -2346,7 +2324,7 @@ void setAvailableGhostDirection(int i)
       px = sprAttr[PACMAN_SPRITENUM].x;
       py = sprAttr[PACMAN_SPRITENUM].y;
 
-      if(energizerctr > 0) {
+      if(energizerCtr > 0) {
         if(x < px && canGoWest(i)) {
           goWest(i);
           return;
@@ -2572,7 +2550,7 @@ void normalGhostBehavior(int i)
           y = sprAttr[i].y;
       }
 
-      if(energizerctr == 0) {
+      if(energizerCtr == 0) {
         // make the ghosts' "legs" swap back and forth if we're in normal mode
         ctr++;
         if( ctr < 24 )  
@@ -2591,21 +2569,21 @@ void normalGhostBehavior(int i)
     sprAttr[i+4].y = y; //set eye location
 
     // make ghosts blue if pac has eaten an energizer
-    if(energizerctr > 0) {
+    if(energizerCtr > 0) {
       sprAttr[i+4].color = TRANSPARENT; // turn off eyes
 
       sprAttr[i].color = DARKBLUE; // make ghost dark blue
 
-      if(energizerctr > 60 && energizerctr < 70)
+      if(energizerCtr > 60 && energizerCtr < 70)
         sprAttr[i].color = WHITE;
       else
-      if(energizerctr > 40 && energizerctr < 50)
+      if(energizerCtr > 40 && energizerCtr < 50)
         sprAttr[i].color = WHITE;
       else
-      if(energizerctr > 20 && energizerctr < 30)
+      if(energizerCtr > 20 && energizerCtr < 30)
         sprAttr[i].color = WHITE;
       else
-      if(energizerctr > 1 && energizerctr < 10)
+      if(energizerCtr > 1 && energizerCtr < 10)
         sprAttr[i].color = WHITE;
     }
 
@@ -2635,7 +2613,7 @@ void moveGhosts(void)
         normalGhostBehavior(i);
   }
 
-  if(energizerctr == 1) {
+  if(energizerCtr == 1) {
     ghostsNormal();
     ghostCtr = 0;
   }
@@ -2870,20 +2848,20 @@ void movePacman(void)
         if(x == 240)
            sprAttr[PACMAN_SPRITENUM].x = 2;
    
-    anPos = anPos + anDir;
-    if(anPos > 1 || anPos < 1) 
-      anDir = -anDir;
+    pacmanAnimationPosition = pacmanAnimationPosition + pacmanAnimationDirection;
+    if(pacmanAnimationPosition > 1 || pacmanAnimationPosition < 1) 
+      pacmanAnimationDirection = -pacmanAnimationDirection;
 
     if(yd < 0) 
-        sprAttr[PACMAN_SPRITENUM].patt = anPos + NORTH_PACMAN_PAT_OFFSET;
+        sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + NORTH_PACMAN_PAT_OFFSET;
     else 
         if(yd > 0) 
-            sprAttr[PACMAN_SPRITENUM].patt = anPos + SOUTH_PACMAN_PAT_OFFSET;
+            sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + SOUTH_PACMAN_PAT_OFFSET;
         else
             if(xd < 0) 
-                sprAttr[PACMAN_SPRITENUM].patt = anPos + WEST_PACMAN_PAT_OFFSET;
+                sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + WEST_PACMAN_PAT_OFFSET;
             else 
-                sprAttr[PACMAN_SPRITENUM].patt = anPos + EAST_PACMAN_PAT_OFFSET;
+                sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + EAST_PACMAN_PAT_OFFSET;
 
     x = x >> 3;
     y = y >> 3;
@@ -2891,43 +2869,39 @@ void movePacman(void)
     xx = (byte) x + 1;
     yy = (byte) y + 1;
 
-    cc = getCharAt(xx,yy);
+    cc = getCharFromNameTable(xx,yy);
 
     if(cc == 'r' || cc == ENERGIZER_RIGHT_CHAR) {
       updateScore(10);
-      dotctr++;
+      dotCtr++;
       wakka();
-      setCharacterAt(xx,yy,' ');
+      setCharInNameTable(xx,yy,' ');
       if(cc == ENERGIZER_RIGHT_CHAR) {
         circ_bbuf_push(&audio_circ_buffer_x83_0, BANK1_C6);
-        energizerctr = 200;
-        setCharacterAt(xx-1,yy,' ');
+        energizerCtr = 200;
+        setCharInNameTable(xx-1,yy,' ');
       }
     }
 
-    if(energizerctr > 0)
-      energizerctr--;
+    if(energizerCtr > 0)
+      energizerCtr--;
 
     if(y == 21) {
       yy++;
-      cc = getCharAt(xx,yy);
+      cc = getCharFromNameTable(xx,yy);
       if(cc == 'q') {
         updateScore(10);
-        dotctr++;
+        dotCtr++;
         wakka();
-        setCharacterAt(xx,yy,'s');
+        setCharInNameTable(xx,yy,'s');
       }
     }
 
-
-    if((gameCtr >> 8) == 2 && fruitEatenOnThisLevel == 0) {
+    if((gameCtr >> 8) == 2 && fruitEatenOnThisLevel == 0) 
         displayFruit(levelCtr);
-    }
 
-    if((gameCtr >> 8) == 4) {
+    if((gameCtr >> 8) == 4) 
         sprAttr[FRUIT_SPRITENUM].color = TRANSPARENT;
-    }
-
 }
 
 
@@ -2942,10 +2916,12 @@ void checkControls(void)
 {
         static byte oldk;
         static byte k;
+
+
         #ifdef GCC_COMPILED
-        k = getJoystick(LEFT_POS);
+            k = getJoystick(LEFT_POS);
         #else
-        k = getFastLeftJoystick();
+            k = getFastLeftJoystick();
         #endif
 
         if(k == J_E && canGoEast(PACMAN_SPRITENUM)) {
@@ -2969,16 +2945,16 @@ void checkControls(void)
         }
 
         #ifdef GCC_COMPILED
-        k = getJoystick(RIGHT_POS);
+            k = getJoystick(RIGHT_POS);
         #else
-        k = getFastRightJoystick();
+            k = getFastRightJoystick();
         #endif
 
         if(k == J_BUTTON && oldk != J_BUTTON) { // switch ghosts with the hat
-          if(GhostWithHat == RED_GHOST_EYES_SPRITENUM)
+          if(GhostWithHat == RED_GHOST_SPRITENUM)
             GhostWithHat = CYAN_GHOST_SPRITENUM;
           else
-          if(GhostWithHat == CYAN_GHOST_EYES_SPRITENUM )
+          if(GhostWithHat == CYAN_GHOST_SPRITENUM )
             GhostWithHat = PINK_GHOST_SPRITENUM;
           else
           if(GhostWithHat == PINK_GHOST_SPRITENUM)
@@ -3070,7 +3046,7 @@ void resetMap(void)
       sprAttr[BROWN_GHOST_SPRITENUM].isEyes = FALSE;
       sprAttr[PINK_GHOST_SPRITENUM].isEyes = FALSE;
 
-      energizerctr = 0;
+      energizerCtr = 0;
       putGhostsInBox();
       ghostsNormal();  
       sprAttr[PACMAN_SPRITENUM].x = PACMAN_HOME_X;
@@ -3093,7 +3069,7 @@ void checkForAllDotsGone(void)
 #endif
 {
       static char cc;
-      if(dotctr == 260) {
+      if(dotCtr == 260) {
         audioSilence();
         for(cc = 0; cc < 6; cc++) {
           hold(1000);
@@ -3115,8 +3091,8 @@ void checkForAllDotsGone(void)
               SDL_RenderPresent(renderer);
           #endif
         }
-      dotctr = 0;
-      levelCtr++;
+      dotCtr = 0;
+      ++levelCtr;
       drawDots();
       resetMap();
     }
@@ -3146,7 +3122,7 @@ void pacmanDead(void)
       hold(500);
       play(AUDIOCHIP0,1,notes[i-PATT_PACMAN_DYING_START],15);
       sprAttr[PACMAN_SPRITENUM].patt = i;
-      syncSpriteAttributesToHardware();
+      syncSpriteAttrStructsToHardware();
       #ifdef GCC_COMPILED
           updateEmulatedVDPScreen();
           SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
@@ -3169,41 +3145,41 @@ void ghostEaten(int i)
     __z88dk_fastcall
 #endif
 {
-          sprAttr[i].color = TRANSPARENT;
-          sprAttr[i+4].color = WHITE;
-          sprAttr[i].isEyes = TRUE;
-          ghostCtr = ghostCtr + 1;
-          popScoreGameCtr = gameCtr;
+      sprAttr[i].color = TRANSPARENT;
+      sprAttr[i+4].color = WHITE;
+      sprAttr[i].isEyes = TRUE;
+      ghostCtr = ghostCtr + 1;
+      popScoreGameCtr = gameCtr;
 
-          sprAttr[POP_SCORE_SPRITENUM].color = CYAN;
-          sprAttr[POP_SCORE_SPRITENUM].x = sprAttr[i].x;
-          sprAttr[POP_SCORE_SPRITENUM].y = sprAttr[i].y;
+      sprAttr[POP_SCORE_SPRITENUM].color = CYAN;
+      sprAttr[POP_SCORE_SPRITENUM].x = sprAttr[i].x;
+      sprAttr[POP_SCORE_SPRITENUM].y = sprAttr[i].y;
 
-          if(ghostCtr == 1) {
-              sprAttr[POP_SCORE_SPRITENUM].patt = PATT_200;
-              updateScore(200);
-          }
-          else
-            if(ghostCtr == 2) {
-                sprAttr[POP_SCORE_SPRITENUM].patt = PATT_400;
-                updateScore(400);
+      if(ghostCtr == 1) {
+          sprAttr[POP_SCORE_SPRITENUM].patt = PATT_200;
+          updateScore(200);
+      }
+      else
+        if(ghostCtr == 2) {
+            sprAttr[POP_SCORE_SPRITENUM].patt = PATT_400;
+            updateScore(400);
+        }
+        else
+            if(ghostCtr == 3) {
+                sprAttr[POP_SCORE_SPRITENUM].patt = PATT_800; 
+                updateScore(800); 
             }
             else
-                if(ghostCtr == 3) {
-                    sprAttr[POP_SCORE_SPRITENUM].patt = PATT_800; 
-                    updateScore(800); 
+                if(ghostCtr == 4) {
+                    sprAttr[POP_SCORE_SPRITENUM].patt = PATT_1600;
+                    updateScore(1600);
                 }
-                else
-                    if(ghostCtr == 4) {
-                        sprAttr[POP_SCORE_SPRITENUM].patt = PATT_1600;
-                        updateScore(1600);
-                    }
-                    else {
-                        sprAttr[POP_SCORE_SPRITENUM].patt = PATT_QUESTIONMARKS;
-                        updateScore(3200);
-                    }
+                else {
+                    sprAttr[POP_SCORE_SPRITENUM].patt = PATT_QUESTIONMARKS;
+                    updateScore(3200);
+                }
 
-          bloip();
+      bloip();
 }
 /* ******************************************************************************************************************************
    | check collision between pacman and ghosts                                                                                  |
@@ -3235,12 +3211,12 @@ void checkCollisions(void)
     gxl = sprAttr[i].x+14;
     gyl = sprAttr[i].y+14;
     if (sprAttr[i].isEyes == FALSE && px  < gxl && pxl > gx && py  < gyl && pyl > gy) {
-      if(energizerctr == 0) {
+      if(energizerCtr == 0) {
           pacmanDead();
           lives--;
           drawPacmanLives();
           if(lives < 0)
-            bRunning = FALSE;
+            gameLoopRunning = FALSE;
           i = BROWN_GHOST_SPRITENUM+1; // not fair to die more than once
       }
       else {
@@ -3279,12 +3255,12 @@ void clearMazeShutOffSprites(void)
 
    for(k=0;k<24;++k)
      for(j=0;j<32;++j)
-        setCharacterAt(j,k,' ');
+        setCharInNameTable(j,k,' ');
 
    for(j=0;j<=MAX_SPRITENUM;++j) {
     sprAttr[j].color = TRANSPARENT;
    }
-   syncSpriteAttributesToHardware();
+   syncSpriteAttrStructsToHardware();
 }
 
 
@@ -3296,38 +3272,39 @@ void attractScreen() {
     int x = 0;
     int y = 4;
     byte j;
-    dotctr = 0;
+    dotCtr = 0;
     lives = 3;
     levelCtr = 1;
 
     for(int i=0;i<32;++i)
-      setCharacterGroupColor(i,DARKBLUE,BLACK);
+      setColorTableEntry(i,DARKBLUE,BLACK);
 
     for(int i=12;i<=15;++i)
-      setCharacterGroupColor(i,DARKRED,BLACK);
+      setColorTableEntry(i,DARKRED,BLACK);
 
-    setCharacterGroupColor(5,DARKYELLOW,BLACK);
+    setColorTableEntry(5,DARKYELLOW,BLACK);
 
-    setCharactersAt(0,23,"dbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbf");
-    setCharactersAt(0,0 , "dbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbf");
-    for(int i=1;i<23;++i)
-      setCharactersAt(0,i,"a                              a");
+    setCharsInNameTable(0,23,"dbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbf");
+    setCharsInNameTable(0,0 , "dbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbf");
+    for(int i=1;i<23;++i) {
+      setCharInNameTable(0, i,'a');
+      setCharInNameTable(31,i,'a');
+    }
 
-    setCharactersAt(4+x,y,   ",  , +,(");
-    setCharactersAt(4+x,y+1, ",  , )( ");
-    setCharactersAt(4+x,y+2, ")(+*  )(");
-    setCharactersAt(4+x,y+3, " )*  ),*");
+    setCharsInNameTable(4+x,y,   ",  , +,(");
+    setCharsInNameTable(4+x,y+1, ",  , )( ");
+    setCharsInNameTable(4+x,y+2, ")(+*  )(");
+    setCharsInNameTable(4+x,y+3, " )*  ),*");
 
-    setCharactersAt(4+x,y+5, ",,( +,( +,( ,(+, +,( , ,");
-    setCharactersAt(4+x,y+6, ", , , , , , ,)*, , , ,(,");
-    setCharactersAt(4+x,y+7, ",,* ,,, ,   ,  , ,,, ,),");
-    setCharactersAt(4+x,y+8, ",   , , , , ,  , , , , ,");
-    setCharactersAt(4+x,y+9, ",   , , ),* ,  , , , , ,");
+    setCharsInNameTable(4+x,y+5, ",,( +,( +,( ,(+, +,( , ,");
+    setCharsInNameTable(4+x,y+6, ", , , , , , ,)*, , , ,(,");
+    setCharsInNameTable(4+x,y+7, ",,* ,,, ,   ,  , ,,, ,),");
+    setCharsInNameTable(4+x,y+8, ",   , , , , ,  , , , , ,");
+    setCharsInNameTable(4+x,y+9, ",   , , ),* ,  , , , , ,");
 
-    setCharactersAt(x+1,y+15," PRESS JOYSTICK FIRE TO BEGIN");
-    setCharactersAt(x+1,y+16,"       JOYSTICK DOWN TO QUIT");
-    setCharactersAt(x+1,y+18,"    @ 2020 JOE ROUNCEVILLE");
-
+    setCharsInNameTable(x+1,y+15," PRESS JOYSTICK FIRE TO BEGIN");
+    setCharsInNameTable(x+1,y+16,"       JOYSTICK DOWN TO QUIT");
+    setCharsInNameTable(x+1,y+18,"    @ 2020 JOE ROUNCEVILLE");
 
     x = 0;
     y = 120;
@@ -3338,7 +3315,7 @@ void attractScreen() {
           audioSilence();
           clearMazeShutOffSprites();
           #ifdef GCC_COMPILED
-          SDLShutdown();
+              SDLShutdown();
           #endif
           exit(0);
        }
@@ -3357,14 +3334,14 @@ void attractScreen() {
        sprAttr[HAT_SPRITENUM].color = DARKGREEN;
        sprAttr[HAT_SPRITENUM].patt = PATT_HAT;
 
-       syncSpriteAttributesToHardware();
+       syncSpriteAttrStructsToHardware();
 
        #ifdef GCC_COMPILED
-       updateEmulatedVDPScreen();
-       SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
-       SDL_RenderClear(renderer);
-       SDL_RenderCopy(renderer, texture, NULL, NULL);
-       SDL_RenderPresent(renderer);
+           updateEmulatedVDPScreen();
+           SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
+           SDL_RenderClear(renderer);
+           SDL_RenderCopy(renderer, texture, NULL, NULL);
+           SDL_RenderPresent(renderer);
        #endif
        x = x + 2;
        sprAttr[PACMAN_SPRITENUM].patt = PATT_PACMAN_E1 + ((x/2) % 3);
@@ -3395,7 +3372,7 @@ void clearScreenAndInitializeSprites(void) {
 
    sprAttr[PACMAN_SPRITENUM].x = 120;
    sprAttr[PACMAN_SPRITENUM].y = 128;
-   sprAttr[PACMAN_SPRITENUM].patt = anPos;
+   sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition;
    
    clearMazeShutOffSprites();
 }
@@ -3412,7 +3389,7 @@ void setupGame(void)
 {
    static int i;
    score = 0;
-   direction = (int)fmax((double)abs(BANK1_GS5 - BANK1_DS5) / 6,(double)1); // wonky math necessary so direction works for both gcc and zcc
+   bgMusicDirection = (int)fmax((double)abs(BANK1_GS5 - BANK1_DS5) / 6,(double)1); // wonky math necessary so direction works for both gcc and zcc
 
    audioSilence();
 
@@ -3422,18 +3399,18 @@ void setupGame(void)
 
    clearScreenAndInitializeSprites();
 
-   static char pacman_e1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_e2[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x78,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xE0,0x00,0x00,0x00,0xE0,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_e3[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7C,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xC0,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xC0,0xC0,0x00};
-   static char pacman_n1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_n2[32] = {0x00,0x00,0x00,0x18,0x38,0x3C,0x7C,0x7C,0x7E,0x7E,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x30,0x38,0x78,0x7C,0x7C,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_n3[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x60,0x70,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0C,0x1C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_w1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_w2[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x0F,0x01,0x00,0x01,0x0F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0x3C,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_w3[32] = {0x00,0x00,0x07,0x07,0x03,0x01,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x07,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0x7C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_s1[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_s2[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7E,0x7E,0x7C,0x7C,0x3C,0x38,0x18,0x00,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0x7C,0x7C,0x78,0x38,0x30,0x00,0x00};
-   static char pacman_s3[32] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7C,0x78,0x70,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0x7C,0x3C,0x1C,0x0C,0x00,0x00,0x00,0x00,0x00};
+   static char pacman_e1[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_e2[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x78,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xE0,0x00,0x00,0x00,0xE0,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_e3[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7C,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xC0,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xC0,0xC0,0x00};
+   static char pacman_n1[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_n2[] = {0x00,0x00,0x00,0x18,0x38,0x3C,0x7C,0x7C,0x7E,0x7E,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x30,0x38,0x78,0x7C,0x7C,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_n3[] = {0x00,0x00,0x00,0x00,0x00,0x00,0x60,0x70,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0C,0x1C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_w1[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_w2[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x0F,0x01,0x00,0x01,0x0F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0x3C,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_w3[] = {0x00,0x00,0x07,0x07,0x03,0x01,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x07,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0x7C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_s1[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7F,0x7F,0x7F,0x7F,0x7F,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_s2[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7E,0x7E,0x7C,0x7C,0x3C,0x38,0x18,0x00,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0xFC,0xFC,0x7C,0x7C,0x78,0x38,0x30,0x00,0x00};
+   static char pacman_s3[] = {0x00,0x00,0x07,0x1F,0x3F,0x3F,0x7E,0x7C,0x78,0x70,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xC0,0xF0,0xF8,0xF8,0xFC,0x7C,0x3C,0x1C,0x0C,0x00,0x00,0x00,0x00,0x00};
 
    setSpritePatternByArray(PATT_PACMAN_E1, pacman_e1,32);
    setSpritePatternByArray(PATT_PACMAN_E2, pacman_e2,32);
@@ -3448,13 +3425,13 @@ void setupGame(void)
    setSpritePatternByArray(PATT_PACMAN_S2, pacman_s2,32);
    setSpritePatternByArray(PATT_PACMAN_S3, pacman_s3,32);
 
-   static char normal_ghost_1[32] =      {0x00,0x03,0x0F,0x1F,0x33,0x21,0x21,0x21,0x73,0x7F,0x7F,0x7F,0x7F,0x7F,0x6C,0x44,0x00,0x80,0xE0,0xF0,0x98,0x08,0x08,0x08,0x9C,0xFC,0xFC,0xFC,0xFC,0xFC,0xEC,0xC4};
-   static char normal_ghost_2[32] =      {0x00,0x03,0x0F,0x1F,0x33,0x21,0x21,0x21,0x73,0x7F,0x7F,0x7F,0x7F,0x7F,0x7B,0x31,0x00,0x80,0xE0,0xF0,0x98,0x08,0x08,0x08,0x9C,0xFC,0xFC,0xFC,0xFC,0xFC,0xDC,0x88};
-   static char normal_ghost_eyes_n[32] = {0x00,0x00,0x00,0x00,0x00,0x12,0x1E,0x1E,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x90,0xF0,0xF0,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char normal_ghost_eyes_s[32] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x1E,0x12,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0xF0,0x90,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char normal_ghost_eyes_e[32] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x18,0x18,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0xC0,0xC0,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char normal_ghost_eyes_w[32] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x06,0x06,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0x30,0x30,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char scared_ghost[32] =        {0x00,0x03,0x0F,0x1F,0x3F,0x3F,0x3F,0x79,0x79,0x7F,0x7F,0x66,0x59,0x7F,0x6E,0x46,0x00,0xC0,0xF0,0xF8,0xFC,0xFC,0xFC,0x9E,0x9E,0xFE,0xFE,0x66,0x9A,0xFE,0x76,0x62};
+   static char normal_ghost_1[] =      {0x00,0x03,0x0F,0x1F,0x33,0x21,0x21,0x21,0x73,0x7F,0x7F,0x7F,0x7F,0x7F,0x6C,0x44,0x00,0x80,0xE0,0xF0,0x98,0x08,0x08,0x08,0x9C,0xFC,0xFC,0xFC,0xFC,0xFC,0xEC,0xC4};
+   static char normal_ghost_2[] =      {0x00,0x03,0x0F,0x1F,0x33,0x21,0x21,0x21,0x73,0x7F,0x7F,0x7F,0x7F,0x7F,0x7B,0x31,0x00,0x80,0xE0,0xF0,0x98,0x08,0x08,0x08,0x9C,0xFC,0xFC,0xFC,0xFC,0xFC,0xDC,0x88};
+   static char normal_ghost_eyes_n[] = {0x00,0x00,0x00,0x00,0x00,0x12,0x1E,0x1E,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x90,0xF0,0xF0,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char normal_ghost_eyes_s[] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x1E,0x12,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0xF0,0x90,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char normal_ghost_eyes_e[] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x18,0x18,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0xC0,0xC0,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char normal_ghost_eyes_w[] = {0x00,0x00,0x00,0x00,0x0C,0x1E,0x06,0x06,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x60,0xF0,0x30,0x30,0x60,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char scared_ghost[] =        {0x00,0x03,0x0F,0x1F,0x3F,0x3F,0x3F,0x79,0x79,0x7F,0x7F,0x66,0x59,0x7F,0x6E,0x46,0x00,0xC0,0xF0,0xF8,0xFC,0xFC,0xFC,0x9E,0x9E,0xFE,0xFE,0x66,0x9A,0xFE,0x76,0x62};
 
    setSpritePatternByArray(PATT_NORMAL_GHOST_1, normal_ghost_1,32);
    setSpritePatternByArray(PATT_NORMAL_GHOST_2, normal_ghost_2,32);
@@ -3464,8 +3441,8 @@ void setupGame(void)
    setSpritePatternByArray(PATT_NORMAL_GHOST_EYES_W, normal_ghost_eyes_w, 32);
    setSpritePatternByArray(PATT_SCARED_GHOST, scared_ghost, 32);
 
-   static char hat[] = {0x00, 0x04, 0x0E, 0x0F, 0x0F, 0x9F, 0xFF, 0x7F, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x70, 0xF0, 0xF0, 0xF9, 0xFF, 0xFE, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-   setSpritePatternByArray(PATT_HAT, hat,32);
+   static char hat[] = {0x00,0x04,0x0E,0x0F,0x0F,0x9F,0xFF,0x7F,0x1F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x70,0xF0,0xF0,0xF9,0xFF,0xFE,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   setSpritePatternByArray(PATT_HAT,hat,32);
 
    attractScreen();
 
@@ -3475,17 +3452,17 @@ void setupGame(void)
 
    drawMaze();
 
-   static char pacman_dying_start[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x60,0x70,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0C,0x1C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_dying_1[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
-   static char pacman_dying_2[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x70,0x7C,0x7F,0x3F,0x1F,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1C,0x7C,0xFC,0xF8,0xF0,0xC0,0x00};
-   static char pacman_dying_3[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x70,0x7F,0x3F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1C,0xFC,0xF8,0xE0,0x00};
-   static char pacman_dying_4[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0F,0x7F,0x3F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xE0,0xFC,0xF8,0xE0};
-   static char pacman_dying_5[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x0F,0x3F,0x7F,0x3E,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xE0,0xF8,0xFC,0xF8,0x60};
-   static char pacman_dying_6[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x0F,0x1F,0x7F,0x7E,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xE0,0xF0,0xFC,0xFC,0x78};
-   static char pacman_dying_7[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x07,0x07,0x0F,0x1F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xC0,0xC0,0xE0,0xF0,0xE0};
-   static char pacman_dying_8[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x03,0x03,0x03,0x07,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x80,0x80,0xC0,0x80};
-   static char pacman_dying_9[32]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-   static char pacman_dying_end[32]   = {0x00,0x00,0x00,0x04,0x02,0x10,0x08,0x00,0x00,0x30,0x00,0x00,0x08,0x10,0x02,0x04,0x00,0x00,0x00,0x20,0x40,0x08,0x10,0x00,0x00,0x0C,0x00,0x00,0x10,0x08,0x40,0x20};
+   static char pacman_dying_start[] = {0x00,0x00,0x00,0x00,0x00,0x00,0x60,0x70,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0C,0x1C,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_dying_1[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x78,0x7C,0x7E,0x3F,0x3F,0x1F,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x3C,0x7C,0xFC,0xF8,0xF8,0xF0,0xC0,0x00};
+   static char pacman_dying_2[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x70,0x7C,0x7F,0x3F,0x1F,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1C,0x7C,0xFC,0xF8,0xF0,0xC0,0x00};
+   static char pacman_dying_3[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x70,0x7F,0x3F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1C,0xFC,0xF8,0xE0,0x00};
+   static char pacman_dying_4[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0F,0x7F,0x3F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xE0,0xFC,0xF8,0xE0};
+   static char pacman_dying_5[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x0F,0x3F,0x7F,0x3E,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xE0,0xF8,0xFC,0xF8,0x60};
+   static char pacman_dying_6[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x0F,0x1F,0x7F,0x7E,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xE0,0xF0,0xFC,0xFC,0x78};
+   static char pacman_dying_7[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x03,0x07,0x07,0x0F,0x1F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0xC0,0xC0,0xE0,0xF0,0xE0};
+   static char pacman_dying_8[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x03,0x03,0x03,0x07,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x80,0x80,0xC0,0x80};
+   static char pacman_dying_9[]     = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   static char pacman_dying_end[]   = {0x00,0x00,0x00,0x04,0x02,0x10,0x08,0x00,0x00,0x30,0x00,0x00,0x08,0x10,0x02,0x04,0x00,0x00,0x00,0x20,0x40,0x08,0x10,0x00,0x00,0x0C,0x00,0x00,0x10,0x08,0x40,0x20};
 
    setSpritePatternByArray(PATT_PACMAN_DYING_START, pacman_dying_start,32);
    setSpritePatternByArray(PATT_PACMAN_DYING_1, pacman_dying_1,32);
@@ -3499,11 +3476,11 @@ void setupGame(void)
    setSpritePatternByArray(PATT_PACMAN_DYING_9, pacman_dying_9,32);
    setSpritePatternByArray(PATT_PACMAN_DYING_END, pacman_dying_end,32);
 
-   static char TwoHundred[] =     {0x00, 0x00, 0x00, 0x00, 0x31, 0x4A, 0x0A, 0x0A, 0x32, 0x42, 0x42, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x52, 0x52, 0x52, 0x52, 0x52, 0x8C, 0x00, 0x00, 0x00, 0x00};
-   static char FourHundred[] =    {0x00, 0x00, 0x00, 0x00, 0x09, 0x1A, 0x2A, 0x4A, 0x7A, 0x0A, 0x0A, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x52, 0x52, 0x52, 0x52, 0x52, 0x8C, 0x00, 0x00, 0x00, 0x00};
-   static char EightHundred[] =   {0x00, 0x00, 0x00, 0x00, 0x31, 0x4A, 0x4A, 0x32, 0x4A, 0x4A, 0x4A, 0x31, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x52, 0x52, 0x52, 0x52, 0x52, 0x8C, 0x00, 0x00, 0x00, 0x00};
-   static char SixteenHundred[] = {0x00, 0x00, 0x00, 0x00, 0x88, 0x91, 0xA1, 0xA1, 0xB9, 0xA5, 0xA5, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC6, 0x29, 0x29, 0x29, 0x29, 0x29, 0x29, 0xC6, 0x00, 0x00, 0x00, 0x00};
-   static char QuestionMarks[] =  {0x00, 0x00, 0x00, 0x31, 0x4A, 0x08, 0x08, 0x10, 0x21, 0x21, 0x00, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8C, 0x52, 0x42, 0x42, 0x84, 0x08, 0x08, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00};
+   static char TwoHundred[] =     {0x00,0x00,0x00,0x00,0x31,0x4A,0x0A,0x0A,0x32,0x42,0x42,0x79,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x8C,0x52,0x52,0x52,0x52,0x52,0x52,0x8C,0x00,0x00,0x00,0x00};
+   static char FourHundred[] =    {0x00,0x00,0x00,0x00,0x09,0x1A,0x2A,0x4A,0x7A,0x0A,0x0A,0x09,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x8C,0x52,0x52,0x52,0x52,0x52,0x52,0x8C,0x00,0x00,0x00,0x00};
+   static char EightHundred[] =   {0x00,0x00,0x00,0x00,0x31,0x4A,0x4A,0x32,0x4A,0x4A,0x4A,0x31,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x8C,0x52,0x52,0x52,0x52,0x52,0x52,0x8C,0x00,0x00,0x00,0x00};
+   static char SixteenHundred[] = {0x00,0x00,0x00,0x00,0x88,0x91,0xA1,0xA1,0xB9,0xA5,0xA5,0x98,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xC6,0x29,0x29,0x29,0x29,0x29,0x29,0xC6,0x00,0x00,0x00,0x00};
+   static char QuestionMarks[] =  {0x00,0x00,0x00,0x31,0x4A,0x08,0x08,0x10,0x21,0x21,0x00,0x21,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x8C,0x52,0x42,0x42,0x84,0x08,0x08,0x00,0x08,0x00,0x00,0x00,0x00};
 
    setSpritePatternByArray(PATT_200,           TwoHundred,     32);
    setSpritePatternByArray(PATT_400,           FourHundred,    32);
@@ -3511,14 +3488,14 @@ void setupGame(void)
    setSpritePatternByArray(PATT_1600,          SixteenHundred, 32);
    setSpritePatternByArray(PATT_QUESTIONMARKS, QuestionMarks,  32);
    
-   static char Cherry[] =         {0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x03, 0x06, 0x1C, 0x3E, 0x2E, 0x2E, 0x26, 0x1C, 0x00, 0x00, 0x00, 0x20, 0x60, 0xC0, 0x80, 0x00, 0x80, 0xC0, 0x78, 0x7C, 0x7C, 0x5C, 0x4C, 0x38, 0x00, 0x00};
-   static char Apple[] =          {0x00, 0x00, 0x00, 0x1D, 0x3E, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x1F, 0x1F, 0x0F, 0x06, 0x00, 0x00, 0x00, 0x00, 0x80, 0x70, 0xF8, 0xFC, 0xFC, 0xFC, 0xEC, 0xEC, 0xD8, 0xF8, 0xF0, 0xE0, 0x00, 0x00};
-   static char Peach[] =          {0x00, 0x00, 0x00, 0x01, 0x01, 0x0B, 0x1D, 0x3E, 0x3F, 0x3F, 0x3F, 0x1F, 0x1F, 0x07, 0x00, 0x00, 0x00, 0x40, 0xF0, 0x60, 0x00, 0xB0, 0x78, 0xFC, 0xFC, 0xFC, 0xFC, 0xF8, 0xF8, 0xE0, 0x00, 0x00};
-   static char Strawberry[] =     {0x00, 0x00, 0x01, 0x07, 0x1B, 0x2C, 0x3B, 0x3F, 0x36, 0x1F, 0x1F, 0x0D, 0x07, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xB0, 0x68, 0xF8, 0xB8, 0xE8, 0xF0, 0xB0, 0xE0, 0xC0, 0x00, 0x00, 0x00};
-   static char Bell[] =           {0x00, 0x00, 0x03, 0x0C, 0x1B, 0x17, 0x37, 0x3F, 0x6F, 0x6F, 0x7F, 0x61, 0x3F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xE0, 0xE0, 0xF0, 0xF0, 0xF8, 0xF8, 0xF8, 0x98, 0xF0, 0x80, 0x00, 0x00};
-   static char Key[] =            {0x00, 0x00, 0x03, 0x0C, 0x0F, 0x0F, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x80, 0x60, 0xE0, 0xE0, 0x80, 0xC0, 0x80, 0x40, 0x80, 0xC0, 0x80, 0x00, 0x00, 0x00};
-   static char Melon[] =          {0x00, 0x08, 0x07, 0x01, 0x02, 0x0F, 0x1B, 0x1F, 0x2F, 0x3D, 0x2F, 0x1F, 0x1B, 0x0F, 0x03, 0x00, 0x00, 0x00, 0x80, 0x00, 0x80, 0xE0, 0xF0, 0x70, 0xF8, 0xD8, 0xF8, 0x70, 0xF0, 0xE0, 0x80, 0x00};
-   static char Galaxian[] =       {0x00, 0x00, 0x01, 0x23, 0x27, 0x3C, 0x3E, 0x2F, 0x37, 0x1B, 0x0D, 0x05, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0xC8, 0x78, 0xF8, 0xE8, 0xD8, 0xB0, 0x60, 0x40, 0x00, 0x00, 0x00, 0x00};
+   static char Cherry[] =         {0x00,0x00,0x00,0x00,0x01,0x01,0x03,0x06,0x1C,0x3E,0x2E,0x2E,0x26,0x1C,0x00,0x00,0x00,0x20,0x60,0xC0,0x80,0x00,0x80,0xC0,0x78,0x7C,0x7C,0x5C,0x4C,0x38,0x00,0x00};
+   static char Apple[] =          {0x00,0x00,0x00,0x1D,0x3E,0x3F,0x3F,0x3F,0x3F,0x3F,0x1F,0x1F,0x0F,0x06,0x00,0x00,0x00,0x00,0x80,0x70,0xF8,0xFC,0xFC,0xFC,0xEC,0xEC,0xD8,0xF8,0xF0,0xE0,0x00,0x00};
+   static char Peach[] =          {0x00,0x00,0x00,0x01,0x01,0x0B,0x1D,0x3E,0x3F,0x3F,0x3F,0x1F,0x1F,0x07,0x00,0x00,0x00,0x40,0xF0,0x60,0x00,0xB0,0x78,0xFC,0xFC,0xFC,0xFC,0xF8,0xF8,0xE0,0x00,0x00};
+   static char Strawberry[] =     {0x00,0x00,0x01,0x07,0x1B,0x2C,0x3B,0x3F,0x36,0x1F,0x1F,0x0D,0x07,0x01,0x00,0x00,0x00,0x00,0x00,0xC0,0xB0,0x68,0xF8,0xB8,0xE8,0xF0,0xB0,0xE0,0xC0,0x00,0x00,0x00};
+   static char Bell[] =           {0x00,0x00,0x03,0x0C,0x1B,0x17,0x37,0x3F,0x6F,0x6F,0x7F,0x61,0x3F,0x01,0x00,0x00,0x00,0x00,0x00,0xC0,0xE0,0xE0,0xF0,0xF0,0xF8,0xF8,0xF8,0x98,0xF0,0x80,0x00,0x00};
+   static char Key[] =            {0x00,0x00,0x03,0x0C,0x0F,0x0F,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x01,0x00,0x00,0x00,0x00,0x80,0x60,0xE0,0xE0,0x80,0xC0,0x80,0x40,0x80,0xC0,0x80,0x00,0x00,0x00};
+   static char Melon[] =          {0x00,0x08,0x07,0x01,0x02,0x0F,0x1B,0x1F,0x2F,0x3D,0x2F,0x1F,0x1B,0x0F,0x03,0x00,0x00,0x00,0x80,0x00,0x80,0xE0,0xF0,0x70,0xF8,0xD8,0xF8,0x70,0xF0,0xE0,0x80,0x00};
+   static char Galaxian[] =       {0x00,0x00,0x01,0x23,0x27,0x3C,0x3E,0x2F,0x37,0x1B,0x0D,0x05,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x88,0xC8,0x78,0xF8,0xE8,0xD8,0xB0,0x60,0x40,0x00,0x00,0x00,0x00};
 
    setSpritePatternByArray(PATT_CHERRY,           Cherry,     32);
    setSpritePatternByArray(PATT_APPLE,            Apple,      32);
@@ -3534,11 +3511,11 @@ void setupGame(void)
    moveGhosts(); // force the ghosts eyes to appear
 
    #ifdef GCC_COMPILED
-   updateEmulatedVDPScreen();
-   SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
-   SDL_RenderClear(renderer);
-   SDL_RenderCopy(renderer, texture, NULL, NULL);
-   SDL_RenderPresent(renderer);
+       updateEmulatedVDPScreen();
+       SDL_UpdateTexture(texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint32));
+       SDL_RenderClear(renderer);
+       SDL_RenderCopy(renderer, texture, NULL, NULL);
+       SDL_RenderPresent(renderer);
    #endif
 
    sprAttr[HAT_SPRITENUM].x = 0; // initialize the hat so it's invisible
@@ -3586,14 +3563,14 @@ void audioBufferProcess(void)
   }
 
   if(gameCtr & 0x0001) {
-      if(energizerctr == 0) {
+      if(energizerCtr == 0) {
         // siren sound in the background
-        x = x + direction;
+        x = x + bgMusicDirection;
 
         if(x > BANK1_GS5)
-          direction = -direction;
+          bgMusicDirection = -bgMusicDirection;
         if(x < BANK1_DS5)
-          direction = -direction;
+          bgMusicDirection = -bgMusicDirection;
         play(AUDIOCHIP0,1,x,9);
       }
       else {
@@ -3607,12 +3584,12 @@ void audioBufferProcess(void)
 
 
 
-#define blinkEnergizers() if(gameCtr & 0x0004) setCharacterGroupColor(16,BLACK,BLACK);  else  setCharacterGroupColor(16,WHITE,BLACK);
+#define blinkEnergizers() if(gameCtr & 0x0004) setColorTableEntry(16,BLACK,BLACK);  else  setColorTableEntry(16,WHITE,BLACK);
 
 #ifndef GCC_COMPILED
     #define charat(x,y,c)  memset(0x3c00+((y<<6) + x), c, 1);
     void strat(byte x, byte y, char* s) {
-        for(uint i = 0; i < strlen(s); i++) {
+        for(uint i = 0; i < strlen(s); ++i) {
             charat(x+i,y,*(s+i));
         }
     }
@@ -3630,19 +3607,19 @@ void displayTRSScreen(void) {
        printf("'---------------------------------------'\n\n");
        printf("THIS IS THE SDL VERSION OF VS PACMAN.\n");
    #else
-        strcpy(ch,"        XXXXXXXXXXXXX       ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 0,ch);
-        strcpy(ch,"    XXXXXXXXXXXXXXXXXXXXX   ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 1,ch);
-        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 2,ch);
-        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 3,ch);
-        strcpy(ch,"XXXXXXXXXXXXXXXXXXXXXXX     ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 4,ch);
-        strcpy(ch,"XXXXXXXXXXXXXXXXX           ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 5,ch);
-        strcpy(ch,"XXXXXXXXXXX                 ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 6,ch);
-        strcpy(ch,"XXXXXXXXXXXXXXXXX           ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 7,ch);
-        strcpy(ch,"XXXXXXXXXXXXXXXXXXXXXXX     ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 8,ch);
-        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 9,ch);
-        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,10,ch);
-        strcpy(ch,"    XXXXXXXXXXXXXXXXXXXXX   ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,11,ch);
-        strcpy(ch,"        XXXXXXXXXXXXX       ");for(int i=0;i<strlen(ch);i++) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,12,ch);
+        strcpy(ch,"        XXXXXXXXXXXXX       ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 0,ch);
+        strcpy(ch,"    XXXXXXXXXXXXXXXXXXXXX   ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 1,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 2,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 3,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXXXXXXXX     ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 4,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXX           ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 5,ch);
+        strcpy(ch,"XXXXXXXXXXX                 ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 6,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXX           ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 7,ch);
+        strcpy(ch,"XXXXXXXXXXXXXXXXXXXXXXX     ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 8,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29, 9,ch);
+        strcpy(ch,"  XXXXXXXXXXXXXXXXXXXXXXXXX ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,10,ch);
+        strcpy(ch,"    XXXXXXXXXXXXXXXXXXXXX   ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,11,ch);
+        strcpy(ch,"        XXXXXXXXXXXXX       ");for(int i=0;i<strlen(ch);++i) {if(ch[i]=='X') {ch[i]=0xbf;}} strat(29,12,ch);
         strat(28,14,"VS PACMAN");
         strat(10,15,"BUILD INFO: YYYY-MM-DD-HH-MM-SS, CKSUM");
         strat( 7, 1,"THIS PROGRAM ");
@@ -3666,25 +3643,23 @@ void displayTRSScreen(void) {
 */
 int main(void)
 {
-
    #ifdef GCC_COMPILED
-   SDLSetup();
+      SDLSetup();
    #endif
 
    clearTRSScreen();
-
    displayTRSScreen();
 
 top:
    setupGame();
 
    // main game loop
-   bRunning = TRUE;
-   while(bRunning == TRUE) {
+   gameLoopRunning = TRUE;
+   while(gameLoopRunning == TRUE) {
         gameCtr++;
 
         audioBufferProcess();
-        syncSpriteAttributesToHardware();
+        syncSpriteAttrStructsToHardware();
         checkControls();
         movePacman();
         checkForAllDotsGone();
@@ -3698,7 +3673,7 @@ top:
    }
 
    clearMazeShutOffSprites();
-   setCharactersAt(12,11,"GAME OVER");
+   setCharsInNameTable(12,11,"GAME OVER");
    audioSilence();
    
    #ifdef GCC_COMPILED
@@ -3709,7 +3684,7 @@ top:
    goto top;
 
    #ifdef GCC_COMPILED
-   SDLShutdown();
+      SDLShutdown();
    #endif
    exit(0);
 }
