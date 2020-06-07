@@ -24821,7 +24821,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="RN1" library="resistor-sil" library_urn="urn:adsk.eagle:library:347" deviceset="G12R" device="" package3d_urn="urn:adsk.eagle:package:25289/1" value="4.7k"/>
 <part name="P+6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
-<part name="JP1" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="JP1E" device="" package3d_urn="urn:adsk.eagle:package:15455/1" value="INT__VDP_JP"/>
+<part name="JP1-INTRPT" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="JP1E" device="" package3d_urn="urn:adsk.eagle:package:15455/1" value="INT__VDP_JP"/>
 <part name="R8" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="R-TRIMM" device="64W" package3d_urn="urn:adsk.eagle:package:23748/1" value="400"/>
 <part name="R9" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="R-US_" device="0207/2V" package3d_urn="urn:adsk.eagle:package:23490/1" value="4.7k"/>
 <part name="P+9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device=""/>
@@ -24870,8 +24870,8 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <part name="L1" library="eagle-ltspice" library_urn="urn:adsk.eagle:library:217" deviceset="L" device="0207/10" package3d_urn="urn:adsk.eagle:package:13275/1" value="6.8uH"/>
 <part name="C16" library="resistor" library_urn="urn:adsk.eagle:library:348" deviceset="CPOL-US" device="E2.5-5" package3d_urn="urn:adsk.eagle:package:23344/1" value="22uF"/>
 <part name="GND14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="JP2-TRIGGER-MODE" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="JP2E" device="" package3d_urn="urn:adsk.eagle:package:15452/1"/>
-<part name="JP2-TRIGGER-MODE1" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="JP2E" device="" package3d_urn="urn:adsk.eagle:package:15452/1"/>
+<part name="JP2-TRG-MD1" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="JP2E" device="" package3d_urn="urn:adsk.eagle:package:15452/1" value="JP2"/>
+<part name="JP1-TRG-MD2" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="JP2E" device="" package3d_urn="urn:adsk.eagle:package:15452/1" value="JP1"/>
 <part name="D7" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="0204/2V" package3d_urn="urn:adsk.eagle:package:23495/1" value="(1N821)"/>
 <part name="D3" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="0204/2V" package3d_urn="urn:adsk.eagle:package:23495/1" value="(1N821)"/>
 <part name="D1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="0204/2V" package3d_urn="urn:adsk.eagle:package:23495/1" value="(1N821)"/>
@@ -25041,7 +25041,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <instance part="P+6" gate="VCC" x="161.29" y="158.75" smashed="yes">
 <attribute name="VALUE" x="158.75" y="156.21" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="JP1" gate="A" x="199.39" y="283.21" smashed="yes" rot="R270">
+<instance part="JP1-INTRPT" gate="A" x="199.39" y="283.21" smashed="yes" rot="R270">
 <attribute name="NAME" x="196.85" y="274.32" size="1.778" layer="95"/>
 <attribute name="VALUE" x="199.39" y="277.495" size="1.778" layer="96"/>
 </instance>
@@ -25248,11 +25248,11 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <instance part="GND14" gate="1" x="307.34" y="54.61" smashed="yes">
 <attribute name="VALUE" x="304.8" y="52.07" size="1.778" layer="96"/>
 </instance>
-<instance part="JP2-TRIGGER-MODE" gate="1" x="116.84" y="232.41" smashed="yes" rot="R270">
+<instance part="JP2-TRG-MD1" gate="1" x="116.84" y="232.41" smashed="yes" rot="R270">
 <attribute name="NAME" x="116.84" y="236.22" size="1.778" layer="95"/>
 <attribute name="VALUE" x="116.84" y="226.695" size="1.778" layer="96"/>
 </instance>
-<instance part="JP2-TRIGGER-MODE1" gate="1" x="116.84" y="182.88" smashed="yes" rot="R270">
+<instance part="JP1-TRG-MD2" gate="1" x="116.84" y="182.88" smashed="yes" rot="R270">
 <attribute name="NAME" x="116.84" y="186.69" size="1.778" layer="95"/>
 <attribute name="VALUE" x="116.84" y="177.165" size="1.778" layer="96"/>
 </instance>
@@ -26320,7 +26320,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <pinref part="JOYSTICK1" gate="G$1" pin="9"/>
 <label x="101.6" y="232.41" size="1.778" layer="95"/>
 <wire x1="114.3" y1="232.41" x2="97.79" y2="232.41" width="0.1524" layer="91"/>
-<pinref part="JP2-TRIGGER-MODE" gate="1" pin="2"/>
+<pinref part="JP2-TRG-MD1" gate="1" pin="2"/>
 </segment>
 </net>
 <net name="JOY1_IN_ENABLE_N" class="0">
@@ -26465,7 +26465,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <segment>
 <pinref part="JOYSTICK2" gate="G$1" pin="9"/>
 <wire x1="97.79" y1="182.88" x2="114.3" y2="182.88" width="0.1524" layer="91"/>
-<pinref part="JP2-TRIGGER-MODE1" gate="1" pin="2"/>
+<pinref part="JP1-TRG-MD2" gate="1" pin="2"/>
 </segment>
 </net>
 <net name="JOY1_IN_ENABLE_N1" class="0">
@@ -26564,7 +26564,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <pinref part="U2_VDP" gate="G$1" pin="INT*"/>
 <wire x1="257.81" y1="72.39" x2="245.11" y2="72.39" width="0.1524" layer="91"/>
 <wire x1="245.11" y1="72.39" x2="245.11" y2="41.91" width="0.1524" layer="91"/>
-<pinref part="JP1" gate="A" pin="2"/>
+<pinref part="JP1-INTRPT" gate="A" pin="2"/>
 <wire x1="245.11" y1="41.91" x2="196.85" y2="41.91" width="0.1524" layer="91"/>
 <wire x1="196.85" y1="41.91" x2="196.85" y2="280.67" width="0.1524" layer="91"/>
 </segment>
@@ -26805,7 +26805,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <net name="N$2" class="0">
 <segment>
 <pinref part="J1-INTERRUPTS" gate="G$1" pin="3"/>
-<pinref part="JP1" gate="A" pin="1"/>
+<pinref part="JP1-INTRPT" gate="A" pin="1"/>
 <wire x1="203.2" y1="302.26" x2="196.85" y2="302.26" width="0.1524" layer="91"/>
 <wire x1="196.85" y1="302.26" x2="196.85" y2="283.21" width="0.1524" layer="91"/>
 </segment>
@@ -26958,7 +26958,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <segment>
 <pinref part="IC8_JOY1_BUF" gate="A" pin="A4"/>
 <wire x1="161.29" y1="242.57" x2="148.59" y2="242.57" width="0.1524" layer="91"/>
-<pinref part="JP2-TRIGGER-MODE" gate="1" pin="1"/>
+<pinref part="JP2-TRG-MD1" gate="1" pin="1"/>
 <wire x1="148.59" y1="242.57" x2="114.3" y2="242.57" width="0.1524" layer="91"/>
 <wire x1="114.3" y1="242.57" x2="114.3" y2="234.95" width="0.1524" layer="91"/>
 <pinref part="RN1" gate="A" pin="12"/>
@@ -26983,7 +26983,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <net name="5_BIT_TRIGGER_LINE_2" class="0">
 <segment>
 <pinref part="IC1_JOY2_BUF" gate="A" pin="A4"/>
-<pinref part="JP2-TRIGGER-MODE1" gate="1" pin="1"/>
+<pinref part="JP1-TRG-MD2" gate="1" pin="1"/>
 <wire x1="161.29" y1="194.31" x2="133.35" y2="194.31" width="0.1524" layer="91"/>
 <wire x1="133.35" y1="194.31" x2="114.3" y2="194.31" width="0.1524" layer="91"/>
 <wire x1="114.3" y1="194.31" x2="114.3" y2="185.42" width="0.1524" layer="91"/>
@@ -27010,7 +27010,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <segment>
 <pinref part="D7" gate="G$1" pin="1"/>
 <wire x1="110.49" y1="177.8" x2="114.3" y2="177.8" width="0.1524" layer="91"/>
-<pinref part="JP2-TRIGGER-MODE1" gate="1" pin="3"/>
+<pinref part="JP1-TRG-MD2" gate="1" pin="3"/>
 <wire x1="114.3" y1="177.8" x2="114.3" y2="180.34" width="0.1524" layer="91"/>
 <pinref part="D3" gate="G$1" pin="1"/>
 <wire x1="114.3" y1="175.26" x2="114.3" y2="177.8" width="0.1524" layer="91"/>
@@ -27023,7 +27023,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <wire x1="110.49" y1="227.33" x2="114.3" y2="227.33" width="0.1524" layer="91"/>
 <pinref part="D1" gate="G$1" pin="1"/>
 <wire x1="114.3" y1="227.33" x2="114.3" y2="223.52" width="0.1524" layer="91"/>
-<pinref part="JP2-TRIGGER-MODE" gate="1" pin="3"/>
+<pinref part="JP2-TRG-MD1" gate="1" pin="3"/>
 <wire x1="114.3" y1="229.87" x2="114.3" y2="227.33" width="0.1524" layer="91"/>
 <junction x="114.3" y="227.33"/>
 </segment>
