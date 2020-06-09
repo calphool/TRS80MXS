@@ -567,14 +567,14 @@ int gameLoopRunning = FALSE;                // main game loop control
 unsigned int pacmanAnimationPosition = 0;   // animation position
 int pacmanAnimationDirection = 1;           // 1, -1 counter direction
 graphicsSetupStruct g;                      // graphics mode struct
-spriteAttrStruct sprAttr[32];               // sprite struct array
+spriteAttrStruct spriteAttrArray[32];       // sprite struct array
 unsigned long score = 0;                    // score field
 unsigned int dotCtr = 0;                    // counter to decide when we're done with a screen
 unsigned int energizerCtr = 0;              // count down counter when an energizer is eaten
 unsigned int ghostCtr = 0;                  // score counter that adds up with each ghost being eaten
 int lives = 3;                              // pacman lives
 unsigned int gameCtr = 0;                   // number that counts up each frame as game plays
-int GhostWithHat = 255;                    // which ghost has the hat?
+int GhostWithHat = 255;                     // which ghost has the hat?
 unsigned int levelCtr = 1;                  // what level am I on?
 int popScoreGameCtr = 0;                    // gameCtr value when ghost was eaten (used to remove popup score)
 int fruitEatenOnThisLevel = 0;              // flag that flips if a fruit has been eaten
@@ -1044,17 +1044,17 @@ void drawSpritesOnSDLWindow(void)
   static Uint32 addr;
 
   for(int i=32;i>=0;--i) {
-      if(sprAttr[i].patt != -1 && sprAttr[i].color != TRANSPARENT) {
+      if(spriteAttrArray[i].patt != -1 && spriteAttrArray[i].color != TRANSPARENT) {
         addr = g.SpritePatternTableAddr;
 
         if(g.sprites16x16Enabled == TRUE) 
-            addr = addr + (sprAttr[i].patt << 5);
+            addr = addr + (spriteAttrArray[i].patt << 5);
         else
-            addr = addr + (sprAttr[i].patt << 3);
+            addr = addr + (spriteAttrArray[i].patt << 3);
 
-          Uint32 clr = getARGBFromTMS9118Color(sprAttr[i].color);
-          x = sprAttr[i].x;
-          y = sprAttr[i].y;
+          Uint32 clr = getARGBFromTMS9118Color(spriteAttrArray[i].color);
+          x = spriteAttrArray[i].x;
+          y = spriteAttrArray[i].y;
           for(int j=0;j<16;++j) {
             byte c = screen_buffer[addr+j];
 
@@ -1422,7 +1422,6 @@ void setPatterns(void)
    static char s[] =  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF};
    static char t[] =  {0xc0,0xe0,0xf0,0xf0,0xe0,0xc0,0x00,0x00};
    static char u[] =  {0x00,0x01,0x03,0x03,0x01,0x00,0x00,0x00};
-
    static char x[] =  {0x38,0x7C,0x3E,0x0E,0x3E,0x7C,0x38,0x00};
 
    static char AT[] = {0x3C,0x42,0x99,0xA1,0xA1,0x99,0x42,0x3C};
@@ -1645,6 +1644,30 @@ void setSpritePatternByArray(byte patternNumber, char* p, char l)
   }
 }
 
+
+
+
+/* ******************************************************************************************************************************
+   | Force all 32 sprites to be transparent                                                                                     |
+   ******************************************************************************************************************************
+*/
+void forceAllSpritesTransparent(void) 
+#ifndef GCC_COMPILED 
+    __z88dk_fastcall
+#endif
+{
+  static unsigned int addr;
+
+    for(int spriteNum = 0;spriteNum <= 32; spriteNum++) {
+      addr = g.spriteAttrStructTableAddr + (spriteNum << 2);
+      setVDPRAM(addr, (byte)   0);
+      setVDPRAM(addr+1, (byte) 0);
+      setVDPRAM(addr+2, (byte) 0);
+      setVDPRAM(addr+3, (byte) TRANSPARENT);
+    }
+}
+
+
 /* ******************************************************************************************************************************
    | move sprite data out of sprite attribute struct and move it into registers                                                 |
    ******************************************************************************************************************************
@@ -1663,12 +1686,12 @@ void syncSpriteAttrStructsToHardware(void)
   static byte patt;
 
   for(int spriteNum = 0;spriteNum <= MAX_SPRITENUM; spriteNum++) {
-      patt = sprAttr[spriteNum].patt;
-      x = sprAttr[spriteNum].x;
-      y = sprAttr[spriteNum].y;
+      patt = spriteAttrArray[spriteNum].patt;
+      x = spriteAttrArray[spriteNum].x;
+      y = spriteAttrArray[spriteNum].y;
       addr = g.spriteAttrStructTableAddr + (spriteNum << 2);
 
-      b5 = sprAttr[spriteNum].color;
+      b5 = spriteAttrArray[spriteNum].color;
       
       vert = y ;
 
@@ -2054,8 +2077,8 @@ byte canGoSouth(byte spriteNum)
     static int x;
     static int y;
 
-    x = sprAttr[spriteNum].x;
-    y = sprAttr[spriteNum].y;
+    x = spriteAttrArray[spriteNum].x;
+    y = spriteAttrArray[spriteNum].y;
 
     if(y < 174) 
       if(x == 8 || x == 32 || x == 208 || x == 232)
@@ -2101,8 +2124,8 @@ byte canGoNorth(byte spriteNum)
     static int x;
     static int y;
 
-    x = sprAttr[spriteNum].x;
-    y = sprAttr[spriteNum].y;
+    x = spriteAttrArray[spriteNum].x;
+    y = spriteAttrArray[spriteNum].y;
 
     if(y > 16) 
       if(x == 8 || x == 32 || x == 208 || x == 232)
@@ -2146,8 +2169,8 @@ byte canGoEast(byte spriteNum)
     static int x;
     static int y;
 
-    x = sprAttr[spriteNum].x;
-    y = sprAttr[spriteNum].y;
+    x = spriteAttrArray[spriteNum].x;
+    y = spriteAttrArray[spriteNum].y;
 
     if(x >= 248)
       return FALSE;
@@ -2199,8 +2222,8 @@ byte canGoWest(byte spriteNum)
     static int x;
     static int y;
 
-    x = sprAttr[spriteNum].x;
-    y = sprAttr[spriteNum].y;
+    x = spriteAttrArray[spriteNum].x;
+    y = spriteAttrArray[spriteNum].y;
 
     if(x <= -8)
       return FALSE;
@@ -2250,10 +2273,10 @@ void goNorth(int i)
     __z88dk_fastcall
 #endif
 {
-        sprAttr[i].ydir = -2;
-        sprAttr[i].xdir = 0;
-        sprAttr[i].prevdir = NORTH;
-        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_N;
+        spriteAttrArray[i].ydir = -2;
+        spriteAttrArray[i].xdir = 0;
+        spriteAttrArray[i].prevdir = NORTH;
+        spriteAttrArray[i+4].patt = PATT_NORMAL_GHOST_EYES_N;
 }
 
 /* ******************************************************************************************************************************
@@ -2265,10 +2288,10 @@ void goSouth(int i)
     __z88dk_fastcall
 #endif
 {
-        sprAttr[i].ydir = 2;
-        sprAttr[i].xdir = 0;
-        sprAttr[i].prevdir = SOUTH;
-        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_S;
+        spriteAttrArray[i].ydir = 2;
+        spriteAttrArray[i].xdir = 0;
+        spriteAttrArray[i].prevdir = SOUTH;
+        spriteAttrArray[i+4].patt = PATT_NORMAL_GHOST_EYES_S;
 }
 
 /* ******************************************************************************************************************************
@@ -2280,10 +2303,10 @@ void goEast(int i)
     __z88dk_fastcall
 #endif
 {
-        sprAttr[i].xdir = 2;
-        sprAttr[i].ydir = 0;
-        sprAttr[i].prevdir = EAST;
-        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_E;
+        spriteAttrArray[i].xdir = 2;
+        spriteAttrArray[i].ydir = 0;
+        spriteAttrArray[i].prevdir = EAST;
+        spriteAttrArray[i+4].patt = PATT_NORMAL_GHOST_EYES_E;
 }
 
 /* ******************************************************************************************************************************
@@ -2295,10 +2318,10 @@ void goWest(int i)
     __z88dk_fastcall
 #endif
 {
-        sprAttr[i].xdir = -2;
-        sprAttr[i].ydir = 0;
-        sprAttr[i].prevdir = WEST;
-        sprAttr[i+4].patt = PATT_NORMAL_GHOST_EYES_W;
+        spriteAttrArray[i].xdir = -2;
+        spriteAttrArray[i].ydir = 0;
+        spriteAttrArray[i].prevdir = WEST;
+        spriteAttrArray[i+4].patt = PATT_NORMAL_GHOST_EYES_W;
 }
 
 
@@ -2319,10 +2342,10 @@ void setAvailableGhostDirection(int i)
   static int py;
 
     if(getRand256() > 64) {  // most of the time we'll use this routine that pursues and evades
-      x = sprAttr[i].x;
-      y = sprAttr[i].y;
-      px = sprAttr[PACMAN_SPRITENUM].x;
-      py = sprAttr[PACMAN_SPRITENUM].y;
+      x = spriteAttrArray[i].x;
+      y = spriteAttrArray[i].y;
+      px = spriteAttrArray[PACMAN_SPRITENUM].x;
+      py = spriteAttrArray[PACMAN_SPRITENUM].y;
 
       if(energizerCtr > 0) {
         if(x < px && canGoWest(i)) {
@@ -2406,20 +2429,20 @@ void ghostsNormal(void)
 #endif
 {
     static int i;
-    if(sprAttr[RED_GHOST_SPRITENUM].isEyes == FALSE)
-        sprAttr[RED_GHOST_SPRITENUM].color = DARKRED;
+    if(spriteAttrArray[RED_GHOST_SPRITENUM].isEyes == FALSE)
+        spriteAttrArray[RED_GHOST_SPRITENUM].color = DARKRED;
 
-    if(sprAttr[BROWN_GHOST_SPRITENUM].isEyes == FALSE)
-        sprAttr[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
+    if(spriteAttrArray[BROWN_GHOST_SPRITENUM].isEyes == FALSE)
+        spriteAttrArray[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
 
-    if(sprAttr[CYAN_GHOST_SPRITENUM].isEyes == FALSE)
-        sprAttr[CYAN_GHOST_SPRITENUM].color = CYAN;
+    if(spriteAttrArray[CYAN_GHOST_SPRITENUM].isEyes == FALSE)
+        spriteAttrArray[CYAN_GHOST_SPRITENUM].color = CYAN;
 
-    if(sprAttr[PINK_GHOST_SPRITENUM].isEyes == FALSE)
-        sprAttr[PINK_GHOST_SPRITENUM].color = LIGHTRED;
+    if(spriteAttrArray[PINK_GHOST_SPRITENUM].isEyes == FALSE)
+        spriteAttrArray[PINK_GHOST_SPRITENUM].color = LIGHTRED;
 
     for(i=RED_GHOST_EYES_SPRITENUM;i<=BROWN_GHOST_EYES_SPRITENUM;++i) {
-      sprAttr[i].color = WHITE;
+      spriteAttrArray[i].color = WHITE;
     }
 }
 
@@ -2438,43 +2461,43 @@ void eyeBehavior(int i)
     static int py;
     static int foundOne;
 
-    x = sprAttr[i].x;
-    y = sprAttr[i].y;
+    x = spriteAttrArray[i].x;
+    y = spriteAttrArray[i].y;
 
     // little alignment cleanups that happen because we made the eyes jump by 4 pixels rather than 2
-    if(y == 14) { sprAttr[i].y = 16; y = sprAttr[i].y;}
-    if(x == 6)  { sprAttr[i].x = 8;  x = sprAttr[i].x;}
-    if(x == 30) { sprAttr[i].x = 32; x = sprAttr[i].x;}
+    if(y == 14) { spriteAttrArray[i].y = 16; y = spriteAttrArray[i].y;}
+    if(x == 6)  { spriteAttrArray[i].x = 8;  x = spriteAttrArray[i].x;}
+    if(x == 30) { spriteAttrArray[i].x = 32; x = spriteAttrArray[i].x;}
 
     px = 120;
     py = 84;
     foundOne = FALSE;
 
     if(x == px && y == py) {
-       sprAttr[i].isEyes = FALSE;
-       if(i == RED_GHOST_SPRITENUM) sprAttr[i].color = DARKRED;
-       if(i == PINK_GHOST_SPRITENUM) sprAttr[i].color = LIGHTRED;
-       if(i == BROWN_GHOST_SPRITENUM) sprAttr[i].color = DARKYELLOW;
-       if(i == CYAN_GHOST_SPRITENUM) sprAttr[i].color = CYAN;
+       spriteAttrArray[i].isEyes = FALSE;
+       if(i == RED_GHOST_SPRITENUM) spriteAttrArray[i].color = DARKRED;
+       if(i == PINK_GHOST_SPRITENUM) spriteAttrArray[i].color = LIGHTRED;
+       if(i == BROWN_GHOST_SPRITENUM) spriteAttrArray[i].color = DARKYELLOW;
+       if(i == CYAN_GHOST_SPRITENUM) spriteAttrArray[i].color = CYAN;
        return;
     }
 
-    if(x < px && canGoEast(i) && sprAttr[i].prevdir != WEST) {
+    if(x < px && canGoEast(i) && spriteAttrArray[i].prevdir != WEST) {
         goEast(i);
         foundOne = TRUE;
     }
     else
-    if(x > px && canGoWest(i) && sprAttr[i].prevdir != EAST) {
+    if(x > px && canGoWest(i) && spriteAttrArray[i].prevdir != EAST) {
         goWest(i);
         foundOne = TRUE;
     }
     else
-    if(y < py && canGoSouth(i) && sprAttr[i].prevdir != NORTH) {
+    if(y < py && canGoSouth(i) && spriteAttrArray[i].prevdir != NORTH) {
         goSouth(i);
         foundOne = TRUE;
     }
     else
-    if(y > py && canGoNorth(i) && sprAttr[i].prevdir != SOUTH) {
+    if(y > py && canGoNorth(i) && spriteAttrArray[i].prevdir != SOUTH) {
         goNorth(i);
         foundOne = TRUE;
     }
@@ -2492,17 +2515,17 @@ void eyeBehavior(int i)
 
     if(foundOne == FALSE) {
         // this shouldn't happen... force eyes into the box
-        printf("Ghost %d at (%d,%d), lost, alignment fix probably needed\n",i,sprAttr[i].x,sprAttr[i].y);
-        sprAttr[i].isEyes = FALSE;
-        sprAttr[i].x = 120;
-        sprAttr[i].y = 84;
+        printf("Ghost %d at (%d,%d), lost, alignment fix probably needed\n",i,spriteAttrArray[i].x,spriteAttrArray[i].y);
+        spriteAttrArray[i].isEyes = FALSE;
+        spriteAttrArray[i].x = 120;
+        spriteAttrArray[i].y = 84;
         return;
     }
 
-    sprAttr[i].x = x + sprAttr[i].xdir*2;
-    sprAttr[i].y = y + sprAttr[i].ydir*2;
-    sprAttr[i+4].x = sprAttr[i].x; //set eye location
-    sprAttr[i+4].y = sprAttr[i].y; //set eye location
+    spriteAttrArray[i].x = x + spriteAttrArray[i].xdir*2;
+    spriteAttrArray[i].y = y + spriteAttrArray[i].ydir*2;
+    spriteAttrArray[i+4].x = spriteAttrArray[i].x; //set eye location
+    spriteAttrArray[i+4].y = spriteAttrArray[i].y; //set eye location
 }
 
 void normalGhostBehavior(int i) 
@@ -2515,20 +2538,20 @@ void normalGhostBehavior(int i)
       static int x;
       static int y;
 
-      x = sprAttr[i].x;
-      y = sprAttr[i].y;
+      x = spriteAttrArray[i].x;
+      y = spriteAttrArray[i].y;
 
       // this code redirects a ghost if he would get stuck
-      if(sprAttr[i].prevdir == NORTH && canGoNorth(i) == FALSE) 
+      if(spriteAttrArray[i].prevdir == NORTH && canGoNorth(i) == FALSE) 
         setAvailableGhostDirection(i);
       else
-        if(sprAttr[i].prevdir == SOUTH && canGoSouth(i) == FALSE) 
+        if(spriteAttrArray[i].prevdir == SOUTH && canGoSouth(i) == FALSE) 
           setAvailableGhostDirection(i);
         else
-          if(sprAttr[i].prevdir == EAST && canGoEast(i) == FALSE) 
+          if(spriteAttrArray[i].prevdir == EAST && canGoEast(i) == FALSE) 
             setAvailableGhostDirection(i);
           else 
-            if(sprAttr[i].prevdir == WEST && canGoWest(i) == FALSE) 
+            if(spriteAttrArray[i].prevdir == WEST && canGoWest(i) == FALSE) 
               setAvailableGhostDirection(i);
 
       r = getRand256();
@@ -2544,54 +2567,54 @@ void normalGhostBehavior(int i)
       }
 
       if(r > 72 - (i<<3) )  { // slows down ghosts randomly, with each one having slightly different behavior
-          sprAttr[i].x = x + sprAttr[i].xdir;
-          sprAttr[i].y = y + sprAttr[i].ydir;
-          x = sprAttr[i].x;
-          y = sprAttr[i].y;
+          spriteAttrArray[i].x = x + spriteAttrArray[i].xdir;
+          spriteAttrArray[i].y = y + spriteAttrArray[i].ydir;
+          x = spriteAttrArray[i].x;
+          y = spriteAttrArray[i].y;
       }
 
       if(energizerCtr == 0) {
         // make the ghosts' "legs" swap back and forth if we're in normal mode
         ctr++;
         if( ctr < 24 )  
-          sprAttr[i].patt = PATT_NORMAL_GHOST_1;
+          spriteAttrArray[i].patt = PATT_NORMAL_GHOST_1;
         else 
-          sprAttr[i].patt = PATT_NORMAL_GHOST_2;
+          spriteAttrArray[i].patt = PATT_NORMAL_GHOST_2;
         
         if(ctr > 47) ctr = 0;
       }
       else {
         // otherwise make the ghosts appear in their "scared" version
-        sprAttr[i].patt = PATT_SCARED_GHOST;
+        spriteAttrArray[i].patt = PATT_SCARED_GHOST;
       }
 
-    sprAttr[i+4].x = x; //set eye location
-    sprAttr[i+4].y = y; //set eye location
+    spriteAttrArray[i+4].x = x; //set eye location
+    spriteAttrArray[i+4].y = y; //set eye location
 
     // make ghosts blue if pac has eaten an energizer
     if(energizerCtr > 0) {
-      sprAttr[i+4].color = TRANSPARENT; // turn off eyes
+      spriteAttrArray[i+4].color = TRANSPARENT; // turn off eyes
 
-      sprAttr[i].color = DARKBLUE; // make ghost dark blue
+      spriteAttrArray[i].color = DARKBLUE; // make ghost dark blue
 
       if(energizerCtr > 60 && energizerCtr < 70)
-        sprAttr[i].color = WHITE;
+        spriteAttrArray[i].color = WHITE;
       else
       if(energizerCtr > 40 && energizerCtr < 50)
-        sprAttr[i].color = WHITE;
+        spriteAttrArray[i].color = WHITE;
       else
       if(energizerCtr > 20 && energizerCtr < 30)
-        sprAttr[i].color = WHITE;
+        spriteAttrArray[i].color = WHITE;
       else
       if(energizerCtr > 1 && energizerCtr < 10)
-        sprAttr[i].color = WHITE;
+        spriteAttrArray[i].color = WHITE;
     }
 
     // put hat on someone's head if they have it
     if(i == GhostWithHat) {
-      sprAttr[HAT_SPRITENUM].color = DARKGREEN;
-      sprAttr[HAT_SPRITENUM].x = x-1;
-      sprAttr[HAT_SPRITENUM].y = y-4;
+      spriteAttrArray[HAT_SPRITENUM].color = DARKGREEN;
+      spriteAttrArray[HAT_SPRITENUM].x = x-1;
+      spriteAttrArray[HAT_SPRITENUM].y = y-4;
     }
 
 }
@@ -2607,7 +2630,7 @@ void moveGhosts(void)
   static int i;
 
   for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;++i) {
-    if(sprAttr[i].isEyes == TRUE)
+    if(spriteAttrArray[i].isEyes == TRUE)
         eyeBehavior(i);
     else
         normalGhostBehavior(i);
@@ -2619,7 +2642,7 @@ void moveGhosts(void)
   }
 
   if(gameCtr > popScoreGameCtr + 10)
-    sprAttr[POP_SCORE_SPRITENUM].color = TRANSPARENT;
+    spriteAttrArray[POP_SCORE_SPRITENUM].color = TRANSPARENT;
 }
 
 
@@ -2632,45 +2655,45 @@ void putGhostsInBox(void)
     __z88dk_fastcall
 #endif
 {
-   sprAttr[RED_GHOST_SPRITENUM].x = 120;
-   sprAttr[RED_GHOST_SPRITENUM].y = 40;
-   sprAttr[RED_GHOST_SPRITENUM].color = DARKRED;
-   sprAttr[RED_GHOST_SPRITENUM].prevdir = EAST;
-   sprAttr[RED_GHOST_SPRITENUM].xdir = 2;
-   sprAttr[RED_GHOST_SPRITENUM].ydir = 0;
-   sprAttr[RED_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
-   sprAttr[RED_GHOST_EYES_SPRITENUM].color = WHITE;
-   sprAttr[RED_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   spriteAttrArray[RED_GHOST_SPRITENUM].x = 120;
+   spriteAttrArray[RED_GHOST_SPRITENUM].y = 40;
+   spriteAttrArray[RED_GHOST_SPRITENUM].color = DARKRED;
+   spriteAttrArray[RED_GHOST_SPRITENUM].prevdir = EAST;
+   spriteAttrArray[RED_GHOST_SPRITENUM].xdir = 2;
+   spriteAttrArray[RED_GHOST_SPRITENUM].ydir = 0;
+   spriteAttrArray[RED_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
+   spriteAttrArray[RED_GHOST_EYES_SPRITENUM].color = WHITE;
+   spriteAttrArray[RED_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
 
-   sprAttr[CYAN_GHOST_SPRITENUM].x = 130;
-   sprAttr[CYAN_GHOST_SPRITENUM].y = 84;
-   sprAttr[CYAN_GHOST_SPRITENUM].color = CYAN;
-   sprAttr[CYAN_GHOST_SPRITENUM].prevdir = EAST;
-   sprAttr[CYAN_GHOST_SPRITENUM].xdir = 2;
-   sprAttr[CYAN_GHOST_SPRITENUM].ydir = 0;
-   sprAttr[CYAN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
-   sprAttr[CYAN_GHOST_EYES_SPRITENUM].color = WHITE;
-   sprAttr[CYAN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   spriteAttrArray[CYAN_GHOST_SPRITENUM].x = 130;
+   spriteAttrArray[CYAN_GHOST_SPRITENUM].y = 84;
+   spriteAttrArray[CYAN_GHOST_SPRITENUM].color = CYAN;
+   spriteAttrArray[CYAN_GHOST_SPRITENUM].prevdir = EAST;
+   spriteAttrArray[CYAN_GHOST_SPRITENUM].xdir = 2;
+   spriteAttrArray[CYAN_GHOST_SPRITENUM].ydir = 0;
+   spriteAttrArray[CYAN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_1;
+   spriteAttrArray[CYAN_GHOST_EYES_SPRITENUM].color = WHITE;
+   spriteAttrArray[CYAN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
 
-   sprAttr[PINK_GHOST_SPRITENUM].x = 122;
-   sprAttr[PINK_GHOST_SPRITENUM].y = 84;
-   sprAttr[PINK_GHOST_SPRITENUM].color = LIGHTRED;
-   sprAttr[PINK_GHOST_SPRITENUM].prevdir = WEST;
-   sprAttr[PINK_GHOST_SPRITENUM].xdir = -2;
-   sprAttr[PINK_GHOST_SPRITENUM].ydir = 0;
-   sprAttr[PINK_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
-   sprAttr[PINK_GHOST_EYES_SPRITENUM].color = WHITE;
-   sprAttr[PINK_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   spriteAttrArray[PINK_GHOST_SPRITENUM].x = 122;
+   spriteAttrArray[PINK_GHOST_SPRITENUM].y = 84;
+   spriteAttrArray[PINK_GHOST_SPRITENUM].color = LIGHTRED;
+   spriteAttrArray[PINK_GHOST_SPRITENUM].prevdir = WEST;
+   spriteAttrArray[PINK_GHOST_SPRITENUM].xdir = -2;
+   spriteAttrArray[PINK_GHOST_SPRITENUM].ydir = 0;
+   spriteAttrArray[PINK_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
+   spriteAttrArray[PINK_GHOST_EYES_SPRITENUM].color = WHITE;
+   spriteAttrArray[PINK_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
 
-   sprAttr[BROWN_GHOST_SPRITENUM].x = 114;
-   sprAttr[BROWN_GHOST_SPRITENUM].y = 84;
-   sprAttr[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
-   sprAttr[BROWN_GHOST_SPRITENUM].prevdir = WEST;
-   sprAttr[BROWN_GHOST_SPRITENUM].xdir = -2;
-   sprAttr[BROWN_GHOST_SPRITENUM].ydir = 0;
-   sprAttr[BROWN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
-   sprAttr[BROWN_GHOST_EYES_SPRITENUM].color = WHITE;
-   sprAttr[BROWN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
+   spriteAttrArray[BROWN_GHOST_SPRITENUM].x = 114;
+   spriteAttrArray[BROWN_GHOST_SPRITENUM].y = 84;
+   spriteAttrArray[BROWN_GHOST_SPRITENUM].color = DARKYELLOW;
+   spriteAttrArray[BROWN_GHOST_SPRITENUM].prevdir = WEST;
+   spriteAttrArray[BROWN_GHOST_SPRITENUM].xdir = -2;
+   spriteAttrArray[BROWN_GHOST_SPRITENUM].ydir = 0;
+   spriteAttrArray[BROWN_GHOST_SPRITENUM].patt = PATT_NORMAL_GHOST_2;
+   spriteAttrArray[BROWN_GHOST_EYES_SPRITENUM].color = WHITE;
+   spriteAttrArray[BROWN_GHOST_EYES_SPRITENUM].patt = PATT_NORMAL_GHOST_EYES_N;
 }
 
 
@@ -2747,41 +2770,41 @@ void fruitEatenSound(void) {
    ******************************************************************************************************************************
 */
 void displayCherry(void) {
-    sprAttr[FRUIT_SPRITENUM].color = DARKRED;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_CHERRY;
+    spriteAttrArray[FRUIT_SPRITENUM].color = DARKRED;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_CHERRY;
 }
 void displayApple(void) {
-    sprAttr[FRUIT_SPRITENUM].color = DARKRED;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_APPLE;
+    spriteAttrArray[FRUIT_SPRITENUM].color = DARKRED;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_APPLE;
 }
 void displayPeach(void) {
-    sprAttr[FRUIT_SPRITENUM].color = LIGHTRED;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_PEACH;
+    spriteAttrArray[FRUIT_SPRITENUM].color = LIGHTRED;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_PEACH;
 }
 void displayMelon(void) {
-    sprAttr[FRUIT_SPRITENUM].color = DARKGREEN;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_MELON;
+    spriteAttrArray[FRUIT_SPRITENUM].color = DARKGREEN;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_MELON;
 }
 void displayStrawberry(void) {
-    sprAttr[FRUIT_SPRITENUM].color = DARKRED;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_STRAWBERRY;
+    spriteAttrArray[FRUIT_SPRITENUM].color = DARKRED;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_STRAWBERRY;
 }
 void displayKey(void) {
-    sprAttr[FRUIT_SPRITENUM].color = GRAY;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_KEY;
+    spriteAttrArray[FRUIT_SPRITENUM].color = GRAY;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_KEY;
 }
 void displayBell(void) {
-    sprAttr[FRUIT_SPRITENUM].color = LIGHTYELLOW;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_BELL;
+    spriteAttrArray[FRUIT_SPRITENUM].color = LIGHTYELLOW;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_BELL;
 }
 void displayGalaxian(void) {
-    sprAttr[FRUIT_SPRITENUM].color = LIGHTYELLOW;
-    sprAttr[FRUIT_SPRITENUM].patt = PATT_GALAXIAN;
+    spriteAttrArray[FRUIT_SPRITENUM].color = LIGHTYELLOW;
+    spriteAttrArray[FRUIT_SPRITENUM].patt = PATT_GALAXIAN;
 }
 
 void displayFruit(int i) {
-      sprAttr[FRUIT_SPRITENUM].x = PACMAN_HOME_X;
-      sprAttr[FRUIT_SPRITENUM].y = PACMAN_HOME_Y;
+      spriteAttrArray[FRUIT_SPRITENUM].x = PACMAN_HOME_X;
+      spriteAttrArray[FRUIT_SPRITENUM].y = PACMAN_HOME_Y;
 
         switch(i) {
             case 1:
@@ -2832,36 +2855,36 @@ void movePacman(void)
     static byte xx;
     static byte yy;
 
-    x = sprAttr[PACMAN_SPRITENUM].x;
-    y = sprAttr[PACMAN_SPRITENUM].y;
-    xd = sprAttr[PACMAN_SPRITENUM].xdir;
-    yd = sprAttr[PACMAN_SPRITENUM].ydir;    
+    x = spriteAttrArray[PACMAN_SPRITENUM].x;
+    y = spriteAttrArray[PACMAN_SPRITENUM].y;
+    xd = spriteAttrArray[PACMAN_SPRITENUM].xdir;
+    yd = spriteAttrArray[PACMAN_SPRITENUM].ydir;    
 
     if((xd < 0 && canGoWest(PACMAN_SPRITENUM)) || (xd > 0 && canGoEast(PACMAN_SPRITENUM)))
-        sprAttr[PACMAN_SPRITENUM].x = x + xd;
+        spriteAttrArray[PACMAN_SPRITENUM].x = x + xd;
     if((yd < 0 && canGoNorth(PACMAN_SPRITENUM)) || (yd > 0 && canGoSouth(PACMAN_SPRITENUM)))
-        sprAttr[PACMAN_SPRITENUM].y = y + yd;
+        spriteAttrArray[PACMAN_SPRITENUM].y = y + yd;
 
     if(x == 0)
-        sprAttr[PACMAN_SPRITENUM].x = 238;
+        spriteAttrArray[PACMAN_SPRITENUM].x = 238;
     else
         if(x == 240)
-           sprAttr[PACMAN_SPRITENUM].x = 2;
+           spriteAttrArray[PACMAN_SPRITENUM].x = 2;
    
     pacmanAnimationPosition = pacmanAnimationPosition + pacmanAnimationDirection;
     if(pacmanAnimationPosition > 1 || pacmanAnimationPosition < 1) 
       pacmanAnimationDirection = -pacmanAnimationDirection;
 
     if(yd < 0) 
-        sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + NORTH_PACMAN_PAT_OFFSET;
+        spriteAttrArray[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + NORTH_PACMAN_PAT_OFFSET;
     else 
         if(yd > 0) 
-            sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + SOUTH_PACMAN_PAT_OFFSET;
+            spriteAttrArray[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + SOUTH_PACMAN_PAT_OFFSET;
         else
             if(xd < 0) 
-                sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + WEST_PACMAN_PAT_OFFSET;
+                spriteAttrArray[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + WEST_PACMAN_PAT_OFFSET;
             else 
-                sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + EAST_PACMAN_PAT_OFFSET;
+                spriteAttrArray[PACMAN_SPRITENUM].patt = pacmanAnimationPosition + EAST_PACMAN_PAT_OFFSET;
 
     x = x >> 3;
     y = y >> 3;
@@ -2901,7 +2924,7 @@ void movePacman(void)
         displayFruit(levelCtr);
 
     if((gameCtr >> 8) == 4) 
-        sprAttr[FRUIT_SPRITENUM].color = TRANSPARENT;
+        spriteAttrArray[FRUIT_SPRITENUM].color = TRANSPARENT;
 }
 
 
@@ -2925,23 +2948,23 @@ void checkControls(void)
         #endif
 
         if(k == J_E && canGoEast(PACMAN_SPRITENUM)) {
-          sprAttr[PACMAN_SPRITENUM].xdir=2;
-          sprAttr[PACMAN_SPRITENUM].ydir=0;
+          spriteAttrArray[PACMAN_SPRITENUM].xdir=2;
+          spriteAttrArray[PACMAN_SPRITENUM].ydir=0;
         }
         else
         if(k == J_N && canGoNorth(PACMAN_SPRITENUM)) {
-          sprAttr[PACMAN_SPRITENUM].ydir=-2;
-          sprAttr[PACMAN_SPRITENUM].xdir=0;
+          spriteAttrArray[PACMAN_SPRITENUM].ydir=-2;
+          spriteAttrArray[PACMAN_SPRITENUM].xdir=0;
         }
         else
         if(k == J_W && canGoWest(PACMAN_SPRITENUM)) {
-          sprAttr[PACMAN_SPRITENUM].xdir=-2;
-          sprAttr[PACMAN_SPRITENUM].ydir=0;
+          spriteAttrArray[PACMAN_SPRITENUM].xdir=-2;
+          spriteAttrArray[PACMAN_SPRITENUM].ydir=0;
         }
         else
         if(k == J_S && canGoSouth(PACMAN_SPRITENUM)) {
-          sprAttr[PACMAN_SPRITENUM].ydir=2;
-          sprAttr[PACMAN_SPRITENUM].xdir=0;
+          spriteAttrArray[PACMAN_SPRITENUM].ydir=2;
+          spriteAttrArray[PACMAN_SPRITENUM].xdir=0;
         }
 
         #ifdef GCC_COMPILED
@@ -3041,19 +3064,19 @@ void resetMap(void)
     __z88dk_fastcall
 #endif
 {
-      sprAttr[RED_GHOST_SPRITENUM].isEyes = FALSE;
-      sprAttr[CYAN_GHOST_SPRITENUM].isEyes = FALSE;
-      sprAttr[BROWN_GHOST_SPRITENUM].isEyes = FALSE;
-      sprAttr[PINK_GHOST_SPRITENUM].isEyes = FALSE;
+      spriteAttrArray[RED_GHOST_SPRITENUM].isEyes = FALSE;
+      spriteAttrArray[CYAN_GHOST_SPRITENUM].isEyes = FALSE;
+      spriteAttrArray[BROWN_GHOST_SPRITENUM].isEyes = FALSE;
+      spriteAttrArray[PINK_GHOST_SPRITENUM].isEyes = FALSE;
 
       energizerCtr = 0;
       putGhostsInBox();
       ghostsNormal();  
-      sprAttr[PACMAN_SPRITENUM].x = PACMAN_HOME_X;
-      sprAttr[PACMAN_SPRITENUM].y = PACMAN_HOME_Y;
-      sprAttr[FRUIT_SPRITENUM].x = PACMAN_HOME_X;
-      sprAttr[FRUIT_SPRITENUM].y = PACMAN_HOME_Y;
-      sprAttr[FRUIT_SPRITENUM].color = TRANSPARENT;
+      spriteAttrArray[PACMAN_SPRITENUM].x = PACMAN_HOME_X;
+      spriteAttrArray[PACMAN_SPRITENUM].y = PACMAN_HOME_Y;
+      spriteAttrArray[FRUIT_SPRITENUM].x = PACMAN_HOME_X;
+      spriteAttrArray[FRUIT_SPRITENUM].y = PACMAN_HOME_Y;
+      spriteAttrArray[FRUIT_SPRITENUM].color = TRANSPARENT;
       gameCtr = 0;
       fruitEatenOnThisLevel = 0;
 }
@@ -3114,14 +3137,14 @@ void pacmanDead(void)
     BANK1_CS5, BANK1_F5, BANK1_F6,  BANK1_F6
   };
 
-  sprAttr[PACMAN_SPRITENUM].xdir = 0;
-  sprAttr[PACMAN_SPRITENUM].ydir = 0;
+  spriteAttrArray[PACMAN_SPRITENUM].xdir = 0;
+  spriteAttrArray[PACMAN_SPRITENUM].ydir = 0;
   audioSilence();
 
     for(i=PATT_PACMAN_DYING_START;i<=PATT_PACMAN_DYING_END;++i) {
       hold(500);
       play(AUDIOCHIP0,1,notes[i-PATT_PACMAN_DYING_START],15);
-      sprAttr[PACMAN_SPRITENUM].patt = i;
+      spriteAttrArray[PACMAN_SPRITENUM].patt = i;
       syncSpriteAttrStructsToHardware();
       #ifdef GCC_COMPILED
           updateEmulatedVDPScreen();
@@ -3145,37 +3168,37 @@ void ghostEaten(int i)
     __z88dk_fastcall
 #endif
 {
-      sprAttr[i].color = TRANSPARENT;
-      sprAttr[i+4].color = WHITE;
-      sprAttr[i].isEyes = TRUE;
+      spriteAttrArray[i].color = TRANSPARENT;
+      spriteAttrArray[i+4].color = WHITE;
+      spriteAttrArray[i].isEyes = TRUE;
       ghostCtr = ghostCtr + 1;
       popScoreGameCtr = gameCtr;
 
-      sprAttr[POP_SCORE_SPRITENUM].color = CYAN;
-      sprAttr[POP_SCORE_SPRITENUM].x = sprAttr[i].x;
-      sprAttr[POP_SCORE_SPRITENUM].y = sprAttr[i].y;
+      spriteAttrArray[POP_SCORE_SPRITENUM].color = CYAN;
+      spriteAttrArray[POP_SCORE_SPRITENUM].x = spriteAttrArray[i].x;
+      spriteAttrArray[POP_SCORE_SPRITENUM].y = spriteAttrArray[i].y;
 
       if(ghostCtr == 1) {
-          sprAttr[POP_SCORE_SPRITENUM].patt = PATT_200;
+          spriteAttrArray[POP_SCORE_SPRITENUM].patt = PATT_200;
           updateScore(200);
       }
       else
         if(ghostCtr == 2) {
-            sprAttr[POP_SCORE_SPRITENUM].patt = PATT_400;
+            spriteAttrArray[POP_SCORE_SPRITENUM].patt = PATT_400;
             updateScore(400);
         }
         else
             if(ghostCtr == 3) {
-                sprAttr[POP_SCORE_SPRITENUM].patt = PATT_800; 
+                spriteAttrArray[POP_SCORE_SPRITENUM].patt = PATT_800; 
                 updateScore(800); 
             }
             else
                 if(ghostCtr == 4) {
-                    sprAttr[POP_SCORE_SPRITENUM].patt = PATT_1600;
+                    spriteAttrArray[POP_SCORE_SPRITENUM].patt = PATT_1600;
                     updateScore(1600);
                 }
                 else {
-                    sprAttr[POP_SCORE_SPRITENUM].patt = PATT_QUESTIONMARKS;
+                    spriteAttrArray[POP_SCORE_SPRITENUM].patt = PATT_QUESTIONMARKS;
                     updateScore(3200);
                 }
 
@@ -3200,17 +3223,17 @@ void checkCollisions(void)
   static int gxl;
   static int gyl;
 
-  px = sprAttr[PACMAN_SPRITENUM].x+2;
-  py = sprAttr[PACMAN_SPRITENUM].y+2;
+  px = spriteAttrArray[PACMAN_SPRITENUM].x+2;
+  py = spriteAttrArray[PACMAN_SPRITENUM].y+2;
   pxl = px + 14;
   pyl = py + 14;
 
   for(i=RED_GHOST_SPRITENUM;i<=BROWN_GHOST_SPRITENUM;++i) {
-    gx = sprAttr[i].x+2;
-    gy = sprAttr[i].y+2;
-    gxl = sprAttr[i].x+14;
-    gyl = sprAttr[i].y+14;
-    if (sprAttr[i].isEyes == FALSE && px  < gxl && pxl > gx && py  < gyl && pyl > gy) {
+    gx = spriteAttrArray[i].x+2;
+    gy = spriteAttrArray[i].y+2;
+    gxl = spriteAttrArray[i].x+14;
+    gyl = spriteAttrArray[i].y+14;
+    if (spriteAttrArray[i].isEyes == FALSE && px  < gxl && pxl > gx && py  < gyl && pyl > gy) {
       if(energizerCtr == 0) {
           pacmanDead();
           lives--;
@@ -3226,16 +3249,16 @@ void checkCollisions(void)
     }      
   }
 
-  if(sprAttr[FRUIT_SPRITENUM].color != TRANSPARENT) {
-        gx = sprAttr[FRUIT_SPRITENUM].x+2;
-        gy = sprAttr[FRUIT_SPRITENUM].y+2;
-        gxl = sprAttr[FRUIT_SPRITENUM].x+14;
-        gyl = sprAttr[FRUIT_SPRITENUM].y+14;    
+  if(spriteAttrArray[FRUIT_SPRITENUM].color != TRANSPARENT) {
+        gx = spriteAttrArray[FRUIT_SPRITENUM].x+2;
+        gy = spriteAttrArray[FRUIT_SPRITENUM].y+2;
+        gxl = spriteAttrArray[FRUIT_SPRITENUM].x+14;
+        gyl = spriteAttrArray[FRUIT_SPRITENUM].y+14;    
         if(px  < gxl && pxl > gx && py  < gyl && pyl > gy) {
             updateScore(1000 * levelCtr);
             fruitEatenSound();
             fruitEatenOnThisLevel = 1;
-            sprAttr[FRUIT_SPRITENUM].color = TRANSPARENT;
+            spriteAttrArray[FRUIT_SPRITENUM].color = TRANSPARENT;
         }
   }
 }
@@ -3258,9 +3281,10 @@ void clearMazeShutOffSprites(void)
         setCharInNameTable(j,k,' ');
 
    for(j=0;j<=MAX_SPRITENUM;++j) {
-    sprAttr[j].color = TRANSPARENT;
+    spriteAttrArray[j].color = TRANSPARENT;
    }
    syncSpriteAttrStructsToHardware();
+   forceAllSpritesTransparent();
 }
 
 
@@ -3320,19 +3344,19 @@ void attractScreen() {
           exit(0);
        }
 
-       sprAttr[PACMAN_SPRITENUM].x = x;
-       sprAttr[PACMAN_SPRITENUM].y = y;
-       sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
+       spriteAttrArray[PACMAN_SPRITENUM].x = x;
+       spriteAttrArray[PACMAN_SPRITENUM].y = y;
+       spriteAttrArray[PACMAN_SPRITENUM].color = DARKYELLOW;
 
-       sprAttr[RED_GHOST_SPRITENUM].x = x + 30;
-       sprAttr[RED_GHOST_SPRITENUM].y = y;
-       sprAttr[RED_GHOST_SPRITENUM].color = DARKBLUE;
-       sprAttr[RED_GHOST_SPRITENUM].patt = PATT_SCARED_GHOST;
+       spriteAttrArray[RED_GHOST_SPRITENUM].x = x + 30;
+       spriteAttrArray[RED_GHOST_SPRITENUM].y = y;
+       spriteAttrArray[RED_GHOST_SPRITENUM].color = DARKBLUE;
+       spriteAttrArray[RED_GHOST_SPRITENUM].patt = PATT_SCARED_GHOST;
 
-       sprAttr[HAT_SPRITENUM].x = x + 30;
-       sprAttr[HAT_SPRITENUM].y = y - 4;
-       sprAttr[HAT_SPRITENUM].color = DARKGREEN;
-       sprAttr[HAT_SPRITENUM].patt = PATT_HAT;
+       spriteAttrArray[HAT_SPRITENUM].x = x + 30;
+       spriteAttrArray[HAT_SPRITENUM].y = y - 4;
+       spriteAttrArray[HAT_SPRITENUM].color = DARKGREEN;
+       spriteAttrArray[HAT_SPRITENUM].patt = PATT_HAT;
 
        syncSpriteAttrStructsToHardware();
 
@@ -3344,7 +3368,9 @@ void attractScreen() {
            SDL_RenderPresent(renderer);
        #endif
        x = x + 2;
-       sprAttr[PACMAN_SPRITENUM].patt = PATT_PACMAN_E1 + ((x/2) % 3);
+       spriteAttrArray[PACMAN_SPRITENUM].patt = PATT_PACMAN_E1 + ((x/2) % 3);
+
+       if(x>255) x = 0;
     };
 
     clearMazeShutOffSprites();
@@ -3366,13 +3392,13 @@ void clearScreenAndInitializeSprites(void) {
    g.backgroundColor = BLACK;
    setGraphicsMode();
 
-   memset(sprAttr,0x0,sizeof(sprAttr));
+   memset(spriteAttrArray,0x0,sizeof(spriteAttrArray));
    for(i=0;i<32;++i)
-    sprAttr[i].patt = -1;
+    spriteAttrArray[i].patt = -1;
 
-   sprAttr[PACMAN_SPRITENUM].x = 120;
-   sprAttr[PACMAN_SPRITENUM].y = 128;
-   sprAttr[PACMAN_SPRITENUM].patt = pacmanAnimationPosition;
+   spriteAttrArray[PACMAN_SPRITENUM].x = 120;
+   spriteAttrArray[PACMAN_SPRITENUM].y = 128;
+   spriteAttrArray[PACMAN_SPRITENUM].patt = pacmanAnimationPosition;
    
    clearMazeShutOffSprites();
 }
@@ -3506,7 +3532,7 @@ void setupGame(void)
    setSpritePatternByArray(PATT_MELON,            Melon,      32);
    setSpritePatternByArray(PATT_GALAXIAN,         Galaxian,   32);
 
-   sprAttr[PACMAN_SPRITENUM].color = DARKYELLOW;
+   spriteAttrArray[PACMAN_SPRITENUM].color = DARKYELLOW;
 
    moveGhosts(); // force the ghosts eyes to appear
 
@@ -3518,10 +3544,10 @@ void setupGame(void)
        SDL_RenderPresent(renderer);
    #endif
 
-   sprAttr[HAT_SPRITENUM].x = 0; // initialize the hat so it's invisible
-   sprAttr[HAT_SPRITENUM].y = 0;
-   sprAttr[HAT_SPRITENUM].patt = PATT_HAT;
-   sprAttr[HAT_SPRITENUM].color = TRANSPARENT;
+   spriteAttrArray[HAT_SPRITENUM].x = 0; // initialize the hat so it's invisible
+   spriteAttrArray[HAT_SPRITENUM].y = 0;
+   spriteAttrArray[HAT_SPRITENUM].patt = PATT_HAT;
+   spriteAttrArray[HAT_SPRITENUM].color = TRANSPARENT;
 
    introMusic(); 
 } 
@@ -3686,5 +3712,6 @@ top:
    #ifdef GCC_COMPILED
       SDLShutdown();
    #endif
+   clearTRSScreen();
    exit(0);
 }

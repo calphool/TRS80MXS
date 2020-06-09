@@ -180,8 +180,8 @@ void setup() {
   configureInterrupts();                             // tie interrupt lines to code blocks
   openDiskFileByName("newdos80.dsk", 0);                // open file specified from SD card
   openDiskFileByName("more-arcade-1_80sssd_jv1.DSK", 1);                // open file specified from SD card
-  openDiskFileByName("more-arcade-2_80sssd_jv1.DSK", 2);                // open file specified from SD card
-  openDiskFileByName("blank.DSK", 3);                // open file specified from SD card
+  openDiskFileByName("blank.DSK", 2);                // open file specified from SD card
+  openDiskFileByName("trs80mxs.dsk",3);
 
   p((char*)"\nReady.\n");
   if (!Serial) {
@@ -203,8 +203,8 @@ void setup() {
 void clockTick() {
   // comment out if you want to turn off the clock functionality...
 
-  //interruptStatus = interruptStatus | 0x80;
-  //digitalWriteFast(INTERUPT_TO_TRS80, LOW);
+  interruptStatus = interruptStatus | 0x80;
+  digitalWriteFast(INTERUPT_TO_TRS80, LOW);
 }
 
 
