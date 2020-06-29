@@ -30,12 +30,30 @@ of the Teensy unit.
 Build Notes
 ===========
 
+June 28, 2020
+
+I updated the graphics/sound board again.  This time I made it so that the joystick ports are compatible with the "Alphastick" joystick
+that was sold back in the early 1980s.  Several games support this joystick.  Also, I added a pair of jumpers that switches between the two 
+different kinds of joystick trigger modes supported on these old joystick designs.  
+
+I also learned how to use graphics mode 2 to produce near-bitmap style graphics.  So, I created a start-up screen for the MXS board that runs 
+as soon as NewDos/80 loads up.
+
+I finished the Pac-Man clone.  Now I've started on a Joust clone.  Joust runs in graphics mode 2, which makes for amazingly accurate reproduction of the 
+background.  I've been working on the SDL emulation layer so that I can duplicate the TMS9918's "only 4 sprites per scanline" behavior.  I need to
+duplicate this behavior so that I can come up with a "flicker routine."  This was the approach used for TMS9918 games back in the day.  You 
+detect the situation, and then rotate the sprites' priorities in order to make sure that no one sprite turns off completely.
+
+So I'm at version 1.4 of the graphics/sound board.  It's done and working well.  I have given some thought to removing two of the sound chips 
+(do I really need 12 voices?  6 seems like it ought to be adequate), and replacing them with a TMS5220 speech synthesis chip.  This would make the 
+board quite versatile.  Though the TMS5220 has become difficult to find, so I'm not sure.  I'll probably finish the Joust clone first.
+
+
 May 9, 2020
 
 Well, with the pandemic I've had a little time to work on the project some more.  I haven't worked on the wifi board recently,
 but I decided to put together at least one piece of software that demonstrates the graphics/sound/gaming capabilities of the 
-TRS80MXS.  [Here's a little video of the Pac-Man clone.](https://youtu.be/DzdaCiHI2xc)  It's a work in progress, but it's at least starting to look like a 
-playable game.
+TRS80MXS.  [Here's a little video of the Pac-Man clone.](https://youtu.be/DzdaCiHI2xc)  It's a work in progress, but it's at least starting to look like a playable game.
 
 
 January 1, 2020
