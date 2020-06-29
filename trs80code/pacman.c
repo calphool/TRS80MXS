@@ -50,10 +50,8 @@
 #endif
 
 // port addresses
-#define LEFT_POS 0x82
-#define RIGHT_POS 0x83
-#define LEFT2_POS 0x84
-#define RIGHT2_POS 0x85
+#define LEFT_POS 0x00
+#define RIGHT_POS 0x01
 
 // colors
 #define TRANSPARENT 0
@@ -73,7 +71,10 @@
 #define GRAY 14
 #define WHITE 15
 
+
 // joystick positions
+// screwy assignments without ALPHASTICK adapter
+/*
 #define J_N 239
 #define J_NE 111
 #define J_E 127
@@ -83,6 +84,18 @@
 #define J_W 191
 #define J_NW 175
 #define J_BUTTON 247
+*/
+
+// ALPHASTICK assignments
+#define J_N 254
+#define J_NE 246
+#define J_E 247
+#define J_SE 245
+#define J_S 253
+#define J_SW 249
+#define J_W 251
+#define J_NW 250
+#define J_BUTTON 239
 
 
 #define PATT_PACMAN_E1 0
@@ -176,13 +189,16 @@
 #define TWOFIFTYSIXTHNOTE 32
 
 
+/* 0x00 = JOY 1 when IN */
+/* 0x01 = JOY 2 when IN */
+
 /* 0x82 = SOUND 1 when OUT */
-/* 0x82 = JOY 1 when IN */
 /* 0x83 = SOUND 2 when OUT */
-/* 0x83 = JOY 2 when IN */
 /* 0x84 = SOUND 3 when OUT */
 /* 0x85 = SOUND 4 when OUT */
 #ifndef GCC_COMPILED
+__sfr __at 0x00 PORTX00;
+__sfr __at 0x01 PORTX01;
 __sfr __at 0x80 PORTX80;
 __sfr __at 0x81 PORTX81;
 __sfr __at 0x82 PORTX82;
@@ -1278,8 +1294,8 @@ void setVDPRAM(unsigned int addr, byte dat) {
    | get left or right joystick position                                                                                        |
    ******************************************************************************************************************************
 */
-#define getFastLeftJoystick() PORTX82
-#define getFastRightJoystick() PORTX83
+#define getFastLeftJoystick() PORTX00
+#define getFastRightJoystick() PORTX01
 
 byte getJoystick(byte LeftOrRight) 
 #ifndef GCC_COMPILED 
@@ -1322,9 +1338,9 @@ byte getJoystick(byte LeftOrRight)
     return 0;
 #else
     if(LeftOrRight == RIGHT_POS)
-        return PORTX83;
+        return PORTX01;
     else
-        return PORTX82;
+        return PORTX00;
 #endif
 }
 

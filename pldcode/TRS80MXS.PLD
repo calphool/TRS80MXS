@@ -1,6 +1,6 @@
 Name     TRS80MXS;
 PartNo   TRS80MXS;
-Date     2/6/2019 ;
+Date     6/17/2020 ;
 Revision 01 ;
 Designer Joe Rounceville ;
 Company  SoftObject System ;
@@ -190,48 +190,28 @@ TABLE snd4_inputs => snd4_outputs {
 }
 
 
-/* send JOY1 1 if address >= 0x00 and <= 0x7f */
-/* send JOY1 1 if address = 0x80 and IN */
-/* send JOY1 1 if address = 0x80 and not IN */
-/* send JOY1 1 if address = 0x81 and IN */
-/* send JOY1 1 if address = 0x81 and not IN */
-/* send JOY1 0 if address = 0x82 and IN */
-/* send JOY1 1 if address >= 0x83 and <= 0xff */
+/* send JOY1 0 if address = 0x00, and DEV_IN state is 0 */
+/* send JOY1 1 if address >= 0x01 and <= 0xff */
 field joy1_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in];
 field joy1_outputs = [joy1];
 
 TABLE joy1_inputs => joy1_outputs {
-['b'000000000..'b'011111111]=>'b'1;
- 'b'100000000=>'b'1;
- 'b'100000001=>'b'1;
- 'b'100000010=>'b'1;
- 'b'100000011=>'b'1;
- 'b'100000100=>'b'0;
-['b'100000101..'b'111111111]=>'b'1;
+ 'b'000000000=>'b'0;
+ 'b'000000001=>'b'1;
+['b'000000010..'b'111111111]=>'b'1;
 }
 
 
 
-/* send JOY2 1 if address >= 0x00 and <= 0x7f */
-/* send JOY2 1 if address = 0x80 and IN */
-/* send JOY2 1 if address = 0x80 and not IN */
-/* send JOY2 1 if address = 0x81 and IN */
-/* send JOY2 1 if address = 0x81 and not IN */
-/* send JOY2 1 if address = 0x82 and IN */
-/* send JOY2 1 if address = 0x82 and not IN */
-/* send JOY2 0 if address = 0x83 and IN */
-/* send JOY2 1 if address >= 0x84 and <= 0xff */
+/* send JOY2 1 if address = 0x00, regardless of DEV_IN state */
+/* send JOY2 0 if address = 0x01, if DEV_IN state is 0 */
+/* send JOY2 1 if address >= 0x02 and <= 0xff */
 field joy2_inputs = [a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in];
 field joy2_outputs = [joy2];
-
+ 
 TABLE joy2_inputs => joy2_outputs {
-['b'000000000..'b'011111111]=>'b'1;
- 'b'100000000=>'b'1;
- 'b'100000001=>'b'1;
- 'b'100000010=>'b'1;
- 'b'100000011=>'b'1;
- 'b'100000100=>'b'1;
- 'b'100000101=>'b'1;
- 'b'100000110=>'b'0;
-['b'100000111..'b'111111111]=>'b'1;
+ 'b'000000000=>'b'1;
+ 'b'000000001=>'b'1;
+ 'b'000000010=>'b'0;
+['b'000000011..'b'111111111]=>'b'1;
 }

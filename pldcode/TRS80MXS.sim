@@ -1,0 +1,162 @@
+%SIGNAL
+PIN   8 =  a_five 
+PIN   7 =  a_four 
+PIN   3 =  a_one 
+PIN  10 =  a_seven 
+PIN   9 =  a_six 
+PIN   6 =  a_three 
+PIN   5 =  a_two 
+PIN   2 =  a_zero 
+PIN  21 =  csr 
+PIN  22 =  csw 
+PIN  11 =  dev_in 
+PIN  13 =  dev_out 
+PIN  18 =  joy1 
+PIN  17 =  joy2 
+PIN  23 =  mode 
+PIN  20 =  snd1 
+PIN  19 =  snd2 
+PIN  16 =  snd3 
+PIN  15 =  snd4 
+%END
+
+%FIELD
+FIELD csr_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in
+FIELD csr_outputs = csr
+FIELD csw_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out
+FIELD csw_outputs = csw
+FIELD joy1_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in
+FIELD joy1_outputs = joy1
+FIELD joy2_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_in
+FIELD joy2_outputs = joy2
+FIELD mode_inputs = dev_in,dev_out,a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero
+FIELD mode_outputs = mode
+FIELD snd1_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out
+FIELD snd1_outputs = snd1
+FIELD snd2_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out
+FIELD snd2_outputs = snd2
+FIELD snd3_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out
+FIELD snd3_outputs = snd3
+FIELD snd4_inputs = a_seven,a_six,a_five,a_four,a_three,a_two,a_one,a_zero,dev_out
+FIELD snd4_outputs = snd4
+%END
+
+%EQUATION
+csr =>
+    dev_in
+  # a_two
+  # a_one
+  # a_six
+  # a_four
+  # a_three
+  # a_five
+  # !a_seven
+
+csw =>
+    dev_out
+  # a_two
+  # a_one
+  # a_six
+  # a_four
+  # a_three
+  # a_five
+  # !a_seven
+
+joy1 =>
+    dev_in
+  # a_one
+  # a_zero
+  # a_two
+  # a_four
+  # a_seven
+  # a_six
+  # a_three
+  # a_five
+
+joy2 =>
+    a_one
+  # !a_zero
+  # dev_in
+  # a_three
+  # a_seven
+  # a_two
+  # a_six
+  # a_five
+  # a_four
+
+mode =>
+    !a_five & !a_four & !a_one & a_seven & !a_six & !a_three & !a_two & a_zero & dev_in & !dev_out
+  # !a_five & !a_four & !a_one & a_seven & !a_six & !a_three & !a_two & a_zero & !dev_in & dev_out
+
+snd1 =>
+    a_zero
+  # a_six
+  # dev_out
+  # !a_one
+  # a_five
+  # a_three
+  # a_two
+  # a_four
+  # !a_seven
+
+snd2 =>
+    a_two
+  # dev_out
+  # !a_zero
+  # a_six
+  # !a_one
+  # a_three
+  # a_five
+  # a_four
+  # !a_seven
+
+snd3 =>
+    a_six
+  # dev_out
+  # a_zero
+  # a_five
+  # a_three
+  # !a_two
+  # a_one
+  # a_four
+  # !a_seven
+
+snd4 =>
+    a_one
+  # dev_out
+  # !a_zero
+  # a_six
+  # !a_seven
+  # a_three
+  # !a_two
+  # a_five
+  # a_four
+
+csr.oe  =>
+    1 
+
+csw.oe  =>
+    1 
+
+joy1.oe  =>
+    1 
+
+joy2.oe  =>
+    1 
+
+mode.oe  =>
+    1 
+
+snd1.oe  =>
+    1 
+
+snd2.oe  =>
+    1 
+
+snd3.oe  =>
+    1 
+
+snd4.oe  =>
+    1 
+
+%END

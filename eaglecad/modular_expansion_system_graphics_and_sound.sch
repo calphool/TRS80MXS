@@ -25272,6 +25272,15 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <attribute name="NAME" x="104.14" y="225.8314" size="1.778" layer="95" rot="R180"/>
 <attribute name="VALUE" x="114.3" y="226.822" size="1.778" layer="96" rot="R180"/>
 </instance>
+<instance part="IC8_JOY1_BUF" gate="P" x="83.82" y="299.72" smashed="yes">
+<attribute name="NAME" x="83.185" y="299.085" size="1.778" layer="95"/>
+</instance>
+<instance part="IC1_JOY2_BUF" gate="P" x="78.74" y="299.72" smashed="yes">
+<attribute name="NAME" x="78.105" y="299.085" size="1.778" layer="95"/>
+</instance>
+<instance part="IC9-74HCU04" gate="P" x="73.66" y="299.72" smashed="yes">
+<attribute name="NAME" x="73.025" y="299.085" size="1.778" layer="95"/>
+</instance>
 </instances>
 <busses>
 <bus name="ADDRESSBUS:A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,IN*,OUT*,RD*,WR*">
@@ -25450,6 +25459,15 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <wire x1="88.9" y1="289.56" x2="100.33" y2="289.56" width="0.1524" layer="91"/>
 <wire x1="100.33" y1="289.56" x2="100.33" y2="294.64" width="0.1524" layer="91"/>
 <junction x="100.33" y="294.64"/>
+<pinref part="IC8_JOY1_BUF" gate="P" pin="GND"/>
+<wire x1="88.9" y1="289.56" x2="83.82" y2="289.56" width="0.1524" layer="91"/>
+<junction x="88.9" y="289.56"/>
+<pinref part="IC1_JOY2_BUF" gate="P" pin="GND"/>
+<wire x1="83.82" y1="289.56" x2="78.74" y2="289.56" width="0.1524" layer="91"/>
+<junction x="83.82" y="289.56"/>
+<pinref part="IC9-74HCU04" gate="P" pin="GND"/>
+<wire x1="78.74" y1="289.56" x2="73.66" y2="289.56" width="0.1524" layer="91"/>
+<junction x="78.74" y="289.56"/>
 </segment>
 <segment>
 <pinref part="U5_SND3" gate="G$1" pin="GND"/>
@@ -25570,6 +25588,15 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <wire x1="88.9" y1="309.88" x2="100.33" y2="309.88" width="0.1524" layer="91"/>
 <wire x1="100.33" y1="309.88" x2="100.33" y2="302.26" width="0.1524" layer="91"/>
 <junction x="100.33" y="302.26"/>
+<pinref part="IC8_JOY1_BUF" gate="P" pin="VCC"/>
+<wire x1="88.9" y1="309.88" x2="83.82" y2="309.88" width="0.1524" layer="91"/>
+<junction x="88.9" y="309.88"/>
+<pinref part="IC1_JOY2_BUF" gate="P" pin="VCC"/>
+<wire x1="83.82" y1="309.88" x2="78.74" y2="309.88" width="0.1524" layer="91"/>
+<junction x="83.82" y="309.88"/>
+<pinref part="IC9-74HCU04" gate="P" pin="VCC"/>
+<wire x1="78.74" y1="309.88" x2="73.66" y2="309.88" width="0.1524" layer="91"/>
+<junction x="78.74" y="309.88"/>
 </segment>
 <segment>
 <pinref part="P+10" gate="VCC" pin="VCC"/>
@@ -26249,9 +26276,6 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 </net>
 <net name="UP" class="0">
 <segment>
-<pinref part="JOYSTICK1" gate="G$1" pin="2"/>
-<wire x1="82.55" y1="240.03" x2="74.93" y2="240.03" width="0.1524" layer="91"/>
-<wire x1="74.93" y1="240.03" x2="74.93" y2="217.17" width="0.1524" layer="91"/>
 <pinref part="IC8_JOY1_BUF" gate="B" pin="A4"/>
 <wire x1="74.93" y1="217.17" x2="104.14" y2="217.17" width="0.1524" layer="91"/>
 <label x="78.74" y="217.17" size="1.778" layer="95"/>
@@ -26263,17 +26287,17 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <wire x1="143.51" y1="257.81" x2="143.51" y2="217.17" width="0.1524" layer="91"/>
 <junction x="143.51" y="217.17"/>
 <pinref part="D1" gate="G$1" pin="2"/>
+<pinref part="JOYSTICK1" gate="G$1" pin="5"/>
+<wire x1="82.55" y1="232.41" x2="74.93" y2="232.41" width="0.1524" layer="91"/>
+<wire x1="74.93" y1="217.17" x2="74.93" y2="232.41" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="DOWN" class="0">
 <segment>
-<pinref part="JOYSTICK1" gate="G$1" pin="3"/>
-<wire x1="82.55" y1="237.49" x2="77.47" y2="237.49" width="0.1524" layer="91"/>
 <pinref part="IC8_JOY1_BUF" gate="B" pin="A3"/>
 <wire x1="161.29" y1="219.71" x2="146.05" y2="219.71" width="0.1524" layer="91"/>
 <wire x1="146.05" y1="219.71" x2="100.33" y2="219.71" width="0.1524" layer="91"/>
 <wire x1="100.33" y1="219.71" x2="77.47" y2="219.71" width="0.1524" layer="91"/>
-<wire x1="77.47" y1="219.71" x2="77.47" y2="237.49" width="0.1524" layer="91"/>
 <label x="78.74" y="219.71" size="1.778" layer="95"/>
 <wire x1="100.33" y1="227.33" x2="100.33" y2="219.71" width="0.1524" layer="91"/>
 <junction x="100.33" y="219.71"/>
@@ -26281,38 +26305,41 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <wire x1="146.05" y1="257.81" x2="146.05" y2="219.71" width="0.1524" layer="91"/>
 <junction x="146.05" y="219.71"/>
 <pinref part="D2" gate="G$1" pin="2"/>
+<pinref part="JOYSTICK1" gate="G$1" pin="4"/>
+<wire x1="82.55" y1="234.95" x2="77.47" y2="234.95" width="0.1524" layer="91"/>
+<wire x1="77.47" y1="234.95" x2="77.47" y2="219.71" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="LEFT" class="0">
 <segment>
-<pinref part="JOYSTICK1" gate="G$1" pin="4"/>
-<wire x1="82.55" y1="234.95" x2="69.85" y2="234.95" width="0.1524" layer="91"/>
 <pinref part="IC8_JOY1_BUF" gate="B" pin="A2"/>
 <wire x1="161.29" y1="222.25" x2="153.67" y2="222.25" width="0.1524" layer="91"/>
 <wire x1="153.67" y1="222.25" x2="153.67" y2="212.09" width="0.1524" layer="91"/>
 <wire x1="153.67" y1="212.09" x2="138.43" y2="212.09" width="0.1524" layer="91"/>
 <wire x1="138.43" y1="212.09" x2="69.85" y2="212.09" width="0.1524" layer="91"/>
-<wire x1="69.85" y1="212.09" x2="69.85" y2="234.95" width="0.1524" layer="91"/>
+<wire x1="69.85" y1="212.09" x2="69.85" y2="237.49" width="0.1524" layer="91"/>
 <label x="78.74" y="212.09" size="1.778" layer="95"/>
 <pinref part="RN1" gate="A" pin="8"/>
 <wire x1="138.43" y1="257.81" x2="138.43" y2="212.09" width="0.1524" layer="91"/>
 <junction x="138.43" y="212.09"/>
+<pinref part="JOYSTICK1" gate="G$1" pin="3"/>
+<wire x1="82.55" y1="237.49" x2="69.85" y2="237.49" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="RIGHT" class="0">
 <segment>
-<pinref part="JOYSTICK1" gate="G$1" pin="5"/>
-<wire x1="82.55" y1="232.41" x2="72.39" y2="232.41" width="0.1524" layer="91"/>
 <label x="78.74" y="214.63" size="1.778" layer="95"/>
 <pinref part="IC8_JOY1_BUF" gate="B" pin="A1"/>
 <wire x1="161.29" y1="224.79" x2="151.13" y2="224.79" width="0.1524" layer="91"/>
 <wire x1="151.13" y1="224.79" x2="151.13" y2="214.63" width="0.1524" layer="91"/>
 <wire x1="151.13" y1="214.63" x2="140.97" y2="214.63" width="0.1524" layer="91"/>
 <wire x1="140.97" y1="214.63" x2="72.39" y2="214.63" width="0.1524" layer="91"/>
-<wire x1="72.39" y1="214.63" x2="72.39" y2="232.41" width="0.1524" layer="91"/>
 <pinref part="RN1" gate="A" pin="9"/>
 <wire x1="140.97" y1="257.81" x2="140.97" y2="214.63" width="0.1524" layer="91"/>
 <junction x="140.97" y="214.63"/>
+<pinref part="JOYSTICK1" gate="G$1" pin="2"/>
+<wire x1="82.55" y1="240.03" x2="72.39" y2="240.03" width="0.1524" layer="91"/>
+<wire x1="72.39" y1="240.03" x2="72.39" y2="214.63" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="TRIGGER" class="0">
@@ -26395,70 +26422,70 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 </net>
 <net name="UP1" class="0">
 <segment>
-<pinref part="JOYSTICK2" gate="G$1" pin="2"/>
-<wire x1="82.55" y1="190.5" x2="76.2" y2="190.5" width="0.1524" layer="91"/>
 <label x="80.01" y="168.91" size="1.778" layer="95"/>
 <pinref part="IC1_JOY2_BUF" gate="B" pin="A4"/>
 <wire x1="161.29" y1="168.91" x2="128.27" y2="168.91" width="0.1524" layer="91"/>
 <wire x1="128.27" y1="168.91" x2="104.14" y2="168.91" width="0.1524" layer="91"/>
 <wire x1="104.14" y1="168.91" x2="76.2" y2="168.91" width="0.1524" layer="91"/>
-<wire x1="76.2" y1="168.91" x2="76.2" y2="190.5" width="0.1524" layer="91"/>
 <wire x1="104.14" y1="175.26" x2="104.14" y2="168.91" width="0.1524" layer="91"/>
 <junction x="104.14" y="168.91"/>
 <pinref part="RN1" gate="A" pin="4"/>
 <wire x1="128.27" y1="257.81" x2="128.27" y2="168.91" width="0.1524" layer="91"/>
 <junction x="128.27" y="168.91"/>
 <pinref part="D3" gate="G$1" pin="2"/>
+<pinref part="JOYSTICK2" gate="G$1" pin="5"/>
+<wire x1="82.55" y1="182.88" x2="76.2" y2="182.88" width="0.1524" layer="91"/>
+<wire x1="76.2" y1="182.88" x2="76.2" y2="168.91" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="DOWN1" class="0">
 <segment>
-<pinref part="JOYSTICK2" gate="G$1" pin="3"/>
-<wire x1="82.55" y1="187.96" x2="78.74" y2="187.96" width="0.1524" layer="91"/>
 <label x="80.01" y="171.45" size="1.778" layer="95"/>
 <pinref part="IC1_JOY2_BUF" gate="B" pin="A3"/>
 <wire x1="161.29" y1="171.45" x2="130.81" y2="171.45" width="0.1524" layer="91"/>
 <wire x1="130.81" y1="171.45" x2="100.33" y2="171.45" width="0.1524" layer="91"/>
 <wire x1="100.33" y1="171.45" x2="78.74" y2="171.45" width="0.1524" layer="91"/>
-<wire x1="78.74" y1="171.45" x2="78.74" y2="187.96" width="0.1524" layer="91"/>
 <junction x="100.33" y="171.45"/>
 <pinref part="RN1" gate="A" pin="5"/>
 <wire x1="130.81" y1="257.81" x2="130.81" y2="171.45" width="0.1524" layer="91"/>
 <junction x="130.81" y="171.45"/>
 <pinref part="D7" gate="G$1" pin="2"/>
 <wire x1="100.33" y1="177.8" x2="100.33" y2="171.45" width="0.1524" layer="91"/>
+<pinref part="JOYSTICK2" gate="G$1" pin="4"/>
+<wire x1="82.55" y1="185.42" x2="78.74" y2="185.42" width="0.1524" layer="91"/>
+<wire x1="78.74" y1="185.42" x2="78.74" y2="171.45" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="LEFT1" class="0">
 <segment>
-<pinref part="JOYSTICK2" gate="G$1" pin="4"/>
-<wire x1="82.55" y1="185.42" x2="71.12" y2="185.42" width="0.1524" layer="91"/>
 <label x="80.01" y="163.83" size="1.778" layer="95"/>
 <pinref part="IC1_JOY2_BUF" gate="B" pin="A2"/>
 <wire x1="161.29" y1="173.99" x2="153.67" y2="173.99" width="0.1524" layer="91"/>
 <wire x1="153.67" y1="173.99" x2="153.67" y2="163.83" width="0.1524" layer="91"/>
 <wire x1="153.67" y1="163.83" x2="123.19" y2="163.83" width="0.1524" layer="91"/>
 <wire x1="123.19" y1="163.83" x2="71.12" y2="163.83" width="0.1524" layer="91"/>
-<wire x1="71.12" y1="163.83" x2="71.12" y2="185.42" width="0.1524" layer="91"/>
 <pinref part="RN1" gate="A" pin="2"/>
 <wire x1="123.19" y1="257.81" x2="123.19" y2="163.83" width="0.1524" layer="91"/>
 <junction x="123.19" y="163.83"/>
+<pinref part="JOYSTICK2" gate="G$1" pin="3"/>
+<wire x1="82.55" y1="187.96" x2="71.12" y2="187.96" width="0.1524" layer="91"/>
+<wire x1="71.12" y1="187.96" x2="71.12" y2="163.83" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="RIGHT1" class="0">
 <segment>
-<pinref part="JOYSTICK2" gate="G$1" pin="5"/>
-<wire x1="82.55" y1="182.88" x2="73.66" y2="182.88" width="0.1524" layer="91"/>
 <label x="80.01" y="166.37" size="1.778" layer="95"/>
 <pinref part="IC1_JOY2_BUF" gate="B" pin="A1"/>
 <wire x1="161.29" y1="176.53" x2="151.13" y2="176.53" width="0.1524" layer="91"/>
 <wire x1="151.13" y1="176.53" x2="151.13" y2="166.37" width="0.1524" layer="91"/>
 <wire x1="151.13" y1="166.37" x2="125.73" y2="166.37" width="0.1524" layer="91"/>
 <wire x1="125.73" y1="166.37" x2="73.66" y2="166.37" width="0.1524" layer="91"/>
-<wire x1="73.66" y1="166.37" x2="73.66" y2="182.88" width="0.1524" layer="91"/>
 <pinref part="RN1" gate="A" pin="3"/>
 <wire x1="125.73" y1="257.81" x2="125.73" y2="166.37" width="0.1524" layer="91"/>
 <junction x="125.73" y="166.37"/>
+<pinref part="JOYSTICK2" gate="G$1" pin="2"/>
+<wire x1="82.55" y1="190.5" x2="73.66" y2="190.5" width="0.1524" layer="91"/>
+<wire x1="73.66" y1="190.5" x2="73.66" y2="166.37" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="TRIGGER1" class="0">
@@ -26468,7 +26495,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <pinref part="JP1-TRG-MD2" gate="1" pin="2"/>
 </segment>
 </net>
-<net name="JOY1_IN_ENABLE_N1" class="0">
+<net name="JOY2_IN_ENABLE_N" class="0">
 <segment>
 <pinref part="IC1_JOY2_BUF" gate="B" pin="G"/>
 <pinref part="IC1_JOY2_BUF" gate="A" pin="G"/>
@@ -26966,7 +26993,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <junction x="148.59" y="242.57"/>
 </segment>
 </net>
-<net name="N$11" class="0">
+<net name="TIED-HIGH-1" class="0">
 <segment>
 <pinref part="IC8_JOY1_BUF" gate="A" pin="A1"/>
 <pinref part="IC8_JOY1_BUF" gate="A" pin="A2"/>
@@ -26992,7 +27019,7 @@ Source: http://www.murata.com .. GRM43DR72E224KW01.pdf</description>
 <junction x="133.35" y="194.31"/>
 </segment>
 </net>
-<net name="N$20" class="0">
+<net name="TIED-HIGH-2" class="0">
 <segment>
 <pinref part="IC1_JOY2_BUF" gate="A" pin="A1"/>
 <pinref part="IC1_JOY2_BUF" gate="A" pin="A2"/>
