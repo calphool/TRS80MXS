@@ -23,14 +23,18 @@
 #define D6               11 /* PORTC BIT 6 */
 #define D7               12 /* PORTC BIT 7 */
 #define D5               13 /* PORTC BIT 5 */
-//                       14 - disconnected
+
 #define D0               15 /* PORTC BIT 0 */
-//                       16 - disconnected
-//                       17 - disconnected
-//                       18 - disconnected
-//                       19 - disconnected
-//                       20 - disconnected
+
+#define LCD_RS           14
+#define LCD_EN           16
+#define LCD_D4           17
+#define LCD_D5           18
+#define LCD_D6           19
+#define LCD_D7           20
+
 //                       21 - disconnected
+
 #define D1               22 /* PORTC BIT 1 */
 #define D2               23 /* PORTC BIT 2 */
 //                       24 - disconnected

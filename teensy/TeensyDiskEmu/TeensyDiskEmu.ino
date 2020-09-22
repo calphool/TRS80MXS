@@ -11,11 +11,13 @@
 #include <stdarg.h>
 #include <SPI.h>
 #include <Wire.h>
+#include <LiquidCrystal.h>
 //#include <Adafruit_GFX.h>
 //#include <Adafruit_SSD1306.h>
 
 #include "defines.h"
 
+LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 
 extern drivesettings Drives[4];
 extern volatile int interruptStatus;
@@ -28,16 +30,60 @@ volatile int address;
 char respBuffer[255];
 char workBuffer[255];
 
+byte disk_spin_0[8] = {
+  B11111,
+  B11001,
+  B11101,
+  B11101,
+  B11111,
+  B11011,
+  B11111,
+};  
+byte disk_spin_1[8] = {
+  B11111,
+  B11111,
+  B11101,
+  B11101,
+  B11001,
+  B11011,
+  B11111,
+};  
+byte disk_spin_2[8] = {
+  B11111,
+  B11111,
+  B10111,
+  B10111,
+  B10011,
+  B11011,
+  B11111,
+};  
+byte disk_spin_3[8] = {
+  B11111,
+  B10011,
+  B10111,
+  B10111,
+  B11111,
+  B11011,
+  B11111,
+};  
+
 
 
 /* set up pin directionality */
 void pinSetup() {
+  pinMode(LCD_RS, OUTPUT);
+  pinMode(LCD_EN, OUTPUT);
+  pinMode(LCD_D4, OUTPUT);
+  pinMode(LCD_D5, OUTPUT);
+  pinMode(LCD_D6, OUTPUT);
+  pinMode(LCD_D7, OUTPUT);
   pinMode(LED2_RED, OUTPUT);
   pinMode(LED2_GREEN, OUTPUT);
   pinMode(LED2_BLUE, OUTPUT);
   pinMode(INTERUPT_TO_TRS80, OUTPUT);
   pinMode(FF_CLR, OUTPUT);
   pinMode(FF_PRE, OUTPUT);
+  
   pinMode(_37E0RD, INPUT);
   pinMode(_37E0WR, INPUT);
   pinMode(_37E4RD, INPUT);
@@ -48,6 +94,7 @@ void pinSetup() {
   pinMode(_37ECWR, INPUT);
   pinMode(_A0, INPUT);
   pinMode(_A1, INPUT);
+  
   pinMode(NOTHING1, OUTPUT);
   pinMode(NOTHING2, OUTPUT);
   pinMode(SYSRES, INPUT);
@@ -62,12 +109,7 @@ void initialPinState() {
   initFlipFlop();                            // jigger flip flop into a known state (loaded, ready for trigger)
 }
 
-
-
 IntervalTimer it;
-
-
-
 
 void _37E0WRInterrupt() {
   dataBus = getDataBusValue();
@@ -153,14 +195,23 @@ void setup() {
   //  display.display();
   //  delay(1000);
 
+  lcd.createChar(0, disk_spin_0);
+  lcd.createChar(1, disk_spin_1);
+  lcd.createChar(2, disk_spin_2);
+  lcd.createChar(3, disk_spin_3);
+
   pinSetup();                         // set pin modes
-  initialPinState();                  // put pins in initial configuration
-  
+  initialPinState();                  // put pins in initial configuration  
 
   strcpy(respBuffer, "PENDING\n");
   workBuffer[0] = 0x0;
 
- 
+  lcd.begin(20,4);
+  lcd.clear();
+
+
+  lcd.setCursor(0,0);
+  lcd.print("Looking for serial.");
   L2_RED();
   while (!Serial && iLEDCtr < 30) {   // attempt to establish serial connection from Teensy
     iLEDCtr++;
@@ -170,12 +221,20 @@ void setup() {
     L2_RED();
   }
 
+  lcd.clear();
+  lcd.setCursor(0,0);
+
   if (!Serial) {                      // couldn't establish serial connection within 6 seconds ((100+100)*30 milliseconds)
     L2_YELLOW();
+    lcd.print("Serial not connected");
   }
   else {                              // okay, serial established, let's move on
+    lcd.print("Serial found");
     L2_CYAN();
   }
+
+  lcd.setCursor(0,1);
+  lcd.print("Loading deflt drives");
 
   configureInterrupts();                             // tie interrupt lines to code blocks
   openDiskFileByName("newdos80.dsk", 0);                // open file specified from SD card
@@ -191,12 +250,16 @@ void setup() {
     L2_GREEN();                      // all good to go
   }
 
+
+  lcd.setCursor(0,2);
+  lcd.print("Turning on timer");
+
   init1771Emulation();
 
   p((char*)"Setting up interval timer: %d", it.begin(clockTick, 25000));
 
+  lcd.clear();
   sei();                             // enable interrupts
-
 }
 
 
@@ -282,8 +345,63 @@ void handleUploadProcess() {
 }
 
 
+void updateLCD() {
+  static int x = 0;
+  static char buffer[80];
+  static unsigned long bSpinning[4];
+  static unsigned long temp;
+      
+  for(int i=0;i<4;i++) {
+    lcd.setCursor(0,i);
+    lcd.print(i);
+        
+    if((Drives[i].statusRegister & 0x01) == 0x01) 
+        bSpinning[i] = millis();
+    
+    lcd.setCursor(2,i);
+    strcpy(buffer,Drives[i].sDiskFileName.c_str()); 
+    buffer[18]=0x0;
+    while(strlen(buffer) < 18) strcat(buffer," ");
+    lcd.print(buffer);
+  }
 
-void loop() {
+  for(int i=0;i<4;i++) {
+    temp = millis() - bSpinning[i];
+    if(temp > 1000)
+        if((Drives[i].statusRegister & 0x01) != 0x01)
+            bSpinning[i] = 0;
+            
+    temp = temp % 1000;
+    lcd.setCursor(1,i);
+    if(temp < 250)
+      lcd.write(byte(0));
+    else if(temp < 500)
+      lcd.write(byte(1));
+    else if(temp < 750)
+      lcd.write(byte(2));
+    else
+      lcd.write(byte(3));
+
+    if(bSpinning[i] == 0) {
+        lcd.setCursor(1,i);     
+        lcd.print(" "); 
+    }
+  }
+
+
+}
+
+
+int lpCtr = 0;
+
+void loop() {  
+  lpCtr++;
+
+  if(lpCtr == 32767) {
+    lpCtr = 0;
+    updateLCD();
+  }
+
   while (Serial.available() > 0 ) {
     sCommand = Serial.readString().trim();
     if (!bInsideUploadCommand)

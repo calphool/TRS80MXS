@@ -388,8 +388,12 @@ void findClosestName(char* s, int drNum) {
     return;
   }
 
+  L2_GREEN();
+
   init1771Emulation();
   sprintf(respBuffer,"MOUNTED %s TO DRIVE %d\n", bestName, drNum);
+
+  p((char*)"%s\n", respBuffer); 
 }
 
 
@@ -414,6 +418,13 @@ void mount() {
   if(c != 0 && c != 1 && c != 2 && c != 3) {
      sprintf(respBuffer,"BAD DRIVE NUMBER\n", c);  
      return;
+  }
+
+  resetWaitLatch(); // added this in to release wait latch because of lockup problems during mount command (sometimes takes too long)
+
+  p((char*)"Closing %s...\n",Drives[c].sDiskFileName.c_str());
+  if(!Drives[c].diskFile.close()) {
+    p((char*)"Unable to close %s...\n", Drives[c].sDiskFileName.c_str());
   }
 
   p((char*)"mount drive num %d, %s\n", c, workBuffer); 

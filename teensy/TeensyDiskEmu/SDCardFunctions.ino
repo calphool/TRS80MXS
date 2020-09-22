@@ -160,6 +160,7 @@ void appendBufferToFile(char* buf, int iSize, char* fileName) {
 }
 
 
+
 int openDiskFileByName(String sFileName, int iDriveNum) {
   File file;
   String workStrm;
@@ -178,7 +179,7 @@ int openDiskFileByName(String sFileName, int iDriveNum) {
            stream.write('/');
           }
           stream.flush();
-          if(workStrm == sFileName) {
+          if(workStrm.equalsIgnoreCase(sFileName)) {
              p((char*)"Opening disk %d file: ",iDriveNum);
              p((char*)workStrm.c_str());
              Drives[iDriveNum].diskFile = sdEx.open(workStrm.c_str(), O_RDWR);
@@ -200,7 +201,7 @@ int openDiskFileByName(String sFileName, int iDriveNum) {
   if(bLoaded == true)
       Drives[iDriveNum].sDiskFileName = sFileName;
   else {
-      fatalError((char*)"ERROR: Unable to load file %s.\n",sFileName);
+      fatalError((char*)"ERROR: Unable to load file %s.\n",sFileName.c_str());
       return -1;
   }
 
