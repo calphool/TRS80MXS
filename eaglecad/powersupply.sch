@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="1.27" unitdist="mm" unit="mm" style="lines" multiple="1" display="no" altdistance="0.127" altunitdist="mm" altunit="mm"/>
+<grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -15192,13 +15192,13 @@ Source: http://www.diotec.com/pdf/s40.pdf</description>
 <instance part="TRIAD-VPP20-1000" gate="G$1" x="15.24" y="2.54" smashed="yes">
 <attribute name="NAME" x="16.51" y="27.94" size="1.778" layer="94"/>
 </instance>
-<instance part="F1-FUSE" gate="1" x="-5.08" y="85.09" smashed="yes">
-<attribute name="NAME" x="-7.62" y="86.487" size="1.778" layer="95"/>
-<attribute name="VALUE" x="-6.35" y="80.899" size="1.778" layer="96"/>
+<instance part="F1-FUSE" gate="1" x="-34.29" y="86.36" smashed="yes">
+<attribute name="NAME" x="-36.83" y="87.757" size="1.778" layer="95"/>
+<attribute name="VALUE" x="-35.56" y="82.169" size="1.778" layer="96"/>
 </instance>
-<instance part="JP1-POWER" gate="1" x="-22.86" y="76.2" smashed="yes" rot="R90">
-<attribute name="NAME" x="-22.86" y="72.39" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="-22.86" y="70.485" size="1.778" layer="96" rot="R180"/>
+<instance part="JP1-POWER" gate="1" x="-49.53" y="73.66" smashed="yes" rot="R90">
+<attribute name="NAME" x="-49.53" y="69.85" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="-49.53" y="67.945" size="1.778" layer="96" rot="R180"/>
 </instance>
 <instance part="JP2-SWITCH" gate="A" x="-20.32" y="88.9" smashed="yes">
 <attribute name="NAME" x="-13.97" y="95.25" size="1.778" layer="95" rot="R180"/>
@@ -15243,19 +15243,12 @@ Source: http://www.diotec.com/pdf/s40.pdf</description>
 <wire x1="5.08" y1="5.08" x2="10.16" y2="5.08" width="0.1524" layer="91"/>
 <wire x1="5.08" y1="20.32" x2="5.08" y2="69.85" width="0.1524" layer="91"/>
 <junction x="5.08" y="20.32"/>
-<pinref part="JP1-POWER" gate="1" pin="1"/>
-<wire x1="5.08" y1="69.85" x2="-20.32" y2="69.85" width="0.1524" layer="91"/>
-<wire x1="-20.32" y1="69.85" x2="-20.32" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="BELSIGNAL-ST-6-16" gate="G$1" pin="P4"/>
 <wire x1="10.16" y1="69.85" x2="5.08" y2="69.85" width="0.1524" layer="91"/>
+<pinref part="JP1-POWER" gate="1" pin="1"/>
+<wire x1="5.08" y1="69.85" x2="-46.99" y2="69.85" width="0.1524" layer="91"/>
+<wire x1="-46.99" y1="69.85" x2="-46.99" y2="71.12" width="0.1524" layer="91"/>
 <junction x="5.08" y="69.85"/>
-</segment>
-</net>
-<net name="AC-IN-1" class="0">
-<segment>
-<pinref part="JP1-POWER" gate="1" pin="3"/>
-<pinref part="JP2-SWITCH" gate="A" pin="1"/>
-<wire x1="-20.32" y1="78.74" x2="-20.32" y2="86.36" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="AC-FOR-RECT-B" class="0">
@@ -15320,21 +15313,6 @@ Source: http://www.diotec.com/pdf/s40.pdf</description>
 <junction x="114.3" y="38.1"/>
 </segment>
 </net>
-<net name="AC-IN-1-AFTER-FUSE" class="0">
-<segment>
-<pinref part="F1-FUSE" gate="1" pin="2"/>
-<pinref part="TRIAD-VPP20-1000" gate="G$1" pin="P4"/>
-<wire x1="0" y1="85.09" x2="10.16" y2="85.09" width="0.1524" layer="91"/>
-<wire x1="10.16" y1="10.16" x2="0" y2="10.16" width="0.1524" layer="91"/>
-<wire x1="0" y1="10.16" x2="0" y2="25.4" width="0.1524" layer="91"/>
-<pinref part="TRIAD-VPP20-1000" gate="G$1" pin="P1"/>
-<wire x1="0" y1="25.4" x2="10.16" y2="25.4" width="0.1524" layer="91"/>
-<wire x1="0" y1="25.4" x2="0" y2="85.09" width="0.1524" layer="91"/>
-<junction x="0" y="25.4"/>
-<junction x="0" y="85.09"/>
-<pinref part="BELSIGNAL-ST-6-16" gate="G$1" pin="P1"/>
-</segment>
-</net>
 <net name="GND" class="0">
 <segment>
 <wire x1="68.58" y1="81.28" x2="68.58" y2="59.69" width="0.1524" layer="91"/>
@@ -15370,12 +15348,36 @@ Source: http://www.diotec.com/pdf/s40.pdf</description>
 <wire x1="99.06" y1="38.1" x2="87.63" y2="38.1" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="AC-IN-2-BEFORE-FUSE" class="0">
+<net name="AC-IN-AFTER-SW" class="0">
+<segment>
+<pinref part="JP2-SWITCH" gate="A" pin="2"/>
+<pinref part="TRIAD-VPP20-1000" gate="G$1" pin="P4"/>
+<wire x1="10.16" y1="10.16" x2="0" y2="10.16" width="0.1524" layer="91"/>
+<wire x1="0" y1="10.16" x2="0" y2="25.4" width="0.1524" layer="91"/>
+<pinref part="TRIAD-VPP20-1000" gate="G$1" pin="P1"/>
+<wire x1="0" y1="25.4" x2="10.16" y2="25.4" width="0.1524" layer="91"/>
+<wire x1="0" y1="25.4" x2="0" y2="85.09" width="0.1524" layer="91"/>
+<junction x="0" y="25.4"/>
+<pinref part="BELSIGNAL-ST-6-16" gate="G$1" pin="P1"/>
+<wire x1="10.16" y1="85.09" x2="0" y2="85.09" width="0.1524" layer="91"/>
+<wire x1="-17.78" y1="86.36" x2="-17.78" y2="85.09" width="0.1524" layer="91"/>
+<wire x1="-17.78" y1="85.09" x2="0" y2="85.09" width="0.1524" layer="91"/>
+<junction x="0" y="85.09"/>
+</segment>
+</net>
+<net name="AC-IN-AFTER-FUSE" class="0">
+<segment>
+<pinref part="JP2-SWITCH" gate="A" pin="1"/>
+<pinref part="F1-FUSE" gate="1" pin="2"/>
+<wire x1="-20.32" y1="86.36" x2="-29.21" y2="86.36" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="AC-IN-BEFORE-FUSE" class="0">
 <segment>
 <pinref part="F1-FUSE" gate="1" pin="1"/>
-<pinref part="JP2-SWITCH" gate="A" pin="2"/>
-<wire x1="-10.16" y1="85.09" x2="-17.78" y2="85.09" width="0.1524" layer="91"/>
-<wire x1="-17.78" y1="85.09" x2="-17.78" y2="86.36" width="0.1524" layer="91"/>
+<pinref part="JP1-POWER" gate="1" pin="3"/>
+<wire x1="-39.37" y1="86.36" x2="-39.37" y2="76.2" width="0.1524" layer="91"/>
+<wire x1="-39.37" y1="76.2" x2="-46.99" y2="76.2" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
