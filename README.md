@@ -30,6 +30,24 @@ of the Teensy unit.
 Build Notes
 ===========
 
+September 21, 2020
+
+I've been fooling around with a few more designs recently.  Someone asked me if I had considered building a stand alone joystick board.
+I had never considered it, but I went ahead and put two together.  One supports two joystick ports, and allows you to select the port 
+numbers with dip switches.  The other is bare bones.  It only supports one joystick, but it can be built for somewhere between $15 and $30.
+
+I also stumbled on a weird bug in the Teensy code for the floppy emulator.  When you swapped the disk image, every once in a while the 
+TRS-80 would either lock up or show random garbage on the screen.  It looks like it's some kind of weird timing bug, most likely because 
+the SD drive emulation is a little slow, and the code was leaving the WAIT signal low while the entire mount command was active.  So I 
+tweaked a couple of things to fix that.
+
+Also, just a quick note.  Jan Beta did a [Septandy video](https://www.youtube.com/watch?v=hyTF-FG4Bv8) where he's working on a Model 1.  He
+didn't have a power supply for it, so he built one.  As I was watching the video, he briefly pulls out the schematic of the power supply, and 
+I was like "Hey, that's *MY* power supply design!"  Unfortunately, he ends up losing a bunch of time in his debugging exercise because he 
+didn't have one of the center tap lines connected correctly.  Incidentally, the way he constructed his power supply looks a lot more 
+professional than mine.  I just threw mine in an electrical gang box, but his looks like it has a nice case and everything.
+
+
 June 28, 2020
 
 I updated the graphics/sound board again.  This time I made it so that the joystick ports are compatible with the "Alphastick" joystick
