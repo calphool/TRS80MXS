@@ -209,6 +209,7 @@ void setup() {
   lcd.begin(20,4);
   lcd.clear();
 
+  iLEDCtr = 0;
 
   lcd.setCursor(0,0);
   lcd.print("Looking for serial.");
@@ -238,8 +239,8 @@ void setup() {
 
   configureInterrupts();                             // tie interrupt lines to code blocks
   openDiskFileByName("newdos80.dsk", 0);                // open file specified from SD card
-  openDiskFileByName("more-arcade-1_80sssd_jv1.DSK", 1);                // open file specified from SD card
-  openDiskFileByName("blank.DSK", 2);                // open file specified from SD card
+  openDiskFileByName("arcade-1.dsk", 1);                // open file specified from SD card
+  openDiskFileByName("blank.dsk", 2);                // open file specified from SD card
   openDiskFileByName("trs80mxs.dsk",3);
 
   p((char*)"\nReady.\n");
@@ -406,6 +407,15 @@ void loop() {
     sCommand = Serial.readString().trim();
     if (!bInsideUploadCommand)
       p((char*)"\nReceived command:  >>%s<<\n\n", sCommand.c_str());
+
+    if (sCommand.indexOf("LED RED") != -1) L2_RED();
+    if (sCommand.indexOf("LED GREEN") != -1) L2_GREEN();
+    if (sCommand.indexOf("LED BLUE") != -1) L2_BLUE();
+    if (sCommand.indexOf("LED CYAN") != -1) L2_CYAN();
+    if (sCommand.indexOf("LED YELLOW") != -1) L2_YELLOW();
+    if (sCommand.indexOf("LED VIOLET") != -1) L2_VIOLET();
+    if (sCommand.indexOf("LED WHITE") != -1) L2_WHITE();
+    if (sCommand.indexOf("LED BLACK") != -1) L2_BLACK();
 
     if (sCommand.indexOf("mount ") != -1) {
       sCommand = sCommand.substring(sCommand.indexOf("mount ") + 6);

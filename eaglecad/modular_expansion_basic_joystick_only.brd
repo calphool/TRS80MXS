@@ -3458,8 +3458,8 @@ design rules under a new name.</description>
 <contactref element="C6" pad="1"/>
 <polygon width="0.1524" layer="1">
 <vertex x="0" y="0"/>
-<vertex x="102.5525" y="0"/>
-<vertex x="102.5525" y="74.6125"/>
+<vertex x="55.245" y="0"/>
+<vertex x="55.245" y="74.6125"/>
 <vertex x="0" y="74.6125"/>
 </polygon>
 <contactref element="IC10" pad="7"/>

@@ -25,6 +25,8 @@ char RETRIEVINGHEADERS = 0;
 char RETRIEVINGSTREAM = 0;
 char BUFFERSREADY = 0;
 
+char interruptsAttached = 0;
+
 WiFiClientSecure client;
 
 char dataDirection = 2;
@@ -4267,7 +4269,7 @@ const char* globalsign_ca = \
    "-----END CERTIFICATE-----\n";
   
 
-void dataIn() {
+void IRAM_ATTR dataIn() {
   if(dataDirection != IN) {
     //Serial.printf("  D7-D0 = INPUT\n");  Serial.flush();
     pinMode(D7, INPUT);
@@ -4282,7 +4284,7 @@ void dataIn() {
   }
 }
 
-void dataOut() {
+void IRAM_ATTR dataOut() {
   if(dataDirection != OUT) {
     //Serial.printf("  D7-D0 = OUTPUT\n");  Serial.flush();
     pinMode(D7, OUTPUT);
@@ -4422,6 +4424,16 @@ int startsWith(char* s, char* t) {
   return 1;
 }
 
+
+char* replace_char(char* str, char find, char replace){
+    char *current_pos = strchr(str,find);
+    while (current_pos){
+        *current_pos = replace;
+        current_pos = strchr(current_pos,find);
+    }
+    return str;
+}
+
 void invokeCommand() {
 
   L1_RED();
@@ -4437,7 +4449,8 @@ void invokeCommand() {
   if(startsWith(inBuffer, "SETSSID=")) {
     L1_BLUE();    
     strcpy(ssid, inBuffer+8);
-    //Serial.printf("SSID: %s\n",ssid);
+    replace_char(ssid,'!','_');
+    Serial.printf("SSID: %s\n",ssid);
     strcpy(outBuffer,"OK");
     L1_GREEN();
   }
@@ -4445,7 +4458,7 @@ void invokeCommand() {
   if(startsWith(inBuffer, "PASSWORD=")) {
     L1_BLUE();
     strcpy(password, inBuffer+9);
-    //Serial.printf("PASSWORD: %s\n",password);
+    Serial.printf("PASSWORD: %s\n",password);
     strcpy(outBuffer,"OK");
     L1_YELLOW();
   }
@@ -4479,11 +4492,11 @@ void invokeCommand() {
   if(startsWith(inBuffer, "GETSUBNETMASK")) {
     subnet = WiFi.subnetMask();
     strcpy(outBuffer,subnet.toString().c_str());
-    Serial.printf("GETSUBNETMAST: %s\n", outBuffer);
+    Serial.printf("GETSUBNETMASK: %s\n", outBuffer);
   }
   else
   if(startsWith(inBuffer, "HTTPGET=")) {
-    strcpy(getBuffer, inBuffer+9);
+    strcpy(getBuffer, inBuffer+8);
     strcpy(outBuffer,"OK");
   }
   else
@@ -4531,7 +4544,8 @@ void invokeCommand() {
 
 
 void invokeCommandTask(void* p) {
-  //Serial.printf("invokeCommandTask()\n");
+  Serial.printf("inside invokeCommandTask()\n");
+  Serial.flush();
   L2_RED();
   invokeCommand();
   L2_GREEN();
@@ -4542,14 +4556,19 @@ void invokeCommandTask(void* p) {
 }
 
 
-void wifiOutFunc() {
+void IRAM_ATTR wifiOutFunc() {
 // this function is invoked when the TRS-80 has requested an OUT 240,X (so we are sending data *FROM* the TRS-80 *TO* the ESP-32)
+    //static uint8_t ucParameterToPass;
+    TaskHandle_t xHandle = NULL;
     
+    //Serial.printf("inside wifiOutFunc\n");Serial.flush();
     dataIn();
     char c = getByte();
     
     if(c == 0x0a || c == 0x0d) {
-        xTaskCreate(invokeCommandTask, "invokeCommandTask", 256, NULL, 4, NULL);
+        Serial.printf("creating invokeCommandTask\n");Serial.flush();
+        xTaskCreate(invokeCommandTask, "InvComTask", 2048, NULL, 1, &xHandle);
+        configASSERT(xHandle);
     }
     else {
         inBuffer[strlen(inBuffer)+1] = 0x0;
@@ -4597,7 +4616,7 @@ inline void resetWaitLatch() {
 }
 
 int ix = -1;
-void wifiInFunc() {
+void IRAM_ATTR wifiInFunc() {
 // this function is invoked when the TRS-80 has requested an INP() (so we are sending data *FROM* the ESP32 *TO* the TRS-80)
     dataOut();
 
@@ -4623,14 +4642,14 @@ void debugLED(char c) {
   if(c % 2  < 1)   digitalWrite(19,LOW); else digitalWrite(19,HIGH);    // L2 - blue
 }
 
-/*
+
 void WiFiEvent(WiFiEvent_t event)
 {
-    digitalWrite(2,HIGH);
+    //digitalWrite(2,HIGH);
 
     Serial.printf("[WiFi-event] event: %d, ", event);
 
-    digitalWrite(2,LOW);
+    //digitalWrite(2,LOW);
     
     switch (event) {
         case SYSTEM_EVENT_WIFI_READY: 
@@ -4710,11 +4729,33 @@ void WiFiEvent(WiFiEvent_t event)
             Serial.println("Obtained IP address");
             break;
     }
+    Serial.flush();
 }
-*/
 
 
 unsigned int iLEDCtr = 0;
+
+
+void detachTRS80Interrupts() {
+  if(interruptsAttached) {
+     Serial.printf("Detaching WIFI_OUT interrupt\n");  Serial.flush();
+     detachInterrupt(digitalPinToInterrupt(WIFI_OUT));
+     Serial.printf("Detaching WIFI_IN interrupt\n");  Serial.flush();
+     detachInterrupt(digitalPinToInterrupt(WIFI_IN));
+     interruptsAttached = 0;
+  }
+}
+
+void attachTRS80Interrupts() { 
+    if(!interruptsAttached) {
+        Serial.printf("Attaching WIFI_OUT interrupt\n");  Serial.flush();
+        attachInterrupt(digitalPinToInterrupt(WIFI_OUT), wifiOutFunc, FALLING);
+        Serial.printf("Attaching WIFI_IN interrupt\n");  Serial.flush();
+        attachInterrupt(digitalPinToInterrupt(WIFI_IN), wifiInFunc, FALLING);
+        interruptsAttached = 1;
+    }
+}
+
 
 void setup() {
     inBuffer[0] = 0x0;
@@ -4745,33 +4786,27 @@ void setup() {
     setPinDirection();
     initFlipFlop();
 
-    Serial.printf("Attaching WIFI_OUT interrupt\n");  Serial.flush();
-    attachInterrupt(digitalPinToInterrupt(WIFI_OUT), wifiOutFunc, FALLING);
-    Serial.printf("Attaching WIFI_IN interrupt\n");  Serial.flush();
-    attachInterrupt(digitalPinToInterrupt(WIFI_IN), wifiInFunc, FALLING);
+    WiFi.mode(WIFI_MODE_STA); 
 
+    attachTRS80Interrupts();
 
-    WiFi.disconnect(); 
+    WiFi.disconnect(true); 
     delay(1000);
 
     
-  //  WiFi.onEvent(WiFiEvent);
+    WiFi.onEvent(WiFiEvent);
 
 
     L1_GREEN();
     getBuffer[0] = 0x0;
     
     Serial.printf("setup() complete.\n");  Serial.flush();
-
-    for(int i=0;i<128;i++) {
-      Serial.printf("%d\n",i);
-      debugLED(i);
-      delay(1000);
-    }
-
 }
 
 void loop() {
+  int stat;
+  
+  //L2_RED(); delay(500); L2_BLACK(); delay(500);
   if(RETRIEVINGSTREAM == 1) {
     Serial.printf("Retrieving data...\n");
     yield();
@@ -4841,7 +4876,7 @@ void loop() {
     strcpy(server, s.c_str());
     Serial.printf("Connecting to server %s...\n", server);
     yield();
-    if(!client.connect(server, 443)) {
+    if(!client.connect(server, 80)) {
       Serial.printf("Connection failed requesting %s\n", getBuffer);
       getBuffer[0] = 0x0;
       strcpy(outBuffer,"CONNECTION FAILED");
@@ -4858,9 +4893,8 @@ void loop() {
   }
 
   if(WAITINGFORCONNECT == 1) {
-    wl_status_t t = WiFi.status();
     yield();
-    Serial.printf("Waiting for connection, %d...\n", t); Serial.flush();
+    wl_status_t t = WiFi.status();
     if(t == WL_CONNECTED) {
       WAITINGFORCONNECT = 0;
       SETTINGCACERT = 1;
@@ -4869,9 +4903,10 @@ void loop() {
 
   if(CONNECTING == 1) {
     CONNECTING = 0;
-    WiFi.disconnect();
+    WiFi.disconnect(true);
     delay(500);
     Serial.printf("WiFi.begin(%s,%s)...\n", ssid, password);
+    //detachTRS80Interrupts();
     WiFi.begin(ssid, password);
     WAITINGFORCONNECT = 1;
   }

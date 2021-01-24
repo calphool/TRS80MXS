@@ -21549,6 +21549,7 @@ STAND-OFF</description>
 <pinref part="IC11" gate="B" pin="I1"/>
 <wire x1="55.88" y1="71.12" x2="55.88" y2="66.04" width="0.1524" layer="91"/>
 <junction x="55.88" y="71.12"/>
+<label x="0" y="71.12" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="A6" class="0">
